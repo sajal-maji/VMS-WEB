@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { interval, timeout } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { API_ENDPOINTS } from '../../config/api-endpoints';
 
 @Component({
   selector: 'app-forgot-password',
@@ -19,7 +20,7 @@ export class ForgotPasswordComponent implements OnInit {
     uniquekey: undefined,
     email: undefined,
     expiryTime: undefined,
-    redirecturl: window.location.origin + '/ivmsweb/setPassword',
+    redirecturl: window.location.origin + '/ivmsweb/set-password',
     newpassword: undefined
   };
 
@@ -82,21 +83,21 @@ export class ForgotPasswordComponent implements OnInit {
     };
 
     setTimeout(() => {
-      const url = this.getAPIUrl(this.getAPIEndpoint('forgotpasswordlink'));
+      const url = API_ENDPOINTS.FORGOT_PASSWORD;
       const payload = {
         method: 'POST',
         url: url,
         payload: JSON.stringify(postData)
       };
 
-      this.http.post('/proxy', payload, {
+      this.http.post(url, postData, {
         headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
       }).subscribe({
         next: (response: any) => {
           // Success modal equivalent (replacing jQuery Confirm)
           alert('Password Reset Link Is Successfully Sent!');
           this.model.email = undefined;
-          this.router.navigateByUrl('/login');
+          this.router.navigateByUrl('ivmsweb/login');
         },
         error: (response: any) => {
           alert(response?.error?.message || 'Something went wrong!');
@@ -110,7 +111,7 @@ export class ForgotPasswordComponent implements OnInit {
   validate(): string | undefined {
 
     const pattern = new RegExp(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/);
-    debugger
+    // debugger
     if (!this.model.email || this.model.email.trim() === '') {
       this.error_message = 'Email is required!';
       return;

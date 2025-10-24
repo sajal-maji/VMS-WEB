@@ -37,7 +37,6 @@ export class AuthStore {
     this.http.post<{ token: string }>(url, credentials).subscribe({
       next: (res) => {
         this.state.set({ isLoading: false, isAuthenticated: true, token: res.token, error: null });
-        localStorage.setItem('sessiontoken', res.token);
       },
       error: (err) => {
         const message = err?.error?.message || 'Login failed';

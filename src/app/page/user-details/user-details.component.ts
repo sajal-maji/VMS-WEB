@@ -127,7 +127,7 @@ export class UserDetailsComponent implements OnInit {
       },
       error: (err) => {
         if (err.status === 401) {
-          this.router.navigate(['/login']);
+          this.router.navigate(['ivmsweb/login']);
         } else {
           alert(err.error?.message || 'An error occurred!');
         }
@@ -149,7 +149,7 @@ export class UserDetailsComponent implements OnInit {
       },
       error: (err) => {
         if (err.status === 401) {
-          this.router.navigate(['/login']);
+          this.router.navigate(['ivmsweb/login']);
         } else {
           alert(err.error?.message || 'Error loading user data!');
         }

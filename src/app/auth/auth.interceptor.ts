@@ -1,39 +1,32 @@
+import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import {
-  HttpInterceptorFn,
-  HttpRequest,
-  HttpHandlerFn,
-} from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  // Get JWT token (you can read from cookies or storage inside AuthService)
   const token = auth.getToken();
+  let authorizedRequest: HttpRequest<unknown> = req;
 
-  // Clone request if token is available
-  const authorizedRequest = token
-    ? req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
-      })
-    : req;
+  if (token) {
+    authorizedRequest = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+  }
 
-  // Handle the request and catch any 401 Unauthorized responses
   return next(authorizedRequest).pipe(
-    catchError((err) => {
-      if (err.status === 401) {
-        // Optionally clear session data or cookies
+    catchError(err => {
+      if (err?.status === 401) {
         auth.logout();
-
-        // Redirect to login
-        router.navigateByUrl('/login');
+        router.navigateByUrl('ivmsweb/login');
       }
-
       return throwError(() => err);
     })
   );
 };
+
+

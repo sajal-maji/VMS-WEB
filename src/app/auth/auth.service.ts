@@ -1,15 +1,31 @@
-import { Injectable } from '@angular/core';
-import { CookieService } from 'ngx-cookie-service';
+import { Injectable, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  constructor(private cookies: CookieService) {}
+  private readonly tokenKey = 'auth_token';
+  readonly isAuthenticated = signal<boolean>(this.hasToken());
 
-  getToken(): string | null {
-    return this.cookies.get('sessiontoken') || null;
+  constructor() {}
+
+  private get localStorage(): Storage | null {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  }
+
+  login(token: string): void {
+    this.localStorage?.setItem(this.tokenKey, token);
+    this.isAuthenticated.set(true);
   }
 
   logout(): void {
-    this.cookies.delete('sessiontoken');
+    this.localStorage?.removeItem(this.tokenKey);
+    this.isAuthenticated.set(false);
+  }
+
+  getToken(): string | null {
+    return this.localStorage?.getItem(this.tokenKey) ?? null;
+  }
+
+  hasToken(): boolean {
+    return !!this.localStorage?.getItem(this.tokenKey);
   }
 }

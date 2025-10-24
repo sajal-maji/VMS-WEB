@@ -11,7 +11,7 @@ export class AuthGuard implements CanActivate {
 canActivate(): boolean {
   const isLoggedIn = !!localStorage.getItem('token'); // or your auth check
   if (!isLoggedIn) {
-    this.router.navigate(['/login']);
+    this.router.navigate(['ivmsweb/login']);
     return false;
   }
   return true;
