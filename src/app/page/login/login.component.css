@@ -1,0 +1,55 @@
+.login-card {
+  max-width: 420px;
+  margin: 3rem auto;
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.form-field {
+  margin-bottom: 0.75rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+button.toggle-password {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 0.5rem 1rem;
+}
+
+.error {
+  color: #b91c1c;
+  margin-top: 0.5rem;
+}
+
+.hint {
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+

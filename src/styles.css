@@ -1,0 +1,163 @@
+/* ------------------------------
+   GLOBAL STYLES
+------------------------------ */
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: 'Titillium Web', sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+/* Centering wrapper */
+.custom-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* ------------------------------
+   LOGIN CONTAINER
+------------------------------ */
+.screen-center {
+  background-color: #1c1f26;
+  border-radius: 10px;
+  padding: 40px 30px;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+  color: #ccc;
+  text-align: center;
+  position: relative;
+}
+
+/* ------------------------------
+   LOGO
+------------------------------ */
+.screen-center img {
+  display: block;
+  margin: 0 auto 20px;
+}
+
+/* ------------------------------
+   INPUT FIELDS
+------------------------------ */
+.login-input,
+input.form-control {
+  background-color: #2a2e38;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  padding: 10px 14px;
+  width: 100%;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: background 0.3s ease;
+}
+
+.login-input:focus {
+  outline: none;
+  background-color: #333844;
+}
+
+/* Placeholder text */
+::placeholder {
+  color: #888;
+  opacity: 1;
+}
+
+/* ------------------------------
+   LABELS
+------------------------------ */
+.custom-text-color {
+  color: #9aa0ad;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+/* ------------------------------
+   BUTTONS
+------------------------------ */
+button {
+  background-color: #0078D7;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #005fa3;
+}
+
+/* ------------------------------
+   LINKS
+------------------------------ */
+.field-link {
+  color: #FCB614;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.field-link:hover {
+  color: #ffdb6d;
+}
+
+/* ------------------------------
+   ERROR MESSAGE
+------------------------------ */
+.form-group.text-center {
+  color: #FCB614;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ------------------------------
+   REMEMBER ME / FORGOT PASSWORD
+------------------------------ */
+.custom-text-color label {
+  margin-bottom: 0;
+}
+
+.text-end {
+  text-align: right;
+}
+
+/* ------------------------------
+   PASSWORD TOGGLE ICON
+------------------------------ */
+.field-icon {
+  position: absolute;
+  right: 15px;
+  top: 38px;
+  color: #888;
+  cursor: pointer;
+}
+
+.field-icon:hover {
+  color: #fff;
+}
+
+/* To ensure toggle icon aligns properly */
+.col-lg-12 {
+  position: relative;
+}
+
+/* ------------------------------
+   RESPONSIVE STYLES
+------------------------------ */
+@media (max-width: 768px) {
+  .screen-center {
+    width: 90%;
+    padding: 30px 20px;
+  }
+  button {
+    width: 100%;
+  }
+}
