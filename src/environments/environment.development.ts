@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://172.16.2.172:7443/V1/REST/'
+  apiBaseUrl: 'https://127.0.0.1:7443/V1/REST/'
 };
 
 

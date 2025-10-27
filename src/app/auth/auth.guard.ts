@@ -1,19 +1,28 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { AuthStore } from './auth.store';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
-  providedIn: 'root' // ensures the guard is available application-wide
+  providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  constructor(private router: Router, private auth: AuthService) {}
+  private router = inject(Router);
+  private authStore = inject(AuthStore);
+  private cookies = inject(CookieService);
 
-canActivate(): boolean {
-  const isLoggedIn = !!localStorage.getItem('token'); // or your auth check
-  if (!isLoggedIn) {
-    this.router.navigate(['/login']);
+  canActivate(): boolean {
+    // Read token from cookie (sessiontoken)
+    const token = this.cookies.get('sessiontoken');
+
+    // Update AuthStore state accordingly
+    if (token) {
+      this.authStore.getToken(); // sync AuthStore
+      return true;
+    }
+
+    // No token → redirect to login
+    this.router.navigate(['ivmsweb/login']);
     return false;
   }
-  return true;
-}
 }

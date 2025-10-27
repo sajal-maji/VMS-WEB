@@ -86,7 +86,7 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
         case 401:
           // Unauthorized - redirect to login
           auth.logout();
-          router.navigateByUrl('/login');
+          router.navigateByUrl('ivmsweb/login');
           break;
         case 403:
           // Forbidden - show access denied message
