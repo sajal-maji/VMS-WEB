@@ -90,7 +90,7 @@ export class ForgotPasswordComponent implements OnInit {
         payload: JSON.stringify(postData)
       };
 
-      this.http.post(url, postData, {
+      this.http.post(url, JSON.stringify(postData), {
         headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
       }).subscribe({
         next: (response: any) => {

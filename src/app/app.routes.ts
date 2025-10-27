@@ -14,11 +14,11 @@ export const routes: Routes = [
 
   // dashboard page (lazy-loaded)
   {
-    path: 'ivmsweb/live_matrix',
-    loadComponent: () =>
-      import('./page/dashboard/dashboard.component').then((m) => m.DashboardComponent),
-    canActivate: [AuthGuard],
-  },
+  path: 'ivmsweb/live_matrix',
+  loadComponent: () =>
+    import('./page/dashboard/dashboard.component').then(m => m.DashboardComponent),
+  canActivate: [AuthGuard],
+},
   {
     path: 'ivmsweb/forgot-password',
     loadComponent: () =>
@@ -34,4 +34,5 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./page/user-details/user-details.component').then((m) => m.UserDetailsComponent),
   },
+  
 ];

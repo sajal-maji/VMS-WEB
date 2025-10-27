@@ -1,32 +1,26 @@
-import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { AuthService } from './auth.service';
-import { catchError } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
+import { AuthStore } from './auth.store';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
+  const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  const token = auth.getToken();
-  let authorizedRequest: HttpRequest<unknown> = req;
+  const token = authStore.getToken();
 
-  if (token) {
-    authorizedRequest = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` }
-    });
-  }
+  const authorizedRequest = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
 
   return next(authorizedRequest).pipe(
     catchError(err => {
-      if (err?.status === 401) {
-        auth.logout();
+      if (err.status === 401) {
+        authStore.logout();
         router.navigateByUrl('ivmsweb/login');
       }
       return throwError(() => err);
     })
   );
 };
-
-

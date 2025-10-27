@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
-
+import * as CryptoJS from 'crypto-js'; 
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,7 +21,11 @@ export class LoginComponent implements OnInit {
   siteList: any[] = [];
   site: string | null = null;
 
-  constructor(private fb: FormBuilder, private sanitizer: DomSanitizer, private authStore: AuthStore) {}
+  constructor(
+    private fb: FormBuilder, 
+    private sanitizer: DomSanitizer,
+    private authStore: AuthStore,
+    ) {}
 
   ngOnInit(): void {
     // Initialize form
@@ -79,12 +83,11 @@ export class LoginComponent implements OnInit {
     // Sanitize and encrypt
     let userid = this.sanitizer.sanitize(1, this.loginForm.value.userid) || '';
     let password = this.sanitizer.sanitize(1, this.loginForm.value.password) || '';
-
-    // if (password.trim()) {
-    //   let firstEncrypt = SHA512(password).toString();
-    //   firstEncrypt = SHA512(firstEncrypt).toString();
-    //   password = firstEncrypt;
-    // }
+    if (password.trim()) {
+      let firstEncrypt = CryptoJS.SHA512(password).toString();
+      firstEncrypt = CryptoJS.SHA512(firstEncrypt).toString();
+      password = firstEncrypt;
+    }
 
     // Remember Me
     if (this.rememberMe) {

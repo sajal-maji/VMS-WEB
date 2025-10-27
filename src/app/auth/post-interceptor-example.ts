@@ -32,7 +32,7 @@ export class ExampleApiService {
 
   // Example POST request that will be excluded from interceptor
   login(credentials: any): Observable<any> {
-    return this.http.post('/login', credentials);
+    return this.http.post('ivmsweb/login', credentials);
   }
 
   // Example GET request - will NOT be intercepted by postInterceptor
