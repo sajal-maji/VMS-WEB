@@ -23,8 +23,8 @@ export class AuthStore {
   constructor(private readonly router: Router) {}
   private readonly state: WritableSignal<AuthState> = signal<AuthState>({
     isLoading: false,
-    isAuthenticated: !!this.cookies.get('sessiontoken'),
-    token: this.cookies.get('sessiontoken') || null,
+    isAuthenticated: !!this.cookies.get('JSESSIONID'),
+    token: this.cookies.get('JSESSIONID') || null,
     error: null
   });
 
@@ -47,19 +47,19 @@ export class AuthStore {
           error: null
         });
         // Set JWT token in cookie, valid for 1 day
-        this.cookies.set('sessiontoken', res.result[0].vsessionid, 1, '/');
+        this.cookies.set('JSESSIONID', res.result[0].vsessionid, 1, '/');
         this.router.navigate(["ivmsweb/live_matrix"])
       },
       error: (err) => {
         const message = err?.error?.message || 'Login failed';
         this.state.set({
-          isLoading: false,
+          isLoading: false, 
           isAuthenticated: false,
           token: null,
           error: message
         });
       }
-    });
+    });                 
   }
 
   logout(): void {
@@ -70,12 +70,12 @@ export class AuthStore {
       error: null
     });
     // Remove JWT token from cookie
-    this.cookies.delete('sessiontoken', '/');
+    this.cookies.delete('JSESSIONID', '/');
   }
 
   getToken(): string | null {
     // Always read from cookie to ensure latest value
-    const token = this.cookies.get('sessiontoken');
+    const token = this.cookies.get('JSESSIONID');
     this.state.update(s => ({ ...s, token, isAuthenticated: !!token }));
     return token || null;
   }

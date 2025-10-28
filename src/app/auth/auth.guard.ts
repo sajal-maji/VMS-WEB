@@ -13,7 +13,7 @@ export class AuthGuard implements CanActivate {
 
   canActivate(): boolean {
     // Read token from cookie (sessiontoken)
-    const token = this.cookies.get('sessiontoken');
+    const token = this.cookies.get('JSESSIONID');
 
     // Update AuthStore state accordingly
     if (token) {

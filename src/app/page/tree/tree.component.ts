@@ -76,15 +76,18 @@ export class TreeComponent implements OnInit {
     //   method: 'GET',
     //   url: this.getAPIUrl(apiEndpoint)
     // };
-    console.log(`Bearer ${this.cookieService.get('sessiontoken')}`);
+    console.log(`Bearer ${this.cookieService.get('JSESSIONID')}`);
     
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': ` ${this.cookieService.get('sessiontoken')}`  // or your API expects 'X-Session-Token'
-    });
-
+    // const headers = new HttpHeaders({
+    //   'Content-Type': 'application/json',
+    //   'Cookie': ` ${this.cookieService.get('JSESSIONID')}`  // or your API expects 'X-Session-Token'
+    // });
+     const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Cookies': `JSESSIONID=${this.cookieService.get('JSESSIONID')}`  // or your API expects 'X-Session-Token'
+  });
     this.loading = true;
-    this.http.get<any>(apiEndpoint,{headers}).pipe(take(1)).subscribe({
+    this.http.get<any>(apiEndpoint,{headers, withCredentials:true}).pipe(take(1)).subscribe({
       next: response => {
         if (response.result) {
           let rawData = response.result;
