@@ -6,10 +6,10 @@ export class AuthService {
   constructor(private cookies: CookieService) {}
 
   getToken(): string | null {
-    return this.cookies.get('sessiontoken') || null;
+    return this.cookies.get('JSESSIONID') || null;
   }
 
   logout(): void {
-    this.cookies.delete('sessiontoken');
+    this.cookies.delete('JSESSIONID');
   }
 }
