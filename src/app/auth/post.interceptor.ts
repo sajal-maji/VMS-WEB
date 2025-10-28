@@ -43,7 +43,7 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
   });
 
   // Log request (in development mode)
-  if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
     console.log(`POST Request: ${req.url}`, {
       method: req.method,
       headers: authorizedRequest.headers.keys(),
@@ -61,7 +61,7 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
     tap((event) => {
       if (event instanceof HttpResponse) {
         // Log successful response
-        if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
           console.log(`POST Response: ${req.url}`, {
             status: event.status,
             statusText: event.statusText,
@@ -72,7 +72,7 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
     }),
     catchError((error: HttpErrorResponse) => {
       // Log error
-      if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
         console.error(`POST Error: ${req.url}`, {
           status: error.status,
           statusText: error.statusText,
