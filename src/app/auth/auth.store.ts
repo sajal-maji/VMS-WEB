@@ -47,9 +47,12 @@ export class AuthStore {
           error: null
         });
         // Set JWT token in cookie, valid for 1 day
-        this.cookies.set('JSESSIONID', res.result[0].vsessionid, 1, '/');
+        this.cookies.set('vSessionId', res.result[0].vsessionid, 1, '/');
+        this.cookies.set('authToken', res.result[0].authToken, 1, '/');
         this.router.navigate(["ivmsweb/live_matrix"])
       },
+      
+
       error: (err) => {
         const message = err?.error?.message || 'Login failed';
         this.state.set({

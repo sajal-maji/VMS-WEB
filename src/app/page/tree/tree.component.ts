@@ -75,7 +75,8 @@ export class TreeComponent implements OnInit {
   // List of drop zones
   dropZones: { index: number; cameras: CameraNode[] }[] = [];
 
-  constructor(private http: HttpClient,
+  constructor(
+    private http: HttpClient,
     private cookieService:CookieService,
     private router:Router
   ) {}
@@ -91,7 +92,8 @@ export class TreeComponent implements OnInit {
         document.querySelector('#ws_schemadomainport')?.textContent?.trim() || '';
       this.rootconfig.ws.context =
         document.querySelector('#ws_context')?.textContent?.trim() || '';
-    this.loadData()
+    this.loadData();
+    // this.buildJunctionTree();
   }
 
   private showInvalidSession(): void {
@@ -116,23 +118,44 @@ export class TreeComponent implements OnInit {
 
   // ❗ Don't use 'Cookie' — browser blocks it
 
-const headers = new HttpHeaders({
-  'Content-Type': 'application/json',
-  'Cookies': `JSESSIONID=${jsessionId}`,
-});
-
-  // === 1. Fetch server info ===
-  this.http.get<any>(url, { headers,withCredentials: true }).subscribe({
-    next: (response) => {
-      console.log('Server Info Response:', response);
-    },
-    error: (err) => {
-      console.error('Server Info Error:', err);
-    }
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Cookies': `JSESSIONID=${jsessionId}`,
+    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
   });
 
+  // === 1. Fetch server info ===
+  this.http.get<any>(url, { headers,withCredentials: true }).pipe(take(1)).subscribe({
+    next: (response) => {
+      console.log('Server Info Response:', response);
+      if (response?.result?.length) { 
+        response.result.forEach((server: any) => { 
+          if (server.servertype === 'IVMS') { 
+            this.rootconfig.serverid = server.serverid; 
+            console.log(this.rootconfig.serverid, server.serverid)
+          } 
+        }); 
+      } 
+      if (!this.rootconfig.serverid) { 
+        this.model.camerror = 'IVMS server is not registered'; 
+        setTimeout(() => (this.model.camerror = ''), 5000); 
+      } else { 
+        // this.getAnalyticsTypes(); 
+        console.log('IsNTAMC:', this.isNTAMC); 
+        this.buildJunctionTree(this.rootconfig.serverid); 
+      }
+    },
+    error: (err) => {
+      if (err.status === 401) {
+        this.showInvalidSession();
+      } else {
+        this.model.camerror = err?.error?.message || 'Error loading servers';
+        setTimeout(() => (this.model.camerror = ''), 5000);
+      }
+    }
+  });
   // === 2. Fetch user session ===
-  this.http.get<any>(url1, { headers }).subscribe({
+  this.http.get<any>(url1, { headers }).pipe(take(1)).subscribe({
     next: (response) => {
       console.log('User Session Response:', response);
     },
@@ -142,25 +165,16 @@ const headers = new HttpHeaders({
   });
 }
 
-
-  buildJunctionTree(value: boolean) {
-    this.isNTAMC = value;
-    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE;
-
-    // const requestData = {
-    //   method: 'GET',
-    //   url: this.getAPIUrl(apiEndpoint)
-    // };
-    console.log(`Bearer ${this.cookieService.get('JSESSIONID')}`);
-    
-    // const headers = new HttpHeaders({
-    //   'Content-Type': 'application/json',
-    //   'Cookie': ` ${this.cookieService.get('JSESSIONID')}`  // or your API expects 'X-Session-Token'
-    // });
-     const headers = new HttpHeaders({
+  buildJunctionTree(serverid:string) {
+    // this.isNTAMC = value;
+    console.log("Hi",this.rootconfig.serverid);
+    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);;
+    const headers = new HttpHeaders({
     'Content-Type': 'application/json',
-    'Cookies': `JSESSIONID=${this.cookieService.get('JSESSIONID')}`  // or your API expects 'X-Session-Token'
+    'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
+    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
   });
+
     this.loading = true;
     this.http.get<any>(apiEndpoint,{headers, withCredentials:true}).pipe(take(1)).subscribe({
       next: response => {
