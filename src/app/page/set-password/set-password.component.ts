@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
+import { API_ENDPOINTS } from '../../config/api-endpoints';
 export const confirmPasswordValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('newPassword')?.value;
   const confirmPassword = control.get('confirmNewPassword')?.value;
@@ -35,6 +37,7 @@ export class SetPasswordComponent implements OnInit {
   uniqueKey: string | null = null;
 
   constructor(
+    private http: HttpClient,
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
@@ -50,14 +53,25 @@ export class SetPasswordComponent implements OnInit {
   }, { validators: confirmPasswordValidator });
   }
 
+  model = {
+    newPassword: undefined as string | undefined,
+    confirmnewPassword: undefined as string | undefined,
+    redirecturl: location.origin + '/ivmsweb/set-password',
+    userid: undefined as string | undefined,
+    expiryTime: undefined as string | undefined,
+    uniquekey: undefined as string | undefined,
+    email: undefined as string | undefined
+  };
+
   ngOnInit(): void {
     // Get unique key from query parameter
     this.uniqueKey = this.route.snapshot.queryParamMap.get('uk');
+    console.log("unique", this.uniqueKey);
     // this.model.uniquekey = this.uniqueKey || undefined;
 
     // Validate the key
     if (this.uniqueKey) {
-      // this.checkValidKey(this.uniqueKey);
+      this.checkValidKey(this.uniqueKey);
     } else {
       this.router.navigate(['/not_found']);
     }
@@ -89,7 +103,33 @@ export class SetPasswordComponent implements OnInit {
   //   });
   // }
 
- get formControls() {
+  checkValidKey(uniqueKey: string): void {
+    this.isCheckingKey = true;
+
+    // Replace {uk} with the actual uniqueKey value
+    const url = API_ENDPOINTS.VALIDATE_KEY.replace('{uniquekey}', uniqueKey);
+
+    this.http.get(url, {
+      headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+    }).subscribe({
+      next: (response: any) => {
+        this.isCheckingKey = false;
+
+        if (response.status === 200 && response.data?.result?.length > 0) {
+          this.isKeyValid = true;
+          this.model.userid = response.result[0].userid;
+        } else {
+          this.router.navigateByUrl('/ivmsweb/not_found');
+        }
+      },
+      error: () => {
+        this.isCheckingKey = false;
+        this.router.navigateByUrl('/ivmsweb/not_found');
+      }
+    });
+  }
+  
+  get formControls() {
     return this.setPasswordForm.controls;
   }
   // Validate password rules

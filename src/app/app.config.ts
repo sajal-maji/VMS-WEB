@@ -6,12 +6,13 @@ import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { authInterceptor } from './auth/auth.interceptor';
 import { postInterceptor } from './auth/post.interceptor';
+import { sessionInterceptor } from './interceptors/session.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes, withHashLocation()), provideClientHydration(withEventReplay()),
-    provideHttpClient(withInterceptors([authInterceptor, postInterceptor]))
+    provideHttpClient(withInterceptors([authInterceptor, postInterceptor, sessionInterceptor]))
   ]
 };

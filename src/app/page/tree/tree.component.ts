@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { take } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
+import { Router } from '@angular/router';
 
 interface CameraNode {
   name: string;
@@ -45,19 +46,39 @@ export class TreeComponent implements OnInit {
   imagePathPtz: string = '';
 
   rootconfig: any = {
-    cameramap: {},
+    serverid: '',
+    vsessionid: '',
+    ws: {
+      schemadomainport: '',
+      context: ''
+    },
+    status_indicator: false,
+    is_connected: false,
     junctions: [],
-    rtamcServers: {},
-    locations: {}
+    cameramap: {},
+    filteredchannels: [],
+    streamer: undefined
   };
 
+  model:any = { 
+		error: "", camerror: "", 
+		success: "", 
+		dateform: {"date": new Date(), "open": false}, 
+		dateto: {"date": new Date(), "open": false}, 
+		total: 0,
+	};
+
+  vsessionuserid: string = '';
+  vsessionid: string = '';
   // List of cameras available to drag
   cameras: CameraNode[] = [];
   // List of drop zones
   dropZones: { index: number; cameras: CameraNode[] }[] = [];
 
-  constructor(private http: HttpClient,
-    private cookieService:CookieService
+  constructor(
+    private http: HttpClient,
+    private cookieService:CookieService,
+    private router:Router
   ) {}
 
   ngOnInit(): void {
@@ -65,26 +86,97 @@ export class TreeComponent implements OnInit {
     for (let i = 0; i < 5; i++) {
       this.dropZones.push({ index: i, cameras: [] });
     }
-    this.buildJunctionTree(false)
+
+     this.rootconfig.vsessionid = this.cookieService.get('vSessionId');
+      this.rootconfig.ws.schemadomainport =
+        document.querySelector('#ws_schemadomainport')?.textContent?.trim() || '';
+      this.rootconfig.ws.context =
+        document.querySelector('#ws_context')?.textContent?.trim() || '';
+    this.loadData();
+    // this.buildJunctionTree();
   }
 
-  buildJunctionTree(value: boolean) {
-    this.isNTAMC = value;
-    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE;
+  private showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookieService.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      // localStorage.clear();
 
-    // const requestData = {
-    //   method: 'GET',
-    //   url: this.getAPIUrl(apiEndpoint)
-    // };
-    console.log(`Bearer ${this.cookieService.get('sessiontoken')}`);
-    
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
+    }
+  }
+
+  loadData(): void {
+  const jsessionId = this.cookieService.get('vSessionId');
+  console.log('Cookie value:', jsessionId);
+
+  const url = API_ENDPOINTS.SERVER_INFO;
+  const url1 = API_ENDPOINTS.USER_SESSION;
+
+  // ❗ Don't use 'Cookie' — browser blocks it
+
+  const headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Cookies': `JSESSIONID=${jsessionId}`,
+    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+  });
+
+  // === 1. Fetch server info ===
+  this.http.get<any>(url, { headers,withCredentials: true }).pipe(take(1)).subscribe({
+    next: (response) => {
+      console.log('Server Info Response:', response);
+      if (response?.result?.length) { 
+        response.result.forEach((server: any) => { 
+          if (server.servertype === 'IVMS') { 
+            this.rootconfig.serverid = server.serverid; 
+            console.log(this.rootconfig.serverid, server.serverid)
+          } 
+        }); 
+      } 
+      if (!this.rootconfig.serverid) { 
+        this.model.camerror = 'IVMS server is not registered'; 
+        setTimeout(() => (this.model.camerror = ''), 5000); 
+      } else { 
+        // this.getAnalyticsTypes(); 
+        console.log('IsNTAMC:', this.isNTAMC); 
+        this.buildJunctionTree(this.rootconfig.serverid); 
+      }
+    },
+    error: (err) => {
+      if (err.status === 401) {
+        this.showInvalidSession();
+      } else {
+        this.model.camerror = err?.error?.message || 'Error loading servers';
+        setTimeout(() => (this.model.camerror = ''), 5000);
+      }
+    }
+  });
+  // === 2. Fetch user session ===
+  this.http.get<any>(url1, { headers }).pipe(take(1)).subscribe({
+    next: (response) => {
+      console.log('User Session Response:', response);
+    },
+    error: (err) => {
+      console.error('User Session Error:', err);
+    }
+  });
+}
+
+  buildJunctionTree(serverid:string) {
+    // this.isNTAMC = value;
+    console.log("Hi",this.rootconfig.serverid);
+    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);;
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': ` ${this.cookieService.get('sessiontoken')}`  // or your API expects 'X-Session-Token'
-    });
+    'Content-Type': 'application/json',
+    'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
+    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+  });
 
     this.loading = true;
-    this.http.get<any>(apiEndpoint,{headers}).pipe(take(1)).subscribe({
+    this.http.get<any>(apiEndpoint,{headers, withCredentials:true}).pipe(take(1)).subscribe({
       next: response => {
         if (response.result) {
           let rawData = response.result;
@@ -275,3 +367,5 @@ private channelClicked(node: any) {
   }
 
 }
+
+

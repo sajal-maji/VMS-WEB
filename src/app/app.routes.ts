@@ -3,7 +3,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { LoginGuard } from './auth/login.guard';
 
 export const routes: Routes = [
-
+  
   // login page (lazy-loaded)
   {
     path: 'ivmsweb/login',

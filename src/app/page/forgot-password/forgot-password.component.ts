@@ -84,11 +84,6 @@ export class ForgotPasswordComponent implements OnInit {
 
     setTimeout(() => {
       const url = API_ENDPOINTS.FORGOT_PASSWORD;
-      const payload = {
-        method: 'POST',
-        url: url,
-        payload: JSON.stringify(postData)
-      };
 
       this.http.post(url, JSON.stringify(postData), {
         headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
