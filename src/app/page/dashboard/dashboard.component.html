@@ -1,1 +1,17 @@
-<tree></tree>
+<div class="dashboard-container">
+  <!-- Left sidebar (Tree) -->
+  <div class="sidebar">
+    <tree></tree>
+  </div>
+
+  <!-- Right section (Header + Main content) -->
+  <div class="main-section">
+    <app-header></app-header>
+
+    <!-- Main content area -->
+    <div class="content-area">
+      <one-x-one *ngIf="selectedLayout() === '1x1'"></one-x-one>
+      <!-- Future: add components for 2x2, 3x3 similarly when ready -->
+    </div>
+  </div>
+</div>

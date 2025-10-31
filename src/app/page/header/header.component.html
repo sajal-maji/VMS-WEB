@@ -1,0 +1,22 @@
+<header class="navbar">
+  <nav class="nav-left">
+    <a class="active">Dashboard</a>
+    <a>Events</a>
+    <a>Archive</a>
+    <a>Profile</a>
+    <a>Configuration</a>
+  </nav>
+
+  <div class="nav-right">
+    <div class="dropdown">
+      <button class="dropbtn">▦ 1x1</button>
+      <div class="dropdown-content">
+        <a (click)="selectLayout('1x1')">1x1</a>
+        <a (click)="selectLayout('2x2')">2x2</a>
+        <a (click)="selectLayout('3x3')">3x3</a>
+        <a (click)="selectLayout('4x4')">4x4</a>
+      </div>
+    </div>
+    <a href="#" class="signout">Signout</a>
+  </div>
+</header>

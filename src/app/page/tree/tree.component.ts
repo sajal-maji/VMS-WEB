@@ -31,7 +31,7 @@ export class TreeComponent implements OnInit {
   displayTree: CameraNode[] = [];
   originalCameraTree: CameraNode[] = [];
   loading: boolean = false;
-  isNTAMC: boolean = false;
+  isNTAMC: boolean = true;
   imagePathFixedIdle = "CameraIconIdle.png";
 
 	imagePathFixedLive = "CameraLiveAndRecordingIcon.png";
@@ -123,7 +123,7 @@ export class TreeComponent implements OnInit {
     'Cookies': `JSESSIONID=${jsessionId}`,
     'Authorization': `Bearer ${this.cookieService.get('authToken')}`
   });
-
+  
   // === 1. Fetch server info ===
   this.http.get<any>(url, { headers,withCredentials: true }).pipe(take(1)).subscribe({
     next: (response) => {
@@ -166,7 +166,7 @@ export class TreeComponent implements OnInit {
 }
 
   buildJunctionTree(serverid:string) {
-    // this.isNTAMC = value;
+    this.isNTAMC = true;
     console.log("Hi",this.rootconfig.serverid);
     const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);;
     const headers = new HttpHeaders({
@@ -174,7 +174,6 @@ export class TreeComponent implements OnInit {
     'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
     'Authorization': `Bearer ${this.cookieService.get('authToken')}`
   });
-
     this.loading = true;
     this.http.get<any>(apiEndpoint,{headers, withCredentials:true}).pipe(take(1)).subscribe({
       next: response => {
@@ -187,81 +186,80 @@ export class TreeComponent implements OnInit {
             this.displayTree = this.originalCameraTree;
           } else {
             let formattedTree: CameraNode[] = [];
+            console.log(rawData);
+            this.rootconfig.locations = rawData;
+            // if (Array.isArray(rawData) && rawData.length > 0) {
+            //   rawData = rawData[0];
+            // }
 
-            if (Array.isArray(rawData) && rawData.length > 0) {
-              rawData = rawData[0];
-            }
+            // Object.keys(rawData).forEach(serverKey => {
+            //   let serverName = "Unnamed Server";
+            //   let serverId = "Unknown ID";
+            //   debugger
+            //     serverName = serverKey[1].trim();
+            //     serverId = serverKey[2].trim();
+              
 
-            Object.keys(rawData).forEach(serverKey => {
-              let serverName = "Unnamed Server";
-              let serverId = "Unknown ID";
+            //   const cameras = Array.isArray(rawData[serverKey]) ? rawData[serverKey] : [];
+            //   const recordingServerMap: any = {};
 
-              const match = serverKey.match(/redundantmediaservername=([^,]+), redundantmediaserverid=([^,\]]+)/);
-              if (match) {
-                serverName = match[1].trim();
-                serverId = match[2].trim();
-              }
+            //   cameras.forEach(camera => {
+            //     const recordingServer = camera.recordingservername;
+            //     const location = camera.location;
 
-              const cameras = Array.isArray(rawData[serverKey]) ? rawData[serverKey] : [];
-              const recordingServerMap: any = {};
+            //     if (!recordingServerMap[recordingServer]) recordingServerMap[recordingServer] = {};
+            //     if (!recordingServerMap[recordingServer][location]) recordingServerMap[recordingServer][location] = [];
 
-              cameras.forEach(camera => {
-                const recordingServer = camera.recordingservername;
-                const location = camera.location;
+            //     recordingServerMap[recordingServer][location].push({
+            //       name: `${camera.channelid}_${camera.channelname}`,
+            //       type: 'camera',
+            //       isRTAMC: false,
+            //       isRecordingServer: false,
+            //       iscamera: true,
+            //       isLocation: false,
+            //       id: camera.channelid,
+            //       location: camera.location,
+            //       configurationType: camera.channeltype
+            //     });
+            //   });
 
-                if (!recordingServerMap[recordingServer]) recordingServerMap[recordingServer] = {};
-                if (!recordingServerMap[recordingServer][location]) recordingServerMap[recordingServer][location] = [];
+            //   const recordingServerNodes = Object.keys(recordingServerMap).map(recordingServer => {
+            //     const recServerCamera = cameras.find(cam => cam.recordingservername === recordingServer);
+            //     const recordingServerId = recServerCamera ? recServerCamera.recordingserverid : 'unknown';
 
-                recordingServerMap[recordingServer][location].push({
-                  name: `${camera.channelid}_${camera.channelname}`,
-                  type: 'camera',
-                  isRTAMC: false,
-                  isRecordingServer: false,
-                  iscamera: true,
-                  isLocation: false,
-                  id: camera.channelid,
-                  location: camera.location,
-                  configurationType: camera.channeltype
-                });
-              });
+            //     const locationNodes = Object.keys(recordingServerMap[recordingServer]).map(location => ({
+            //       name: location,
+            //       type: 'location',
+            //       isRTAMC: false,
+            //       isRecordingServer: false,
+            //       isLocation: true,
+            //       iscamera: false,
+            //       children: recordingServerMap[recordingServer][location]
+            //     }));
 
-              const recordingServerNodes = Object.keys(recordingServerMap).map(recordingServer => {
-                const recServerCamera = cameras.find(cam => cam.recordingservername === recordingServer);
-                const recordingServerId = recServerCamera ? recServerCamera.recordingserverid : 'unknown';
+            //     return {
+            //       name: recordingServer,
+            //       id: recordingServerId,
+            //       type: 'recordingserver',
+            //       isRTAMC: false,
+            //       isRecordingServer: true,
+            //       isLocation: false,
+            //       iscamera: false,
+            //       children: locationNodes
+            //     };
+            //   });
 
-                const locationNodes = Object.keys(recordingServerMap[recordingServer]).map(location => ({
-                  name: location,
-                  type: 'location',
-                  isRTAMC: false,
-                  isRecordingServer: false,
-                  isLocation: true,
-                  iscamera: false,
-                  children: recordingServerMap[recordingServer][location]
-                }));
-
-                return {
-                  name: recordingServer,
-                  id: recordingServerId,
-                  type: 'recordingserver',
-                  isRTAMC: false,
-                  isRecordingServer: true,
-                  isLocation: false,
-                  iscamera: false,
-                  children: locationNodes
-                };
-              });
-
-              formattedTree.push({
-                name: serverName,
-                id: serverId,
-                type: 'rtamcserver',
-                isRTAMC: true,
-                isRecordingServer: false,
-                isLocation: false,
-                iscamera: false,
-                children: recordingServerNodes
-              });
-            });
+            //   formattedTree.push({
+            //     name: serverName,
+            //     id: serverId,
+            //     type: 'rtamcserver',
+            //     isRTAMC: true,
+            //     isRecordingServer: false,
+            //     isLocation: false,
+            //     iscamera: false,
+            //     children: recordingServerNodes
+            //   });
+            // });
 
             this.originalCameraTree = formattedTree;
             this.displayTree = this.originalCameraTree;
@@ -339,6 +337,8 @@ export class TreeComponent implements OnInit {
   // }
 nodeClicked(node: any) {
   // Toggle the checked state
+  console.log(node);
+  
   node.checked = !node.checked;
 
   if (node.isjunction) {

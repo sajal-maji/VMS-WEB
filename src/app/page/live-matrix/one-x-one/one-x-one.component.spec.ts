@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { OneXOneComponent } from './one-x-one.component';
+import { beforeEach, describe, it } from 'node:test';
 
-import { OneXOne } from './one-x-one';
 
-describe('OneXOne', () => {
-  let component: OneXOne;
-  let fixture: ComponentFixture<OneXOne>;
+
+describe('OneXOneComponent', () => {
+  let component: OneXOneComponent;
+  let fixture: ComponentFixture<OneXOneComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [OneXOne]
+      imports: [OneXOneComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(OneXOne);
+    fixture = TestBed.createComponent(OneXOneComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

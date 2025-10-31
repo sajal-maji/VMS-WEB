@@ -1,0 +1,195 @@
+<div class="d-flex flex-wrap align-items-center w-100">
+
+  <!-- Input and Buttons Container -->
+  <div class="col-lg-11 col-md-11 col-sm-11 col-xs-10 d-flex flex-wrap align-items-center" style="padding: 0px;">
+
+    <!-- Input Field -->
+    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-5" style="padding: 0 10px; margin-left: 10px; gap: 10px;">
+      <input
+        placeholder="Video matrix url"
+        class="form-control matrixUrl"
+        type="text"
+        id="matrixUrl"
+        [(ngModel)]="sendMatrix.matrixUrl" />
+    </div>
+
+    <!-- Buttons (Copy & Play) -->
+    <div class="col-lg-5 col-md-5 col-sm-6 col-xs-7 d-flex align-items-center" style="padding: 0px 12px; gap: 0px;">
+      <!-- Copy Button -->
+      <div style="width: 60px;">
+        <button
+          class="grid-button"
+          type="button"
+          (click)="navigator.clipboard.writeText(sendMatrix.matrixUrl)"
+          style="width: 32px !important;">
+          <i class="fa fa-copy fa-icons" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- Play Button -->
+      <div>
+        <button
+          class="grid-button"
+          type="button"
+          title="Play Matrix"
+          (click)="playMatrixUrl()"
+          style="width: 32px !important;">
+          <img src="/images/Play.png" style="margin: 0px;" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dropdown -->
+  <div class="col-lg-1 col-md-1 col-sm-1 col-xs-2 dropdown" style="padding-right: 10px;">
+    <button class="dropdown-toggle pull-right grid-button" type="button" data-bs-toggle="dropdown">
+      <img src="/images/layout/1x1.png" style="margin: 0px;" /> 1x1
+    </button>
+
+    <ul class="dropdown-menu pull-right" style="min-width: 75px !important; background: #33343E !important;">
+      <li *ngFor="let matrixItem of matrixItems" style="height: 32px;">
+        <a
+          [routerLink]="['/live_matrix', matrixItem.label]"
+          (click)="clearAllPlayers(matrixItem)"
+          style="color:#BABFCC !important;">
+          <img [src]="'/images/layout/' + matrixItem.label + '.png'" style="margin: 0px;" />
+          {{ matrixItem.label }}
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="custom-row">
+  <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center error">{{ model.error }}</span>
+
+  <div class="custom-second custom-container" style="padding: 0px !important">
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="height: 5px;"></div>
+
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 player_container" style="padding: 0px 20px">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 ui-droppable video-container">
+
+          <!-- Header -->
+          <div
+            class="col-lg-12 col-md-12 col-sm-12 col-xs-12 video-header"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px;">
+            
+            <!-- Left -->
+            <div class="d-flex align-items-center" style="min-width: 0;">
+              <div class="video-header-icon d-flex align-items-center" style="margin-left: 15px;">
+                <!-- Icons -->
+                <img
+                  [src]="players[0].isSpeakerOn ? '/images/SpeakerOnIcon.png' : '/images/SpeakerOffIcon.png'"
+                  (click)="toggleSpeaker(0)"
+                  [title]="players[0].isSpeakerOn ? 'Audio is On' : 'Audio is Off'" />
+
+                <img
+                  [src]="players[0].isMicrophoneOn ? '/images/MicrophoneOnIcon.png' : '/images/MicrophoneOffIcon.png'"
+                  (click)="toggleMicrophone(0)"
+                  [title]="players[0].isMicrophoneOn ? 'Microphone is On' : 'Microphone is Off'" />
+
+                <img src="/images/camera/CameraLiveAndRecordingIcon.png" />
+              </div>
+
+              <!-- Channel Name -->
+              <div
+                class="video-header-title text-truncate"
+                style="font-weight: 500; padding-left: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                [title]="players[0].channelName">
+                {{ players[0].channelName }}
+              </div>
+            </div>
+
+            <!-- Right -->
+            <div class="video-header-icon d-flex align-items-center" style="gap: 0px; padding: 0 45px">
+              <img
+                *ngIf="players[0].ptz_control"
+                (click)="showPTZControl(0)"
+                src="/images/PTZIcon.png"
+                title="PTZ Control" />
+
+              <img
+                *ngIf="players[0].sessionId || players[0].mjpeg_sessionId"
+                (click)="screenshotClicked(0)"
+                src="/images/ScreenshotIcon.png"
+                title="Take Snap" />
+
+              <img (click)="closeClicked(0)" src="/images/CloseIcon.png" title="Stop Playing" />
+            </div>
+          </div>
+
+          <!-- Video -->
+          <div class="video-container-centeredOverlay" style="display: none;">
+            <span class="video-container-centeredOverlay-helper"></span>
+            <img src="/images/loadinghome.gif" alt="loading" />
+          </div>
+
+          <video
+            [id]="players[0].elem_id"
+            index="0"
+            poster="/images/postervtpl_new.jpg"
+            class="video-elem"></video>
+
+          <!-- Controls -->
+          <div class="video-controls">
+            <table width="100%">
+              <tr>
+                <td width="50%" align="center">
+                  <button type="button" class="btn btn-default" (click)="toggleFullScreen(0)">
+                    <span class="fa fa-arrows-alt" title="Full Screen"></span>
+                  </button>
+                </td>
+                <td width="50%" align="center">
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    (click)="playPause(0)"
+                    [disabled]="!players[0].hlsURL">
+                    <span
+                      [ngClass]="players[0].isplaying ? 'fa fa-pause' : 'fa fa-play'"
+                      [title]="players[0].isplaying ? 'Pause' : 'Play'">
+                    </span>
+                  </button>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Parameters -->
+          <div class="video-parameters" *ngIf="players[0].isplaying">
+            <p *ngIf="players[0].streamingParameters[0].fps > 0">
+              {{ currentTime }} |
+              {{ players[0].streamingParameters[0].fps }}fps |
+              {{ players[0].streamingParameters[0].bitrate }}kbps |
+              {{
+                players[0].streamingParameters[0].codecType == 0
+                  ? 'MJPG'
+                  : players[0].streamingParameters[0].codecType == 1
+                  ? 'MPEG'
+                  : players[0].streamingParameters[0].codecType == 2
+                  ? 'H264'
+                  : players[0].streamingParameters[0].codecType == 3
+                  ? 'PCMU'
+                  : players[0].streamingParameters[0].codecType == 8
+                  ? 'H265'
+                  : ''
+              }}
+              |
+              {{ players[0].streamingParameters[0].width }}x{{ players[0].streamingParameters[0].height }}
+              |
+              {{ players[0].streamingParameters[0].streamType == 0 ? 'Major Stream' : 'Minor Stream' }}
+            </p>
+          </div>
+
+          <!-- Error -->
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 d-flex justify-content-center align-items-center"
+               [id]="players[0].controls_id"
+               style="min-height: 30px;">
+            <span class="custom-center error custom-small">{{ players[0].error }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
