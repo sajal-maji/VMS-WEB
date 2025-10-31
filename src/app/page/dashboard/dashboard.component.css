@@ -1,0 +1,35 @@
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  background-color: #2e323b;
+  color: white;
+  font-family: "Inter", sans-serif;
+}
+
+/* Left Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #1a1d22;
+  border-right: 1px solid #2b2e34;
+}
+
+/* Main Section (header + content) */
+.main-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #2e323b;
+}
+
+/* Main Content Area */
+.content-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder img {
+  width: 300px;
+  opacity: 0.8;
+}

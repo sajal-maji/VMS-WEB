@@ -1,4 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: '/api/V1/REST/'   // 👈 now use /api prefix instead of the full IP
+  apiBaseUrl: 'https://172.16.2.172:7443/V1/REST/'
 };
+
+

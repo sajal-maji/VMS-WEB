@@ -10,11 +10,8 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { interval, Subscription, timer } from 'rxjs';
 import Hls from 'hls.js';
-import { TreeComponent } from '../tree/tree.component';
-import { HeaderComponent } from '../header/header.component';
-import { LayoutService } from '../live-matrix/layout.service';
-import { VideoStreamService } from '../../store/service/video-stream.service';
-import { StreamingService } from '../../store/service/commonService/streaming.service';
+import { StreamingService } from '../../../store/service/commonService/streaming.service';
+import { VideoStreamService } from '../../../store/service/video-stream.service';
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -47,15 +44,13 @@ const liveHlsJsConfig = {
 };
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,        // ✅ must be standalone for lazy-loading
-  imports: [CommonModule, TreeComponent, HeaderComponent, RouterLink, FormsModule],
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  selector: 'one-x-one',
+  standalone: true,
+  imports: [CommonModule, FormsModule,RouterLink],
+  templateUrl: './one-x-one.component.html',
+  styleUrls: ['./one-x-one.component.css']
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly layout = inject(LayoutService);
-  readonly selectedLayout = computed(() => this.layout.selectedLayout());
+export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
 
   players: Player[] = [];
@@ -1512,6 +1507,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ============================
      Small AngularJS helpers emulation (to keep code identical)
      ============================ */
-
-  
 }
+
+// -----------------------------
+// Helper utility functions outside class (kept as plain functions to avoid touching original lines)
+// -----------------------------

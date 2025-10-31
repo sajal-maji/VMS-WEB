@@ -1,7 +1,19 @@
+<div class="sidebar">
+  <div class="sidebar-logo">
+  <img src="/images/newvtplLogo.png" alt="Videonetics Logo" />
+</div>
 
+<div class="sidebar-search">
+  <input
+    type="text"
+    class="search"
+    placeholder="Search..."
+  />
+  <i class="fa fa-search search-icon"></i>
+</div>
 <ul class="tree">
   <!-- Loop through locations -->
-  @for (location of rootconfig.locations; track location.id) {
+  @for(location of rootconfig.locations; track location.id) {
     <li class="parent_li">
       <div
         class="location"
@@ -59,7 +71,7 @@
       </div>
 
       <!-- Cameras under Location -->
-      @if (location.expanded) {
+      @if (location.checked) {
         <ul>
           @for (camera of location.children; track camera.id) {
             <li>
@@ -166,3 +178,4 @@
     </li>
   }
 </ul>
+</div>
