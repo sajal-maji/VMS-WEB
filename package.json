@@ -33,6 +33,7 @@
     "@angular/ssr": "^20.3.5",
     "crypto-js": "^4.2.0",
     "express": "^5.1.0",
+    "hls.js": "^1.6.13",
     "ngx-cookie-service": "^20.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
