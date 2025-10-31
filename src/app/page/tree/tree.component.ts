@@ -6,6 +6,7 @@ import { take } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 
 interface CameraNode {
   name: string;
@@ -57,8 +58,11 @@ export class TreeComponent implements OnInit {
     junctions: [],
     cameramap: {},
     filteredchannels: [],
-    streamer: undefined
+    streamer: undefined,
+    analytictypes: {}
   };
+
+  serverConfiguration: any;
 
   model:any = { 
 		error: "", camerror: "", 
@@ -74,6 +78,13 @@ export class TreeComponent implements OnInit {
   cameras: CameraNode[] = [];
   // List of drop zones
   dropZones: { index: number; cameras: CameraNode[] }[] = [];
+  message='';
+  isFavroite = false;
+  isLocation = false;
+  isGroup = false;
+
+  analytictypes:any[] = [];
+  analyticTypes$ = new Subject<any>();
 
   constructor(
     private http: HttpClient,
@@ -87,13 +98,18 @@ export class TreeComponent implements OnInit {
       this.dropZones.push({ index: i, cameras: [] });
     }
 
-     this.rootconfig.vsessionid = this.cookieService.get('vSessionId');
-      this.rootconfig.ws.schemadomainport =
-        document.querySelector('#ws_schemadomainport')?.textContent?.trim() || '';
-      this.rootconfig.ws.context =
-        document.querySelector('#ws_context')?.textContent?.trim() || '';
+    this.rootconfig.vsessionid = this.cookieService.get('vSessionId');
+    this.rootconfig.ws.schemadomainport =
+      document.querySelector('#ws_schemadomainport')?.textContent?.trim() || '';
+    this.rootconfig.ws.context =
+      document.querySelector('#ws_context')?.textContent?.trim() || '';
     this.loadData();
+    this.loadServerConfiguration();
     // this.buildJunctionTree();
+  }
+
+  ngOnDestroy(): void {
+    localStorage.removeItem('serverConfiguration');
   }
 
   private showInvalidSession(): void {
@@ -102,7 +118,7 @@ export class TreeComponent implements OnInit {
       // Clear cookies and local/session storage (optional for security)
       this.cookieService.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
-      // localStorage.clear();
+      localStorage.clear();
 
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');
@@ -110,65 +126,74 @@ export class TreeComponent implements OnInit {
   }
 
   loadData(): void {
-  const jsessionId = this.cookieService.get('vSessionId');
-  console.log('Cookie value:', jsessionId);
+    const jsessionId = this.cookieService.get('vSessionId');
+    console.log('Cookie value:', jsessionId);
 
-  const url = API_ENDPOINTS.SERVER_INFO;
-  const url1 = API_ENDPOINTS.USER_SESSION;
+    const url = API_ENDPOINTS.SERVER_INFO;
+    const url1 = API_ENDPOINTS.USER_SESSION;
 
-  // ❗ Don't use 'Cookie' — browser blocks it
+    // ❗ Don't use 'Cookie' — browser blocks it
 
-  const headers = new HttpHeaders({
-    'Content-Type': 'application/json',
-    'Cookies': `JSESSIONID=${jsessionId}`,
-    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
-  });
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    });
 
-  // === 1. Fetch server info ===
-  this.http.get<any>(url, { headers,withCredentials: true }).pipe(take(1)).subscribe({
-    next: (response) => {
-      console.log('Server Info Response:', response);
-      if (response?.result?.length) { 
-        response.result.forEach((server: any) => { 
-          if (server.servertype === 'IVMS') { 
-            this.rootconfig.serverid = server.serverid; 
-            console.log(this.rootconfig.serverid, server.serverid)
-          } 
-        }); 
-      } 
-      if (!this.rootconfig.serverid) { 
-        this.model.camerror = 'IVMS server is not registered'; 
-        setTimeout(() => (this.model.camerror = ''), 5000); 
-      } else { 
-        // this.getAnalyticsTypes(); 
-        console.log('IsNTAMC:', this.isNTAMC); 
-        this.buildJunctionTree(this.rootconfig.serverid); 
+    // === 1. Fetch server info ===
+    this.http.get<any>(url, { headers }).pipe(take(1)).subscribe({
+      next: (response) => {
+        console.log('Server Info Response:', response);
+        if (response?.result?.length) { 
+          response.result.forEach((server: any) => { 
+            if (server.servertype === 'IVMS') { 
+              this.rootconfig.serverid = server.serverid; 
+              // console.log(this.rootconfig.serverid, server.serverid)
+            } 
+          }); 
+        } 
+        if (!this.rootconfig.serverid) { 
+          this.model.camerror = 'IVMS server is not registered'; 
+          setTimeout(() => (this.model.camerror = ''), 5000); 
+        } else { 
+          this.getAnalyticsTypes(this.rootconfig.serverid); 
+          // console.log('IsNTAMC:', this.isNTAMC); 
+          this.buildJunctionTree(this.rootconfig.serverid); 
+        }
+      },
+      error: (err) => {
+        if (err.status === 401) {
+          this.showInvalidSession();
+        } else {
+          this.model.camerror = err?.error?.message || 'Error loading servers';
+          setTimeout(() => (this.model.camerror = ''), 5000);
+        }
       }
-    },
-    error: (err) => {
-      if (err.status === 401) {
-        this.showInvalidSession();
-      } else {
-        this.model.camerror = err?.error?.message || 'Error loading servers';
-        setTimeout(() => (this.model.camerror = ''), 5000);
-      }
-    }
-  });
-  // === 2. Fetch user session ===
-  this.http.get<any>(url1, { headers }).pipe(take(1)).subscribe({
-    next: (response) => {
-      console.log('User Session Response:', response);
-    },
-    error: (err) => {
-      console.error('User Session Error:', err);
-    }
-  });
-}
+    });
+    // === 2. Fetch user session ===
+    this.http.get<any>(url1, { headers }).pipe(take(1)).subscribe({
+      next: (response) => {
+        console.log('User Session Response:', response);
+        if (response?.result?.length > 0) {
+          const user = response.result[0];
+          this.vsessionuserid = user.userid;
+          this.vsessionid = user.vsessionid;
+          // console.log(this.vsessionid, this.vsessionuserid)
+        }
+      },
+      error: (err) => {
+        if (err.status === 401) {
+          this.showInvalidSession();
+        } else {
+          this.model.camerror = err?.error?.message || 'Error loading user info';
+          setTimeout(() => (this.model.camerror = ''), 5000);
+        }
+      },
+    });
+  }
 
   buildJunctionTree(serverid:string) {
-    // this.isNTAMC = value;
-    console.log("Hi",this.rootconfig.serverid);
-    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);;
+    const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);
     const headers = new HttpHeaders({
     'Content-Type': 'application/json',
     'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
@@ -337,34 +362,122 @@ export class TreeComponent implements OnInit {
   //   );
   //   console.log('Camera dropped in zone', dropZoneIndex, event.container.data);
   // }
-nodeClicked(node: any) {
-  // Toggle the checked state
-  node.checked = !node.checked;
+  nodeClicked(node: any) {
+    // Toggle the checked state
+    node.checked = !node.checked;
 
-  if (node.isjunction) {
-    // Toggle visibility of children using a 'visible' property
-    if (node.children) {
-      node.children.forEach((child:any) => {
-        child.visible = !child.visible;
-      });
+    if (node.isjunction) {
+      // Toggle visibility of children using a 'visible' property
+      if (node.children) {
+        node.children.forEach((child:any) => {
+          child.visible = !child.visible;
+        });
+      }
+    } else {
+      // Replace $rootScope.$broadcast with a custom method or EventEmitter
+      this.channelClicked(node);
     }
-  } else {
-    // Replace $rootScope.$broadcast with a custom method or EventEmitter
-    this.channelClicked(node);
   }
-}
 
-getNodeName(nodeName: string): string {
-  return nodeName.length <= 20 ? nodeName : nodeName.substring(0, 18) + '..';
-}
+  getNodeName(nodeName: string): string {
+    return nodeName.length <= 20 ? nodeName : nodeName.substring(0, 18) + '..';
+  }
 
-// Example placeholder for channel click event
-private channelClicked(node: any) {
-  console.log('Channel clicked:', node);
-}
+  // Example placeholder for channel click event
+  private channelClicked(node: any) {
+    console.log('Channel clicked:', node);
+  }
   private getAPIUrl(endpoint: string): string {
     return `${endpoint}`;
   }
+
+
+  loadServerConfiguration(): void {
+    const jsessionId = this.cookieService.get('vSessionId');
+    // console.log('Cookie value:', jsessionId);
+    const apiUrl = API_ENDPOINTS.SERVER_CONFIG;
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    });
+
+    this.http.get<any>(apiUrl,  { headers, withCredentials:true }).pipe(take(1)).subscribe({
+      next: (response) => {
+        console.log("serverConfiguration", response);
+        if (response?.result?.length > 0 && response.result[0]) {
+          this.serverConfiguration = response.result[0];
+          localStorage.setItem('serverConfiguration', JSON.stringify(this.serverConfiguration));
+
+          this.rootconfig.streamer = this.serverConfiguration.streamingMode;
+        }
+      },
+      error: (error) => {
+        // this.message = error?.data?.message || 'Could not connect to server!';
+      }
+    });
+  }
+
+  getAnalyticsTypes(serverid:string): void {
+    const apiUrl = API_ENDPOINTS.ANLYTICS_INFO.replace('{serverid}', serverid);
+    const jsessionId = this.cookieService.get('vSessionId');
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    });
+
+    this.http.get<any>(apiUrl,{ headers }).subscribe({
+      next: (response) => {
+        if (response?.result?.length > 0) {
+          console.log("analytic response", response);
+          
+          response.result.forEach((analytic: any, index: number) => {
+            console.log("analytic", analytic, this.analytictypes);
+            
+            this.rootconfig.analytictypes[index] = {
+              alerttype: analytic.alerttype,
+              alertname: analytic.alertname
+            };
+            this.analytictypes[index] = analytic;
+          });
+
+          // 🔊 Equivalent to $rootScope.$broadcast('analytictypes', ...)
+          this.analyticTypes$.next(this.rootconfig.analytictypes);
+          console.log(this.rootconfig.analytictypes, this.analytictypes);
+          
+        }
+      },
+      error: (error) => {
+        if (error.status === 401) {
+          this.showInvalidSession();
+        } else {
+          this.model.camerror = error.error?.message || 'Server error occurred.';
+          setTimeout(() => {
+            this.model.camerror = '';
+          }, 3000);
+        }
+      }
+    });
+  }
+
+  // locationClick(value: string): void {
+  //   if (value === 'Favroite') {
+  //     this.isFavroite = !this.isFavroite;
+  //     this.isLocation = false;
+  //     this.isGroup = false;
+  //   } else if (value === 'Location') {
+  //     this.isLocation = !this.isLocation;
+  //     this.isFavroite = false;
+  //     this.isGroup = false;
+  //   } else if (value === 'Group') {
+  //     this.isGroup = !this.isGroup;
+  //     this.isFavroite = false;
+  //     this.isLocation = false;
+  //   }
+  // }
 
 }
 

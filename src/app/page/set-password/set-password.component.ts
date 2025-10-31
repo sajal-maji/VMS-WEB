@@ -73,7 +73,7 @@ export class SetPasswordComponent implements OnInit {
     if (this.uniqueKey) {
       this.checkValidKey(this.uniqueKey);
     } else {
-      this.router.navigate(['/not_found']);
+      this.router.navigate(['ivmsweb/not-found']);
     }
   }
 
@@ -119,12 +119,12 @@ export class SetPasswordComponent implements OnInit {
           this.isKeyValid = true;
           this.model.userid = response.result[0].userid;
         } else {
-          this.router.navigateByUrl('/ivmsweb/not_found');
+          this.router.navigateByUrl('/ivmsweb/not-found');
         }
       },
       error: () => {
         this.isCheckingKey = false;
-        this.router.navigateByUrl('/ivmsweb/not_found');
+        this.router.navigateByUrl('/ivmsweb/not-found');
       }
     });
   }
