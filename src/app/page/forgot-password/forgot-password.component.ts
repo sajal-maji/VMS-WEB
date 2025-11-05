@@ -6,6 +6,7 @@ import { interval, timeout } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -32,7 +33,8 @@ export class ForgotPasswordComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private sanitizer: DomSanitizer,
-    private router: Router
+    private router: Router,
+    private cookieService:CookieService,
   ) {}
 
   ngOnInit(): void {
@@ -85,10 +87,14 @@ export class ForgotPasswordComponent implements OnInit {
     setTimeout(() => {
       const url = API_ENDPOINTS.FORGOT_PASSWORD;
 
-      this.http.post(url, JSON.stringify(postData), {
-        headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
+      this.http.post(url, postData, {
+        headers: new HttpHeaders({ 'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+        }),
       }).subscribe({
         next: (response: any) => {
+          console.log("response", response);
+          
           // Success modal equivalent (replacing jQuery Confirm)
           alert('Password Reset Link Is Successfully Sent!');
           this.model.email = undefined;

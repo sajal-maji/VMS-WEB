@@ -2,10 +2,18 @@ import { environment } from "../../environments/environment.development";
 
 export const API_ENDPOINTS = {
   LOGIN: `${environment.apiBaseUrl}user/login`,
+  SIGNIN: `${environment.apiBaseUrl}user/signin`,
   FORGOT_PASSWORD: `${environment.apiBaseUrl}user/forgotpassword/generatelink`,
-  SIGNUP: `${environment.apiBaseUrl}user/signup`,
+  VALIDATE_KEY: `${environment.apiBaseUrl}user/forgotpassword/validate/{uniquekey}`,
   LOCATION_TREE: `${environment.apiBaseUrl}{serverid}/channel/junction/tree`,
+  CHANNEL_STATUS: `${environment.apiBaseUrl}{serverid}/channel/channel/status`,
   SERVER_INFO: `${environment.apiBaseUrl}server`,
   USER_SESSION: `${environment.apiBaseUrl}user/session`,
-  VALIDATE_KEY: `${environment.apiBaseUrl}user/forgotpassword/validate/{uniquekey}`
+  SERVER_CONFIG: `${environment.apiBaseUrl}server/config`,
+  ANALYTICS_INFO: `${environment.apiBaseUrl}{serverid}/analytic/type`,
+  KEEP_ALIVE_LIVE: `${environment.apiBaseUrl}{serverid}/live/keepalive`,
+  WEBRTC_LIVE: `${environment.apiBaseUrl}webrtc/{serverid}/startlive`,
+  HLS_START_LIVE: `${environment.apiBaseUrl}{serverid}/startlive`,
+  HLS_STOP_LIVE: `${environment.apiBaseUrl}{serverid}/stoplive`,
+  VIDEO_INFO: `${environment.apiBaseUrl}{serverid}/channel/getstreamingparameter/{channelid}/{streamindex}`,
 };

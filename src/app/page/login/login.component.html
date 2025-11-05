@@ -33,9 +33,9 @@
         Password
       </label>
       <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-        <input id="password-field" type="password" class="form-control login-input" placeholder="Password"
+        <input id="password-field" [type]="showPassword ? 'text' : 'password'" class="form-control login-input" placeholder="Password"
           formControlName="password" required autocomplete="off" />
-        <span (click)="togglePassword()" class="fa fa-fw fa-eye field-icon toggle-password"></span>
+        <span (click)="togglePassword()" class="fa field-icon toggle-password" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></span>
         @if (submitted && loginForm.controls['password'].errors) {
           <div style="color:#b00020;font-size:12px;margin-top:4px;">
             @if (loginForm.controls['password'].errors['required']) {<span>Password is required.</span>}
