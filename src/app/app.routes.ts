@@ -11,14 +11,14 @@ export const routes: Routes = [
       import('./page/login/login.component').then((m) => m.LoginComponent),
     canActivate: [LoginGuard],
   },
-
+  
   // dashboard page (lazy-loaded)
   {
-  path: 'ivmsweb/live_matrix',
-  loadComponent: () =>
-    import('./page/dashboard/dashboard.component').then(m => m.DashboardComponent),
-  canActivate: [AuthGuard],
-},
+    path: 'ivmsweb/live_matrix',
+    loadComponent: () =>
+      import('./page/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    canActivate: [AuthGuard],
+  },
   {
     path: 'ivmsweb/forgot-password',
     loadComponent: () =>
@@ -38,6 +38,11 @@ export const routes: Routes = [
     path: 'ivmsweb/event-search',
     loadComponent: () =>
       import('./page/event-search/event-search/event-search.component').then((m) => m.EventSearchComponent),
+  },
+  {
+    path: 'ivmsweb/not-found',
+    loadComponent: () => 
+      import('./page/not-found/not-found.component').then((m) => m.NotFoundComponent),
   },
   
 ];
