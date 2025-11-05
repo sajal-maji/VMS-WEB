@@ -6,15 +6,17 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, Renderer2, ViewChildren, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
-import { interval, Subscription, timer } from 'rxjs';
+import { interval, Subscription, take, timer } from 'rxjs';
 import Hls from 'hls.js';
 import { TreeComponent } from '../tree/tree.component';
 import { HeaderComponent } from '../header/header.component';
 import { LayoutService } from '../live-matrix/layout.service';
 import { VideoStreamService } from '../../store/service/video-stream.service';
 import { StreamingService } from '../../store/service/commonService/streaming.service';
+import { CookieService } from 'ngx-cookie-service';
+import { API_ENDPOINTS } from '../../config/api-endpoints';
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -64,7 +66,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   currentPlayer: any = {};
   allPresets: any[] = [];
   vSessionId = ''; // if you used vsessionid in original
-  serverConfiguration: any = null;
+  serverConfiguration: any = {};
   rootconfig: any = {}; // replace or inject as needed
   sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = { matrix: '2x2', channels: [], matrixUrl: '' };
   currentTime = '';
@@ -78,7 +80,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private renderer: Renderer2,
     private streamSvc: StreamingService,
     private http: HttpClient,
-    private videoneticsRTC: VideoStreamService
+    private videoneticsRTC: VideoStreamService,
+    private cookies:CookieService,
   ) {} 
 
   ngOnInit(): void {
@@ -86,9 +89,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
     this.subscriptions.push(t);
+    console.log("players", this.players);
+    
 
     // start keepalive behavior for live sessions (if required)
-    this.liveKeepAlive();
+    // this.liveKeepAlive();
   }
 
   ngAfterViewInit(): void {
@@ -406,10 +411,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getVideoInfo(index: number) {
     const player = this.players[index];
+    console.log("channel", player.channelId);
+    
     if (player.channelId > -1 && player && player.streamType !== undefined && player.streamType > -1) {
-      const apiUrl = this.getApiEndpointStreamingParameter(player.channelId, player.streamType);
-      this.streamSvc.getStreamingParameters(apiUrl).subscribe({
-        next: (response: any) => player.streamingParameters = response?.result ?? null,
+      const apiUrl = API_ENDPOINTS.VIDEO_INFO
+      .replace('{serverid}', this.serverConfiguration.serverid)
+      .replace('{channelid}', player.channelId.toString())
+      .replace('{streamindex}', player.streamType.toString());
+      this.http.get<any>(apiUrl, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          'Authorization': `Bearer ${this.cookies.get('authToken')}`
+        }),
+      }).pipe(take(1)).subscribe({
+        next: (response: any) => {
+          console.log("response", response);
+          player.streamingParameters = response?.result ?? null;
+          console.log("streamingParameters", player.streamingParameters);
+        },
         error: (err:any) => {
           console.error('Error fetching streaming parameters', err);
           player.streamingParameters = null;
@@ -614,8 +634,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // normal HLS stop: call API stoplive with streamsessionid
     const postData = { streamsessionid: player.sessionId };
-    const apiEndpoint = this.getApiEndpointStopLive(); // build like your AngularJS helper
-    this.streamSvc.stopLive(apiEndpoint, postData).subscribe({
+    const apiEndpoint = API_ENDPOINTS.HLS_STOP_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+    this.http.post<any>(apiEndpoint, postData).subscribe({
       next: () => {
         player.sessionId = 0;
         const vid = this.getVideoElement(index);
@@ -681,20 +701,65 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      Keep Alive for sessions
      ============================ */
 
+  // liveKeepAlive() {
+  //   // interval to ping keepalive API for sessionid > 0
+  //   this.keepAliveSub = interval(30_000).subscribe(() => {
+  //     this.players.forEach((player, idx) => {
+  //       if (player.channelId > -1 && player.sessionId > 0) {
+  //         const apiUrl = this.getApiEndpointKeepAlive();
+  //         const payload = { streamsessionid: player.sessionId, channelid: player.channelId };
+  //         this.streamSvc.proxyRequest('POST', apiUrl, payload).subscribe({
+  //           next: () => {},
+  //           error: (err:any) => {
+  //             if (err?.status !== 401 && err?.error?.code !== 3113) {
+  //               player.error = err?.error?.message ?? player.error;
+  //               if (err?.error?.code === 3551) {
+  //                 // session expired/closed by server
+  //                 player.channelId = -1;
+  //                 player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
+  //                 player.hlsURL = '';
+  //                 player.sessionId = 0;
+  //                 player.status = undefined;
+  //                 player.ptz_control = false;
+  //                 player.isplaying = false;
+  //                 if (player.hlsPlayer) { try { player.hlsPlayer.destroy(); } catch (e) {} player.hlsPlayer = undefined; }
+  //               }
+  //             } else {
+  //               console.error('Invalid session');
+  //             }
+  //           }
+  //         });
+  //       }
+  //     });
+  //   });
+  // }
   liveKeepAlive() {
-    // interval to ping keepalive API for sessionid > 0
+    // Ping every 30 seconds
     this.keepAliveSub = interval(30_000).subscribe(() => {
       this.players.forEach((player, idx) => {
         if (player.channelId > -1 && player.sessionId > 0) {
-          const apiUrl = this.getApiEndpointKeepAlive();
-          const payload = { streamsessionid: player.sessionId, channelid: player.channelId };
-          this.streamSvc.proxyRequest('POST', apiUrl, payload).subscribe({
-            next: () => {},
-            error: (err:any) => {
+          const apiUrl = API_ENDPOINTS.KEEP_ALIVE_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+          const payload = {
+            streamsessionid: player.sessionId,
+            channelid: player.channelId
+          };
+
+          this.http.post<any>(apiUrl, payload, {
+            headers: new HttpHeaders({
+              'Content-Type': 'application/json',
+              'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+              'Authorization': `Bearer ${this.cookies.get('authToken')}`
+            }),
+          }).subscribe({
+            next: (res: any) => {
+              // API success — you can log or handle response if needed
+              console.log(`Keepalive success for channel ${player.channelId}`);
+            },
+            error: (err: any) => {
               if (err?.status !== 401 && err?.error?.code !== 3113) {
                 player.error = err?.error?.message ?? player.error;
                 if (err?.error?.code === 3551) {
-                  // session expired/closed by server
+                  // Session expired/closed by server
                   player.channelId = -1;
                   player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
                   player.hlsURL = '';
@@ -702,7 +767,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                   player.status = undefined;
                   player.ptz_control = false;
                   player.isplaying = false;
-                  if (player.hlsPlayer) { try { player.hlsPlayer.destroy(); } catch (e) {} player.hlsPlayer = undefined; }
+                  if (player.hlsPlayer) {
+                    try { player.hlsPlayer.destroy(); } catch (e) {}
+                    player.hlsPlayer = undefined;
+                  }
                 }
               } else {
                 console.error('Invalid session');
@@ -752,14 +820,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private getApiEndpointGoToPreset() {
     return this.getApiEndpoint('gotopreset').replace('{0}', this.rootconfig.serverid);
   }
-  private getApiEndpointStreamingParameter(channelId: number, streamType: number) {
-    return `${this.getApiEndpoint('getstreamingparameter')}/${channelId}/${streamType}`;
-  }
   private getApiEndpointStopLive() {
     return this.getApiEndpoint('stoplive').replace('{0}', this.rootconfig.serverid);
-  }
-  private getApiEndpointKeepAlive() {
-    return this.getApiEndpoint('keepalivelive').replace('{0}', this.rootconfig.serverid);
   }
 
   // placeholder for constructing endpoints exactly like your old helpers
@@ -771,7 +833,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       'gotopreset': '/api/gotopreset/{0}',
       'getstreamingparameter': '/api/getstreamingparameter',
       'stoplive': '/api/stoplive/{0}',
-      'keepalivelive': '/api/keepalivelive/{0}',
       'encodedStartlive': '/api/encoded/startlive/',
       'encodedStoplive': '/api/encoded/stoplive/'
     };
@@ -1059,7 +1120,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Append the original channelClicked logic (converted) — preserved comments and flow
   channelClicked(channelToPlay: any, fromMatrixUrl?: any) {
-
+    console.log("channelToPlay",channelToPlay);
     if (channelToPlay?.index) {
       // Click Action
       var alreadyPlayingIndex = -1; var availableIndex = -1;
@@ -1074,17 +1135,20 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       if (alreadyPlayingIndex < 0 && availableIndex > -1) {
-
+        console.log("channelToPlay",channelToPlay);
         this.players[availableIndex]["channelId"] = channelToPlay.id;
         this.players[availableIndex]["channelName"] = channelToPlay.name;
         if (channelToPlay.configurationType && channelToPlay.configurationType == "1") {
           this.players[availableIndex]["ptz_control"] = true;
         }
+        this.players = [...this.players];
+        console.log("Updated Player:", this.players[availableIndex]);
 
         this.players[availableIndex]["status"] = channelToPlay.status;
 
         this.count++;
         this.startPlaying(availableIndex);
+        this.liveKeepAlive();
 
         this.setVideoMatrixUrlChannels(availableIndex, channelToPlay.id.toString());
 
@@ -1113,19 +1177,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       // Drag Action
+      console.log("channelToPlay", channelToPlay);
+      this.getVideoInfo(channelToPlay.id);
       let availableIdx = channelToPlay.index - 1;
       if (availableIdx < 0) { availableIdx = 0; }
       // loop all and find if already playing
       var alreadyPlayingIndex = -1;
       this.players.forEach((player, innerIndex) => {
-        if (player.channelId === channelToPlay.channelId) {
+        if (player.channelId === channelToPlay.id) {
           alreadyPlayingIndex = innerIndex;
         }
+        // console.log('innerindex', innerIndex,alreadyPlayingIndex);
       });
 
       if (alreadyPlayingIndex < 0 && this.players[availableIdx]["channelId"] <= -1 && this.players[availableIdx]["sessionId"] <= 0) {
-        this.players[availableIdx]["channelId"] = channelToPlay.channelId;
-        this.players[availableIdx]["channelName"] = channelToPlay.channelName;
+        this.players[availableIdx]["channelId"] = channelToPlay.id;
+        this.players[availableIdx]["channelName"] = channelToPlay.name;
         if ((channelToPlay.configurationType) && channelToPlay.configurationType == "1") {
           this.players[availableIdx]["ptz_control"] = true;
         }
@@ -1138,8 +1205,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.count++;
         this.startPlaying(availableIdx);
+        this.getVideoInfo(channelToPlay.id);
 
-        this.setVideoMatrixUrlChannels(availableIdx, channelToPlay.channelId.toString());
+        this.setVideoMatrixUrlChannels(availableIdx, channelToPlay.id.toString());
       }
     }
   }
@@ -1210,6 +1278,28 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      We'll create a wrapper similar to the original which picks encoded vs HLS vs WebRTC paths
      ============================ */
 
+
+  OnClick(event: any) {
+  const availableIndex = this.players.findIndex(p => p.channelId === -1);
+  const channelToPlay = {
+    id: event.id.toString(),
+    name: event.name,
+    configurationType: event.configurationType,
+    status: event.status,
+    index: availableIndex !== -1 ? availableIndex : 0
+  };
+
+  console.log("Clicked Event:", channelToPlay);
+  this.channelClicked(channelToPlay);
+}
+
+  OnLoad(event: any) {
+    // console.log(event);
+    this.serverConfiguration = event;
+    console.log("server config",this.serverConfiguration);
+  }
+
+
   startPlaying(index: number) {
 
     if (this.getLocationPath() != "/live_matrix/4x4" && this.getLocationPath() != "/live_matrix/5x5" && (this.serverConfiguration) &&
@@ -1249,171 +1339,191 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       const waitingElem = waitinggollaId ? document.getElementById(waitinggollaId) : null;
       if (waitingElem) waitingElem.style.display = 'block';
       if (waitingElem) waitingElem.style.display = 'block';
-
+      const apiUrl = API_ENDPOINTS.WEBRTC_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
       // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
       if (this.serverConfiguration &&
         this.serverConfiguration.streamingMode == (this.rootconfig?.WEBRTC_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
         /** WebRTC */
-        // Make proxy POST similar to original $http.post to "proxy" with payload holding the actual REST call
-        this.proxyRequestPost(this.getApiEndpoint("startwebrtclive"), postData).then((response: any) => {
-          this.players[index]["error"] = "";
-          if (waitingElem) waitingElem.style.display = 'none';
+        this.http.post(apiUrl, postData, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+            'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+            'Authorization': `Bearer ${this.cookies.get('authToken')}`
+          }),
+        })
+        .subscribe({
+          next: (response: any) => {
+            console.log("res", response);
+            this.players[index]["error"] = "";
+            if (waitingElem) waitingElem.style.display = 'none';
 
-          this.players[index]["sessionId"] = new Date().getTime();
+            this.players[index]["sessionId"] = new Date().getTime();
 
-          if (this.players[index]["channelId"] > -1) {
-
-            var streamingResponse = response?.result?.[0];
-            this.players[index]["streamType"] = streamingResponse.streamType;
-            var videoElement = this.getVideoElement(index);
-            var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-            // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
-            // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
-            
-            var webrtc = new (window as any).VideoneticsRTC(webrtcURL, videoElement);
-            
-
-            try {
-              this.players[index]["webrtc"] = webrtc;
-              this.players[index]["webrtc"].start(streamingResponse.serverId, streamingResponse.channelId,
-                streamingResponse.startTimestamp);
-              console.log("streamingResponse",streamingResponse, streamingResponse.startTimestamp);
-            } catch (error) {
-
-              console.log("WebRTC playing, error: ", error);
-
-              var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-              var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
-              this.players[index]["webrtc"] = webrtc;
-              if (this.players[index]["webrtc"].onconnect) this.players[index]["webrtc"].onconnect();
-            }
-            this.players[index]["isplaying"] = true;
-
-          } else {
-            this.count--;
-            this.stopPlaying(index);
-
-            this.players[index]["sessionId"] = 0;
-          }
-        }).catch((response: any) => {
-          if (waitingElem) waitingElem.style.display = 'none';
-
-          this.players[index]["webrtc"] = undefined;
-          this.players[index]["sessionId"] = 0;
-          this.players[index]["mjpeg_sessionId"] = 0;
-
-          if (response && response.data && response.data["code"] == 3037) {
-            const ele = document.getElementById(this.players[index]["elem_id"]);
-            if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-          }
-
-          if (response.status != 401 && response.data["code"] != 3113) {
             if (this.players[index]["channelId"] > -1) {
+
+              var streamingResponse = response?.result?.[0];
+              this.players[index]["streamType"] = streamingResponse.streamType;
+              var videoElement = this.getVideoElement(index);
+              var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
+              // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
+              // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
+              
+              var webrtc: any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+              
+
+              try {
+                this.players[index]["webrtc"] = webrtc;
+                this.players[index]["webrtc"].start(streamingResponse.serverId, streamingResponse.channelId,
+                  streamingResponse.startTimestamp);
+                console.log("streamingResponse",streamingResponse, streamingResponse.startTimestamp);
+              } catch (error) {
+
+                console.log("WebRTC playing, error: ", error);
+
+                var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
+                var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+                this.players[index]["webrtc"] = webrtc;
+                if (this.players[index]["webrtc"].onconnect) this.players[index]["webrtc"].onconnect();
+              }
+              this.players[index]["isplaying"] = true;
+              this.manageVideoInfoInterval(index);
+            } else {
               this.count--;
-              this.players[index]["error"] = response.data.message;
-              this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
-              this.players[index]["channelId"] = -1;
-              this.players[index]["recoverDecodingErrorDate"] = null;
-              this.players[index]["recoverSwapAudioCodecDate"] = null;
-              this.players[index]["ptz_control"] = false;
-              this.players[index]["status"] = undefined;
-              this.players[index]["isplaying"] = false;
+              this.stopPlaying(index);
 
-              setTimeout(() => {
-                this.players[index]["error"] = "";
+              this.players[index]["sessionId"] = 0;
+            }
+          },
+          error: (response: any) => {
+            console.log("response", response?.error);
+            if (waitingElem) waitingElem.style.display = 'none';
 
-                const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+            this.players[index]["hlsURL"] = "";
+            this.players[index]["sessionId"] = 0;
+            this.players[index]["mjpeg_sessionId"] = 0;
 
-              }, 5 * 1000);
+            if (response?.error?.code === 3037) {
+              const ele = document.getElementById(this.players[index]["elem_id"]);
+              if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
             }
 
-          } else {
-            // emulate invalid session
-            console.error('Invalid session');
+            if (response.status !== 401 && response?.error?.code !== 3113) {
+              if (this.players[index]["channelId"] > -1) {
+                this.count--;
+                this.players[index]["error"] = response?.error?.message || 'Stream error';
+                this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+
+                this.players[index]["channelId"] = -1;
+                this.players[index]["recoverDecodingErrorDate"] = null;
+                this.players[index]["recoverSwapAudioCodecDate"] = null;
+                this.players[index]["ptz_control"] = false;
+                this.players[index]["status"] = undefined;
+                this.players[index]["isplaying"] = false;
+
+                if (this.players[index]["hlsPlayer"]) {
+                  try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+                }
+
+                setTimeout(() => {
+                  this.players[index]["error"] = "";
+                  const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
+                  if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+                }, 5000);
+              }
+            } else {
+              console.error('Invalid session');
+            }
           }
-        });
+        })
 
       } else {
-
+        const apiUrl = API_ENDPOINTS.HLS_START_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
         /** HLS */
-        this.proxyRequestPost(this.getApiEndpoint("startlive"), postData).then((response: any) => {
-          this.players[index]["error"] = "";
-          if (waitingElem) waitingElem.style.display = 'none';
-          this.players[index]["streamType"] = response?.result?.[0]?.streamType;
+        this.http.post<any>(apiUrl, postData, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+            'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+            'Authorization': `Bearer ${this.cookies.get('authToken')}`
+          }),
+        })
+        .subscribe({
+          next: (response: any) => {
+            console.log("response", response?.result);
 
-          this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
+            this.players[index]["error"] = "";
+            if (waitingElem) waitingElem.style.display = 'none';
+            this.players[index]["streamType"] = response?.result?.[0]?.streamType;
+            this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
 
-          if (this.players[index]["channelId"] > -1) {
-            this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
-            this.players[index]["isplaying"] = true;
-
-            if ((Hls as any).isSupported && (Hls as any).isSupported()) {
-
-              var video = this.getVideoElement(index);
-              this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
-
-              setTimeout(() => {
-                if (this.players[index]["channelId"] > -1) {
-                  // $scope.players[index]["hlsPlayer"].loadSource($scope.players[index]["hlsURL"]);
-                  try {
-                    (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
-                    (this.players[index]["hlsPlayer"] as any).attachMedia(video);
-                    video?.play().catch(() => {});
-                  } catch (e) {
-                    console.error('HLS attach/play error', e);
-                  }
-                }
-              }, 2000);
-
-              // onEventsMediaAttached/onEventsMediaDetached/onEventsError etc. can be implemented as needed
-            } else {
-              this.players[index]["error"] = "HLS video is not supported in your browser!";
-            }
-          } else {
-            this.count--;
-            this.stopPlaying(index);
-
-            this.players[index]["sessionId"] = 0;
-          }
-        }).catch((response: any) => {
-          if (waitingElem) waitingElem.style.display = 'none';
-
-          this.players[index]["hlsURL"] = "";
-          this.players[index]["sessionId"] = 0;
-          this.players[index]["mjpeg_sessionId"] = 0;
-
-          if (response && response.data && response.data["code"] == 3037) {
-
-            const ele = document.getElementById(this.players[index]["elem_id"]);
-            if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-          }
-
-          if (response.status != 401 && response.data["code"] != 3113) {
             if (this.players[index]["channelId"] > -1) {
+              this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
+              this.players[index]["isplaying"] = true;
+
+              if ((Hls as any).isSupported && (Hls as any).isSupported()) {
+                const video = this.getVideoElement(index);
+                this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
+
+                setTimeout(() => {
+                  if (this.players[index]["channelId"] > -1) {
+                    try {
+                      (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
+                      (this.players[index]["hlsPlayer"] as any).attachMedia(video);
+                      video?.play().catch(() => {});
+                    } catch (e) {
+                      console.error('HLS attach/play error', e);
+                    }
+                  }
+                }, 2000);
+              } else {
+                this.players[index]["error"] = "HLS video is not supported in your browser!";
+              }
+              this.manageVideoInfoInterval(index);
+            } else {
               this.count--;
-              this.players[index]["error"] = response.data.message;
-              this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
-              this.players[index]["channelId"] = -1;
-              this.players[index]["recoverDecodingErrorDate"] = null;
-              this.players[index]["recoverSwapAudioCodecDate"] = null;
-              this.players[index]["ptz_control"] = false;
-              this.players[index]["status"] = undefined;
-              this.players[index]["isplaying"] = false;
-              if ((this.players[index]["hlsPlayer"])) { try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch(e) {} }
+              this.stopPlaying(index);
+              this.players[index]["sessionId"] = 0;
+            }
+          },
 
-              setTimeout(() => {
-                this.players[index]["error"] = "";
+          error: (response: any) => {
+            console.log("response", response?.error);
+            if (waitingElem) waitingElem.style.display = 'none';
 
-                const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+            this.players[index]["hlsURL"] = "";
+            this.players[index]["sessionId"] = 0;
+            this.players[index]["mjpeg_sessionId"] = 0;
 
-              }, 5 * 1000);
+            if (response?.error?.code === 3037) {
+              const ele = document.getElementById(this.players[index]["elem_id"]);
+              if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
             }
 
-          } else {
-            // invalid session
-            console.error('Invalid session');
+            if (response.status !== 401 && response?.error?.code !== 3113) {
+              if (this.players[index]["channelId"] > -1) {
+                this.count--;
+                this.players[index]["error"] = response?.error?.message || 'Stream error';
+                this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+
+                this.players[index]["channelId"] = -1;
+                this.players[index]["recoverDecodingErrorDate"] = null;
+                this.players[index]["recoverSwapAudioCodecDate"] = null;
+                this.players[index]["ptz_control"] = false;
+                this.players[index]["status"] = undefined;
+                this.players[index]["isplaying"] = false;
+
+                if (this.players[index]["hlsPlayer"]) {
+                  try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+                }
+
+                setTimeout(() => {
+                  this.players[index]["error"] = "";
+                  const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
+                  if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+                }, 5000);
+              }
+            } else {
+              console.error('Invalid session');
+            }
           }
         });
       }
@@ -1480,38 +1590,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   // clearAllPlayers root listener registration done in attachLegacyListeners
 
   // stopPlaying was already defined above (kept original); nothing to duplicate here.
-
-  /* ============================
-     Helper functions used in the appended converted logic
-     ============================ */
-
-  // Proxy a POST request to the backend 'proxy' behavior similar to your AngularJS proxy call
-  // We return a Promise so we can easily use then/catch in the startPlaying wrapper above.
-  private proxyRequestPost(apiNameOrEndpoint: string, payload: any): Promise<any> {
-    // In AngularJS original they POST to "proxy" with payload: { method: "POST", url: <api url>, "payload": JSON.stringify(postData) }
-    // Here we attempt to call streamSvc.proxyRequest or fallback to HttpClient.
-    const url = this.getApiEndpoint(apiNameOrEndpoint) || apiNameOrEndpoint;
-    // If streamSvc has a proxyRequest that returns Observable, use it.
-    try {
-      if (this.streamSvc && (this.streamSvc as any).proxyRequest) {
-        return new Promise((resolve, reject) => {
-          (this.streamSvc as any).proxyRequest('POST', url, payload).subscribe({
-            next: (res: any) => resolve(res),
-            error: (err: any) => reject(err)
-          });
-        });
-      }
-    } catch (e) {
-      // ignore and fallback
-    }
-
-    // fallback: direct HttpClient post to the url (assuming a CORS-allowed direct endpoint)
-    return this.http.post(url, payload).toPromise();
-  }
-
-  /* ============================
-     Small AngularJS helpers emulation (to keep code identical)
-     ============================ */
 
   
 }

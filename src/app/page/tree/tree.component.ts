@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { take } from 'rxjs/operators';
+import { switchMap, take, takeUntil } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { interval, Subject, Subscription } from 'rxjs';
 
 interface CameraNode {
   name: string;
@@ -85,12 +85,17 @@ export class TreeComponent implements OnInit {
 
   analytictypes:any[] = [];
   analyticTypes$ = new Subject<any>();
+  private statusIntervalSub?: Subscription;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private http: HttpClient,
     private cookieService:CookieService,
     private router:Router
   ) {}
+
+  @Output() channelClickedEvent = new EventEmitter<any>();
+  @Output() serverConfig = new EventEmitter<any>();
 
   ngOnInit(): void {
     // Initialize dropZones if needed
@@ -110,6 +115,8 @@ export class TreeComponent implements OnInit {
 
   ngOnDestroy(): void {
     localStorage.removeItem('serverConfiguration');
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private showInvalidSession(): void {
@@ -126,24 +133,17 @@ export class TreeComponent implements OnInit {
   }
 
   loadData(): void {
-    const jsessionId = this.cookieService.get('vSessionId');
-    console.log('Cookie value:', jsessionId);
-
     const url = API_ENDPOINTS.SERVER_INFO;
     const url1 = API_ENDPOINTS.USER_SESSION;
-
-    // ❗ Don't use 'Cookie' — browser blocks it
-
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,
       'Authorization': `Bearer ${this.cookieService.get('authToken')}`
     });
 
     // === 1. Fetch server info ===
     this.http.get<any>(url, { headers }).pipe(take(1)).subscribe({
       next: (response) => {
-        console.log('Server Info Response:', response);
         if (response?.result?.length) { 
           response.result.forEach((server: any) => { 
             if (server.servertype === 'IVMS') { 
@@ -157,8 +157,10 @@ export class TreeComponent implements OnInit {
           setTimeout(() => (this.model.camerror = ''), 5000); 
         } else { 
           this.getAnalyticsTypes(this.rootconfig.serverid); 
-          // console.log('IsNTAMC:', this.isNTAMC); 
+          this.getCameraStatus(this.rootconfig.serverid);
+          this.startStatusPolling();
           this.buildJunctionTree(this.rootconfig.serverid); 
+          
         }
       },
       error: (err) => {
@@ -173,7 +175,6 @@ export class TreeComponent implements OnInit {
     // === 2. Fetch user session ===
     this.http.get<any>(url1, { headers }).pipe(take(1)).subscribe({
       next: (response) => {
-        console.log('User Session Response:', response);
         if (response?.result?.length > 0) {
           const user = response.result[0];
           this.vsessionuserid = user.userid;
@@ -200,7 +201,7 @@ export class TreeComponent implements OnInit {
     'Authorization': `Bearer ${this.cookieService.get('authToken')}`
   });
     this.loading = true;
-    this.http.get<any>(apiEndpoint,{headers, withCredentials:true}).pipe(take(1)).subscribe({
+    this.http.get<any>(apiEndpoint, {headers}).pipe(take(1)).subscribe({
       next: response => {
         if (response.result) {
           let rawData = response.result;
@@ -366,6 +367,7 @@ export class TreeComponent implements OnInit {
 
     if (node.isjunction) {
       // Toggle visibility of children using a 'visible' property
+      // this.channelClickedEvent.emit(node);
       if (node.children) {
         node.children.forEach((child:any) => {
           child.visible = !child.visible;
@@ -384,56 +386,48 @@ export class TreeComponent implements OnInit {
   // Example placeholder for channel click event
   private channelClicked(node: any) {
     console.log('Channel clicked:', node);
-  }
-  private getAPIUrl(endpoint: string): string {
-    return `${endpoint}`;
+    this.channelClickedEvent.emit(node);
   }
 
 
   loadServerConfiguration(): void {
-    const jsessionId = this.cookieService.get('vSessionId');
-    // console.log('Cookie value:', jsessionId);
     const apiUrl = API_ENDPOINTS.SERVER_CONFIG;
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,
       'Authorization': `Bearer ${this.cookieService.get('authToken')}`
     });
 
-    this.http.get<any>(apiUrl,  { headers, withCredentials:true }).pipe(take(1)).subscribe({
+    this.http.get<any>(apiUrl,{ headers }).pipe(take(1)).subscribe({
       next: (response) => {
-        console.log("serverConfiguration", response);
         if (response?.result?.length > 0 && response.result[0]) {
           this.serverConfiguration = response.result[0];
           localStorage.setItem('serverConfiguration', JSON.stringify(this.serverConfiguration));
 
           this.rootconfig.streamer = this.serverConfiguration.streamingMode;
+          this.serverConfig.emit(this.rootconfig);
         }
       },
       error: (error) => {
-        // this.message = error?.data?.message || 'Could not connect to server!';
+        this.message = error?.data?.message || 'Could not connect to server!';
       }
     });
   }
 
   getAnalyticsTypes(serverid:string): void {
-    const apiUrl = API_ENDPOINTS.ANLYTICS_INFO.replace('{serverid}', serverid);
-    const jsessionId = this.cookieService.get('vSessionId');
-
+    const apiUrl = API_ENDPOINTS.ANALYTICS_INFO.replace('{serverid}', serverid);
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Cookies': `JSESSIONID=${jsessionId}`,
+      'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,
       'Authorization': `Bearer ${this.cookieService.get('authToken')}`
     });
 
-    this.http.get<any>(apiUrl,{ headers }).subscribe({
+    this.http.get<any>(apiUrl,{ headers }).pipe(take(1)).subscribe({
       next: (response) => {
         if (response?.result?.length > 0) {
-          console.log("analytic response", response);
-          
           response.result.forEach((analytic: any, index: number) => {
-            console.log("analytic", analytic, this.analytictypes);
+            // console.log("analytic", analytic, this.analytictypes);
             
             this.rootconfig.analytictypes[index] = {
               alerttype: analytic.alerttype,
@@ -444,8 +438,7 @@ export class TreeComponent implements OnInit {
 
           // 🔊 Equivalent to $rootScope.$broadcast('analytictypes', ...)
           this.analyticTypes$.next(this.rootconfig.analytictypes);
-          console.log(this.rootconfig.analytictypes, this.analytictypes);
-          
+          // console.log(this.rootconfig.analytictypes, this.analytictypes);
         }
       },
       error: (error) => {
@@ -458,6 +451,88 @@ export class TreeComponent implements OnInit {
           }, 3000);
         }
       }
+    });
+  }
+
+  getCameraStatus(serverid: string): void {
+    const apiUrl = API_ENDPOINTS.CHANNEL_STATUS.replace('{serverid}', serverid);
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,
+      'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    });
+
+    this.http.get<any>(apiUrl, { headers }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        console.log("response", response);
+        
+        if (response?.result?.length > 0) {
+          response.result.forEach((data: any) => {
+            console.log("resp",response.result);
+            
+            const name = data.channelname || `Channel ${data.channelid}`;
+            console.log(`Channel: ${name}, Status: ${data.statustext}`);
+            this.updateTreeStatus(this.displayTree, data);
+            this.updateTreeStatus(this.originalCameraTree, data);
+          });
+
+          // 🔊 Equivalent to `$rootScope.$broadcast('camerastatus', result)`
+          console.log('Camera Status Updated:', response.result);
+        }
+      },
+      error: (error) => {
+        if (error.status === 401) {
+          this.showInvalidSession();
+          setTimeout(() => {
+            window.location.href = 'ivmsweb/login';
+          }, 3000);
+        } else {
+          console.debug(error.error?.message || 'Camera status fetch failed.');
+
+          // Set all camera statuses to 1 (offline/fallback)
+          this.setAllChildrenStatus(this.displayTree, 1);
+          this.setAllChildrenStatus(this.originalCameraTree, 1);
+        }
+      }
+    });
+  }
+
+  /**
+   * ✅ Start periodic polling every 10 seconds
+   */
+  private startStatusPolling(): void {
+    interval(10000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (this.rootconfig.serverid && this.originalCameraTree?.length > 0) {
+          this.getCameraStatus(this.rootconfig.serverid);
+        }
+      });
+  }
+
+  /**
+   * ✅ Utility: Update node status in trees
+   */
+  private updateTreeStatus(tree: any[], data: any): void {
+    tree.forEach((node) => {
+      node.children?.forEach((child: any) => {
+        console.log("channel", child, data, node);
+        if (child.id === data.channelid) {
+          child.status = data.channelstatus;
+          child.name = data.channelname;
+        }
+      });
+    });
+  }
+
+  /**
+   * ✅ Utility: Set fallback status for all children
+   */
+  private setAllChildrenStatus(tree: any[], status: number): void {
+    tree.forEach((node) => {
+      node.children?.forEach((child: any) => {
+        child.status = status;
+      });
     });
   }
 
@@ -476,7 +551,6 @@ export class TreeComponent implements OnInit {
   //     this.isLocation = false;
   //   }
   // }
-
 }
 
 

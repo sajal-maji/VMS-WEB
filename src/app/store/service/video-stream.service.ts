@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'
@@ -583,12 +584,13 @@ class VideoneticsRTC extends EventTarget {
    * @param {string|URL} value
    */
   set #src(value:any) {
-    console.log("VideoneticsRTC.src");
+    console.log("VideoneticsRTC.src", value, environment.apiUrl);
     if (typeof value !== "string") value = value.toString();
     if (value.startsWith("http")) {
+      console.log("VideoneticsRTC.src", value.substring(4));
       value = "ws" + value.substring(4);
     } else if (value.startsWith("/")) {
-      value = "ws" + location.origin.substring(4) + value;
+      value = "ws" + environment.apiUrl.substring(4) + value;
     }
 
     this.#wsURL = value;
