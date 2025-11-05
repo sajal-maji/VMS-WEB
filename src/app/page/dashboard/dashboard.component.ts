@@ -49,11 +49,11 @@ const liveHlsJsConfig = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,        // ✅ must be standalone for lazy-loading
-  imports: [CommonModule, TreeComponent, HeaderComponent, RouterLink, FormsModule],
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   private readonly layout = inject(LayoutService);
   readonly selectedLayout = computed(() => this.layout.selectedLayout());
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
@@ -78,11 +78,26 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private renderer: Renderer2,
     private streamSvc: StreamingService,
     private http: HttpClient,
-    private videoneticsRTC: VideoStreamService
-  ) {} 
-
+    private videoneticsRTC: VideoStreamService,
+    public layoutService: LayoutService,
+  ) {
+  } 
+ 
   ngOnInit(): void {
-    this.initPlayers(25);
+    if(this.layoutService.selectedLayout()==='1x1'){
+      this.initPlayers(1);
+    }else if(this.layoutService.selectedLayout()==='2x2'){
+      this.initPlayers(4);
+
+    }
+    else if(this.layoutService.selectedLayout()==='3x3'){
+      this.initPlayers(9);
+
+    }
+    else if(this.layoutService.selectedLayout()==='4x4'){
+      this.initPlayers(24);
+
+    }
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
     this.subscriptions.push(t);
@@ -278,7 +293,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
   }
+  // setLayout(size: number) {
+  //     this.gridSize = size;
+  //   }
 
+    get gridTemplate() {
+      // Example: 2x2 -> "repeat(2, 1fr)"
+      return `repeat(${2}, 1fr)`;
+    }
   loadSnap(blobData: Blob | null, index: number) {
     if (!blobData) {
       setTimeout(() => this.requestFrames(index), 500);

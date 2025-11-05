@@ -351,7 +351,7 @@ nodeClicked(node: any) {
   } else {
     // Replace $rootScope.$broadcast with a custom method or EventEmitter
     this.channelClicked(node);
-  }
+  } 
 }
 
 getNodeName(nodeName: string): string {

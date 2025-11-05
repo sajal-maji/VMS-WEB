@@ -34,5 +34,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./page/user-details/user-details.component').then((m) => m.UserDetailsComponent),
   },
+   {
+    path: 'ivmsweb/event-search',
+    loadComponent: () =>
+      import('./page/event-search/event-search/event-search.component').then((m) => m.EventSearchComponent),
+  },
   
 ];

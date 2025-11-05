@@ -8,7 +8,7 @@ import { LayoutService, MatrixLayout } from '../live-matrix/layout.service';
   selector: 'app-header',
   templateUrl: './header.component.html',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   styleUrls: ['./header.component.css']
 })
 export class HeaderComponent {
