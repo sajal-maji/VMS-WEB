@@ -11,7 +11,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
-import * as CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-es';;
 
 @Component({
   selector: 'app-change-password',
@@ -144,7 +144,7 @@ export class ChangePasswordComponent implements OnInit {
     }
 
     const changePassword = this.changePassForm.value;
-    console.log("change Pass", changePassword)
+    // console.log("change Pass", changePassword)
 
     Object.keys(changePassword).forEach(key => {
       changePassword[key] = this.sanitizeInput(changePassword[key]);
@@ -159,7 +159,7 @@ export class ChangePasswordComponent implements OnInit {
 
     changePassword.confirmPassword = firstEncryptNewPass;
 
-    console.log("change Pass", changePassword);
+    // console.log("change Pass", changePassword);
 
     const postData = {
       userid: changePassword.userid,
@@ -182,7 +182,8 @@ export class ChangePasswordComponent implements OnInit {
       }).subscribe({
         next: (response: any) => {
           console.log("response", response);
-           alert('Password Changed successfully');
+          alert('Password Changed successfully');
+          this.router.navigate(['ivmsweb/login']);
           this.isLoading = false;
         }
       });

@@ -53,7 +53,7 @@ const liveHlsJsConfig = {
 @Component({
   selector: 'app-archive',
   standalone: true,
-  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, RouterLink, FooterComponent],
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
   templateUrl: './archive.component.html',
   styleUrl: './archive.component.css'
 })

@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
-import * as CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from "../footer/footer.component"; 
 @Component({
   selector: 'app-login',

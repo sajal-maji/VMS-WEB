@@ -10,7 +10,7 @@ import { HeaderComponent } from "../header/header.component";
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
-import * as CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from "../footer/footer.component"; 
 
 @Component({
@@ -146,7 +146,7 @@ export class UserDetailsComponent implements OnInit {
       this.userForm.patchValue({ securityanswer1: '**********' });
     }
     if (user.securityanswer2) {
-      console.log(user.securityanswer1);
+      console.log(user.securityanswer2);
       this.userForm.patchValue({ securityanswer2: '**********' });
     }
   }
