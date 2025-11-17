@@ -1803,7 +1803,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy  {
 
           this.stop();
           this.counter = 0;
-          this.countstart();
+          this.countStart();
 
         } else {
           // this.stopAllArchivePlaying(player.sessionId);
@@ -1858,9 +1858,9 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy  {
       }
     });
 }
-  countstart() {
-    throw new Error('Method not implemented.');
-  }
+  // countstart() {
+  //   throw new Error('Method not implemented.');
+  // }
 
 
   // Provide a light options/actionsMenu equivalent (converted)

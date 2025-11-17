@@ -171,7 +171,7 @@ export class ChangePasswordComponent implements OnInit {
 
 
     // Your old AngularJS save() logic goes here
-    // setTimeout(() => {
+    setTimeout(() => {
       const url = API_ENDPOINTS.CHANGE_PASSWORD;
       this.http.post<any>(url, postData, {
           headers: new HttpHeaders({
@@ -188,7 +188,7 @@ export class ChangePasswordComponent implements OnInit {
       });
       // console.log('Saved:', this.model);
       this.isLoading = false;
-    // }, 1000);
+    }, 1000);
   }
 
   
