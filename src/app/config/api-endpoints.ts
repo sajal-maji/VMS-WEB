@@ -15,5 +15,13 @@ export const API_ENDPOINTS = {
   WEBRTC_LIVE: `${environment.apiBaseUrl}webrtc/{serverid}/startlive`,
   HLS_START_LIVE: `${environment.apiBaseUrl}{serverid}/startlive`,
   HLS_STOP_LIVE: `${environment.apiBaseUrl}{serverid}/stoplive`,
+  WEBRTC_ARCHIVE: `${environment.apiBaseUrl}webrtc/{serverid}/startarchive`,
+  HLS_START_ARCHIVE: `${environment.apiBaseUrl}{serverid}/startarchive`,
   VIDEO_INFO: `${environment.apiBaseUrl}{serverid}/channel/getstreamingparameter/{channelid}/{streamindex}`,
+  CHANNEL_INFO: `${environment.apiBaseUrl}{serverid}/channel`,
+  EVENT_SEARCH: `${environment.apiBaseUrl}{serverid}/event/getevents`,
+  EVENT_COUNT: `${environment.apiBaseUrl}{serverid}/event/count`,
+  USER_INFO: `${environment.apiBaseUrl}user`,
+  UPDATE_USER: `${environment.apiBaseUrl}user/update/details`,
+  CHANGE_PASSWORD: `${environment.apiBaseUrl}user/changepassword`
 };

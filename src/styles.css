@@ -148,6 +148,17 @@ button:hover {
   color: #ffdb6d;
 }
 
+.field-link-name {
+  color: #BABFCC;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.field-link-name:hover {
+  color: #BABFCC;
+}
+
 /* ------------------------------
    ERROR MESSAGE
 ------------------------------ */

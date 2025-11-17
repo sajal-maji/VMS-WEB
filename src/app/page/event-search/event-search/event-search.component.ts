@@ -1,13 +1,18 @@
 import { Component, OnInit, AfterViewInit, NgZone, Renderer2, HostListener } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from "../../header/header.component";
 import { TreeComponent } from "../../tree/tree.component";
+import { API_ENDPOINTS } from '../../../config/api-endpoints';
+import { CookieService } from 'ngx-cookie-service';
+import { take } from 'rxjs';
+import { environment } from '../../../../environments/environment.development';
+import { FooterComponent } from "../../footer/footer.component";
 
 @Component({
   selector: 'app-event-search',
-  imports: [CommonModule, FormsModule, HeaderComponent, TreeComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, TreeComponent, FooterComponent],
   standalone: true,
   templateUrl: './event-search.component.html',
   styleUrls: ['./event-search.component.css']
@@ -21,15 +26,17 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     error: '',
     dateform: { date: new Date(), open: false },
     dateto: { date: new Date(), open: false },
-    selectedtype: undefined,
+    selectedtype: '',
     offset: 0,
     total: 0,
     limit: 10,
-    selectedchannelid: null,
+    selectedchannelid: '',
     selectedrtamc: undefined,
     selectedrecordingserver: undefined,
     searchresult: []
   };
+
+  rootconfig: any = {}
 
   //$scope.isNTAMC;
   isNTAMC: any;
@@ -55,7 +62,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   private durInitial: number | undefined;
   private firstTimeLoadingClip: boolean = false;
 
-  selectedEvent: any = null;
+  selectedEvent: any = {};
 
   selectedRTAMC: any = null;
   selectedRecServer: any = null;
@@ -66,8 +73,14 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
   users: any[] = [];
   selectedUsers: any[] = [];
+  analyticsList: any[] = [];
 
-  constructor(private http: HttpClient, private ngZone: NgZone, private renderer: Renderer2) {}
+  constructor(
+    private http: HttpClient, 
+    private cookies:CookieService, 
+    private ngZone: NgZone, 
+    private renderer: Renderer2
+  ) {}
 
   // ---- lifecycle ----
   ngOnInit(): void {
@@ -155,7 +168,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     this.page = 1;
     this.model.total = 0;
     this.model.searchresult = [];
-    this.selectedEvent = null;
+    this.selectedEvent = {};
 
     this.reset();
 
@@ -182,33 +195,44 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
     if (this.model.selectedchannelid) {
       this.postData['channelid'] = this.model.selectedchannelid;
+      console.log("channelId", this.model.selectedchannelid);
     } else {
       this.postData['channelid'] = null;
     }
+    const apiurl = API_ENDPOINTS.EVENT_COUNT.replace('{serverid}', this.rootconfig.serverid);
+    const payload = JSON.stringify(this.postData)
 
     // Mirror the original $http POST to "proxy"
-    this.http.post<any>('proxy', {
-      method: 'POST',
-      url: (window as any).$rootScope?.getAPIUrl?.(this.getAPIEndpoint('geteventscount'), (window as any).rootconfig?.serverid),
-      payload: JSON.stringify(this.postData)
-    }).subscribe(response => {
-      try {
-        this.model.error = '';
-        this.model.offset = 0;
-        this.model.total = response.result[0]['totalrecords'];
+    this.http.post<any>(apiurl, this.postData, {
+      headers: new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+      'Authorization': `Bearer ${this.cookies.get('authToken')}`
+    })
+    }).subscribe({
+      next: (response) => {
+        try {
+          this.model.error = '';
+          this.model.offset = 0;
+          this.model.total = response.result[0]['totalrecords'];
 
-        if (this.model.total > 0) {
-          this.refreshResultSet();
+          if (this.model.total > 0) {
+            this.refreshResultSet();
+          }
+        } catch (e) {
+          // preserve original behavior: set error
+          this.model.error = 'Unexpected response format';
         }
-      } catch (e) {
-        // preserve original behavior: set error
-        this.model.error = 'Unexpected response format';
-      }
-    }, (response) => {
-      if (response && response.status == 401) {
-        (window as any).$rootScope?.showInvalidSession?.();
-      } else {
-        this.model.error = response?.error?.message || response?.message || 'Error fetching event counts';
+      },
+      error: (err) => {
+        this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+        if (err) {
+          setTimeout(() => {
+            if (err.status === 401) {
+              (window as any).$rootScope?.showInvalidSession?.();
+            }
+          }, 2000);
+        }
       }
     });
   }
@@ -216,130 +240,100 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   refreshResultSet() {
     if (!this.postData) { this.postData = {}; }
     this.postData['page'] = this.page;
+    const apiurl = API_ENDPOINTS.EVENT_SEARCH.replace('{serverid}', this.rootconfig.serverid);
+    const payload = JSON.stringify(this.postData);
 
-    this.http.post<any>('proxy', {
-      method: 'POST',
-      url: (window as any).$rootScope?.getAPIUrl?.(this.getAPIEndpoint('eventsearch'), (window as any).rootconfig?.serverid),
-      payload: JSON.stringify(this.postData)
-    }).subscribe(response => {
-      try {
-        this.model.error = '';
-        this.model.searchresult = response.result[0]['eventlist'];
-      } catch (e) {
-        this.model.error = 'Unexpected response format';
-      }
-    }, (response) => {
-      this.model.error = response?.error?.message || response?.message || 'Error fetching events';
-      if (response) {
-        setTimeout(() => {
-          if (response.status == 401) { (window as any).$rootScope?.showInvalidSession?.(); }
-        }, 2000);
+    this.http.post<any>(apiurl, payload, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }),
+    }).subscribe({next: (response) => {
+      // console.log("r",response);
+        try {
+          this.model.error = '';
+          this.model.searchresult = response.result[0]['eventlist'];
+        } catch (e) {
+          this.model.error = 'Unexpected response format';
+        }
+      },
+      error: (err) => {
+        this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+        if (err) {
+          setTimeout(() => {
+            if (err.status === 401) {
+              (window as any).$rootScope?.showInvalidSession?.();
+            }
+          }, 2000);
+        }
       }
     });
   }
 
-  // emulate $scope.$on("updateNTAMCFlag", ...)
-  // This example expects some external code to call this.updateNTAMCFlag(isNTAMC)
-  updateNTAMCFlag(isNTAMC: any) {
-    this.isNTAMC = isNTAMC;
-    console.log('Received NTAMC flag update in eventsearchcontroller:', isNTAMC, this.isNTAMC);
+  OnLoad(event: any) {
+    // console.log("",event);
+    this.rootconfig = event;
+    console.log("HIIIII", this.rootconfig);
+  }
+
+  OnAnayticsLoad(event: any) {  
+    // console.log("",event); 
+    const eventList = Array.isArray(event) ? event : Object.values(event); 
+    this.analyticsList=eventList;
+    this.analyticsList.map((e: any) => e.alertname);
+
+    // Initialize selectedEvent if null
+    if (!this.selectedEvent) {
+      this.selectedEvent = {};
+    }
+
+    // Store the array
+    // this.selectedEvent.alertname = alertNames;
+
+    // console.log("All selected alert names:", this.selectedEvent.alertname);
   }
 
   // ---- channel / camera handling ----
   getChannels() {
-    const apiEndpoint = this.isNTAMC ? 'getntamccameratree' : 'getchannels';
-    console.log('isNTAMC:', this.isNTAMC);
+    const url = API_ENDPOINTS.CHANNEL_INFO.replace('{serverid}', this.rootconfig.serverid);
 
-    this.http.post<any>('proxy', {
-      method: 'GET',
-      url: (window as any).$rootScope?.getAPIUrl?.(this.getAPIEndpoint(apiEndpoint), (window as any).rootconfig?.serverid)
-    }).subscribe(response => {
-      this.channelList = [];
-      let rawData = response.result;
-      console.log('Raw Data:', response, rawData);
-
-      if (this.isNTAMC) {
-        if (Array.isArray(rawData) && rawData.length > 0) {
-          rawData = rawData[0];
-        }
-
-        console.log('raw data', rawData, response);
-
-        const fullList: any[] = [];
-        const uniqueRTAMCMap = new Map();
-        const uniqueRecServerMap = new Map();
-
-        Object.keys(rawData).forEach(serverKey => {
-          let rtamcName = 'Unnamed RTAMC';
-          let rtamcId = 'Unknown ID';
-
-          const match = serverKey.match(/redundantmediaservername=([^,]+), redundantmediaserverid=([^,\]]+)/);
-          if (match) {
-            rtamcName = match[1].trim();
-            rtamcId = match[2].trim();
+    this.http.get<any>(url, { 
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }), 
+    }).pipe(take(1)).subscribe({
+      next: (response) => {
+        this.channelList = [];
+        const rawData = response?.result;
+        // console.log('Raw Data:', rawData);
+        
+        if (rawData && rawData.length > 0) {
+          this.channelList = rawData;
+          this.channelList.map((ch: any) => ch.channelname);
+          if (!this.selectedEvent) {
+            this.selectedEvent = {};
           }
-
-          let cameras = rawData[serverKey];
-          if (!Array.isArray(cameras)) {
-            console.warn('Expected an array of cameras but got:', cameras);
-            cameras = [];
-          }
-
-          cameras.forEach((camera: any) => {
-            const recServerId = camera.recordingserverid;
-            const recServerName = camera.recordingservername;
-            const channelId = camera.channelid;
-            const channelName = camera.channelname;
-
-            if (!uniqueRTAMCMap.has(rtamcId)) {
-              uniqueRTAMCMap.set(rtamcId, { rtamcid: rtamcId, rtamcname: rtamcName });
-            }
-
-            if (!uniqueRecServerMap.has(recServerId)) {
-              uniqueRecServerMap.set(recServerId, { recordingserverid: recServerId, recordingservername: recServerName, rtamcid: rtamcId });
-            }
-
-            fullList.push({
-              rtamcid: rtamcId,
-              rtamcname: rtamcName,
-              recordingserverid: recServerId,
-              recordingservername: recServerName,
-              channelid: channelId,
-              channelname: channelName
-            });
-          });
-        });
-
-        this.fullChannelList = fullList;
-        this.uniqueRTAMCList = Array.from(uniqueRTAMCMap.values());
-        this.uniqueRecServerList = Array.from(uniqueRecServerMap.values());
-
-        this.updateRecServerDropdown();
-        this.filterChannels();
-
-        console.log('Flattened Camera List:', this.fullChannelList);
-        console.log('Unique RTAMC List:', this.uniqueRTAMCList);
-        console.log('Unique Recording Server List:', this.uniqueRecServerList);
-      } else {
-        if (response.result && response.result.length > 0) {
-          this.channelList = response.result;
+          // this.selectedEvent.channelname = channelNames;
+          // console.log('All Channel Names:', this.selectedEvent.channelname);
         } else {
           this.channelList = [];
         }
-        return;
-      }
-
-    }, (response) => {
-      this.channelList = [];
-      if (response.status == 401) {
-        (window as any).$rootScope?.showInvalidSession?.();
-      } else {
-        this.model.camerror = response?.error?.message || response?.message || 'Error fetching channels';
-        setTimeout(() => { this.model.camerror = ''; }, 3000);
+      },
+      error: (err) => {
+        this.channelList = [];
+        if (err.status === 401) {
+          (window as any).$rootScope?.showInvalidSession?.();
+        } else {
+          this.model.camerror = err?.error?.message || err?.message || 'Error fetching channels';
+          setTimeout(() => (this.model.camerror = ''), 3000);
+        }
       }
     });
   }
-
+  
   updateRecServerDropdown() {
     const filteredServers = this.fullChannelList
       .filter(channel => !this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc)
@@ -380,7 +374,10 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
     if (this.videoPlayer) {
       if (typeof event.snapurl !== 'undefined') {
-        this.videoPlayer.setAttribute('poster', event.snapurl);
+        console.log("eventsnap", event.snapurl);
+        const snap = `${environment.apiurl}${event.snapurl}`
+        const videoSnap = this.videoPlayer.setAttribute('poster', snap);
+        console.log("snap", snap, videoSnap);
       }
 
       this.event_clip_url = this.selectedEvent.clipurl;
@@ -389,46 +386,64 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   }
 
   play() {
-    if (typeof this.selectedEvent !== 'undefined' && this.selectedEvent != null) {
-      if (!this.firstTimeLoadingClip) {
-        const waiting = document.getElementById('event_video_player_waitinggolla_id');
-        if (waiting) { waiting.style.display = 'block'; }
+    if (typeof this.selectedEvent === 'undefined' || this.selectedEvent == null) return;
 
-        this.http.get((window as any).$rootScope?.getAPIUrl?.(this.event_clip_url, (window as any).rootconfig?.serverid), { responseType: 'text' as 'json' }).subscribe(response => {
-          this.firstTimeLoadingClip = true;
-          this.model.error = '';
-          if (waiting) { waiting.style.display = 'none'; }
+    const waiting = document.getElementById('event_video_player_waitinggolla_id');
+    if (!this.firstTimeLoadingClip && waiting) {
+      waiting.style.display = 'block';
+    }
+    const cleanPath = this.event_clip_url.replace(/^\/V1/i, '');
+    const url = `${environment.apiUrl}${cleanPath}`;
+    console.log("clipurl",this.event_clip_url, url);
 
-          if (this.videoPlayer) {
-            this.videoPlayer.setAttribute('src', this.event_clip_url);
-            const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-            if (playBtn) { playBtn.src = 'images/Pause_16x16.png'; }
-            this.videoPlayer.play();
-          }
-        }, (response) => {
-          const waiting = document.getElementById('event_video_player_waitinggolla_id');
-          if (waiting) { waiting.style.display = 'none'; }
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+      'Authorization': `Bearer ${this.cookies.get('authToken')}`
+    });
 
-          if (response.status == 401) {
-            (window as any).$rootScope?.showInvalidSession?.();
-          } else {
-            this.model.error = response?.error?.message || response?.message || 'Error loading clip';
-          }
-        });
-      }
+    this.http.get<any>(url, { headers }).pipe(take(1)).subscribe({
+      next: (response) => {
+        console.log("response", response);
+        this.firstTimeLoadingClip = true;
+        this.model.error = '';
+        if (waiting) waiting.style.display = 'none';
 
-      if (this.firstTimeLoadingClip && this.videoPlayer) {
-        const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-        if (this.videoPlayer.paused) {
-          if (playBtn) { playBtn.src = 'images/Pause_16x16.png'; }
+        if (this.videoPlayer) {
+          this.videoPlayer.setAttribute('src', this.event_clip_url);
+          console.log(this.videoPlayer.setAttribute('src', this.event_clip_url))
+          const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
+          if (playBtn) playBtn.src = 'images/Pause_16x16.png';
           this.videoPlayer.play();
+        }
+      },
+      error: (err) => {
+        if (waiting) waiting.style.display = 'none';
+
+        if (err.status === 401) {
+          (window as any).$rootScope?.showInvalidSession?.();
         } else {
-          if (playBtn) { playBtn.src = 'images/Play.png'; }
-          this.videoPlayer.pause();
+          this.model.error =
+            err?.error?.message || err?.message || 'Error loading clip';
+          setTimeout(() => (this.model.error = ''), 3000);
+        }
+      },
+      complete: () => {
+        // Handle play/pause toggle only after first load
+        if (this.firstTimeLoadingClip && this.videoPlayer) {
+          const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
+          if (this.videoPlayer.paused) {
+            if (playBtn) playBtn.src = 'images/Pause_16x16.png';
+            this.videoPlayer.play();
+          } else {
+            if (playBtn) playBtn.src = 'images/Play.png';
+            this.videoPlayer.pause();
+          }
         }
       }
-    }
+    });
   }
+
 
   fullScreen() {
     if (!this.videoPlayer) { return; }
@@ -563,11 +578,24 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
   // ---- users ----
   getAllUsers() {
-    this.http.post<any>('proxy', { method: 'GET', url: (window as any).$rootScope?.getAPIUrl?.(this.getAPIEndpoint('getUsers')) }).subscribe(response => {
-      this.users = response.result;
-      this.selectedUsers = this.users.map((user: any) => ({ username: user.userid, selected: user.selected || false }));
-    }, (response) => {
-      console.error('Error fetching users:', response?.error || response);
+    const url = API_ENDPOINTS.USER_INFO;
+    this.http.get<any>(url, { 
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }), 
+     }).pipe(take(1))
+    .subscribe({
+      next: (response) => {
+        this.users = response.result;
+        this.selectedUsers = this.users.map((user: any) => ({ 
+          username: user.userid, selected: user.selected || false 
+        }));
+      },
+      error: (err) => {
+        console.error('Error fetching users:', err?.error || err);
+      }
     });
   }
 

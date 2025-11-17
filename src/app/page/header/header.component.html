@@ -1,15 +1,46 @@
 <header class="navbar">
   <nav class="nav-left">
-    <a href="/ivmsweb/live_matrix" routerLink="/ivmsweb/live_matrix" class="active">Dashboard</a>
-    <a href="/ivmsweb/event-search" routerLink="/ivmsweb/event-search">Events</a>
-    <a>Archive</a>
-    <a>Profile</a>
-    <a>Configuration</a>
+    <a
+      href="/ivmsweb/live-matrix"
+      routerLink="/ivmsweb/live-matrix"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="tabChanged('Dashboard')"
+    >Dashboard</a>
+
+    <a
+      href="/ivmsweb/event-search"
+      routerLink="/ivmsweb/event-search"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="tabChanged('Events')"
+    >Events</a>
+
+    <a
+      href="/ivmsweb/archive-matrix"
+      routerLink="/ivmsweb/archive-matrix"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="tabChanged('Archive')"
+    >Archive</a>
+
+    <a
+      href="/ivmsweb/user-details"
+      routerLink="/ivmsweb/user-details"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="tabChanged('Profile')"
+    >Profile</a>
+    <a
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      (click)="tabChanged('Configuration')"
+    >Configuration</a>
   </nav>
 
   <div class="nav-right">
-    <div class="dropdown">
-      <button class="dropbtn">▦ 1x1</button>
+    <div class="dropdown" *ngIf="showDropdown">
+      <button class="dropbtn">▦ {{ currentLayout }}</button>
       <div class="dropdown-content">
         <a (click)="selectLayout('1x1')">1x1</a>
         <a (click)="selectLayout('2x2')">2x2</a>
@@ -17,6 +48,6 @@
         <a (click)="selectLayout('4x4')">4x4</a>
       </div>
     </div>
-    <a href="#" class="signout">Signout</a>
+    <a href="ivmsweb/login" class="signout" (click)="signOut()">Signout</a>
   </div>
 </header>

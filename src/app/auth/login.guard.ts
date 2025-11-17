@@ -9,7 +9,7 @@ export class LoginGuard implements CanActivate {
   canActivate(): boolean {
     const isLoggedIn = !!this.cookie.get("vSessionId");
     if (isLoggedIn) {
-      this.router.navigate(['ivmsweb/live_matrix']);
+      this.router.navigate(['ivmsweb/live-matrix']);
       return false;
     }
     return true;

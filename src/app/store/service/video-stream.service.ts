@@ -234,7 +234,9 @@ class VideoneticsRTC extends EventTarget {
       " Channel ID: ",
       this.#channelId,
       " TimeStamp: ",
-      this.#timeStamp
+      this.#timeStamp,
+      "base_url",
+      this.base_url
     );
     let live = 1;
     this.#sessionId = "";
@@ -319,7 +321,7 @@ class VideoneticsRTC extends EventTarget {
       "/archive/sessionid/" +
       this.#sessionId +
       "/webrtc/pause";
-
+      
     const requestBody = { sessionid: this.#sessionId };
 
     try {
@@ -330,6 +332,7 @@ class VideoneticsRTC extends EventTarget {
         },
         body: JSON.stringify(requestBody)
       });
+      console.log("response url", response)
 
       if (response.ok) {
         console.log('WebRTC paused successfully.');

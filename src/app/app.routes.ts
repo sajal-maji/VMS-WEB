@@ -14,7 +14,7 @@ export const routes: Routes = [
   
   // dashboard page (lazy-loaded)
   {
-    path: 'ivmsweb/live_matrix',
+    path: 'ivmsweb/live-matrix',
     loadComponent: () =>
       import('./page/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [AuthGuard],
@@ -33,16 +33,31 @@ export const routes: Routes = [
     path: 'ivmsweb/user-details',
     loadComponent: () =>
       import('./page/user-details/user-details.component').then((m) => m.UserDetailsComponent),
+    canActivate: [AuthGuard],
   },
    {
     path: 'ivmsweb/event-search',
     loadComponent: () =>
       import('./page/event-search/event-search/event-search.component').then((m) => m.EventSearchComponent),
+    canActivate: [AuthGuard],
   },
   {
     path: 'ivmsweb/not-found',
     loadComponent: () => 
       import('./page/not-found/not-found.component').then((m) => m.NotFoundComponent),
   },
+  {
+    path: 'ivmsweb/archive-matrix',
+    loadComponent: () => 
+      import('./page/archive/archive.component').then((m) => m.ArchiveComponent),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'ivmsweb/change-password',
+    loadComponent: () => 
+      import('./page/change-password/change-password.component').then((m) => m.ChangePasswordComponent),
+    canActivate: [AuthGuard],
+  },
+
   
 ];

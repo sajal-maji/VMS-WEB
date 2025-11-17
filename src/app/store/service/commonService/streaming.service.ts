@@ -53,4 +53,12 @@ export class StreamingService {
   requestFrameBlob(hlsUrl: string): Observable<Blob> {
     return this.http.get(hlsUrl, { responseType: 'blob' });
   }
+
+  startEncodedArchive(serverApiEndpoint: string): Observable<any> {
+    // serverApiEndpoint should be something like getAPIEndpoint("encodedStartlive") + channel + '/200/100/0'
+    return this.proxyRequest('GET', serverApiEndpoint);
+  }
+  stopEncodedArchive(serverApiEndpoint: string): Observable<any> {
+    return this.proxyRequest('GET', serverApiEndpoint);
+  }
 }

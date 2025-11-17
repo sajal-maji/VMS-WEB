@@ -17,6 +17,7 @@ import { VideoStreamService } from '../../store/service/video-stream.service';
 import { StreamingService } from '../../store/service/commonService/streaming.service';
 import { CookieService } from 'ngx-cookie-service';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
+import { FooterComponent } from "../footer/footer.component";
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -51,7 +52,7 @@ const liveHlsJsConfig = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,        // ✅ must be standalone for lazy-loading
-  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, RouterLink],
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, RouterLink, FooterComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -646,7 +647,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     // if encoded/videonetics encoded path:
     if (
       (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration?.videoneticsStreamType === 'encoded') &&
-      (window.location.pathname !== '/live_matrix/4x4' && window.location.pathname !== '/live_matrix/5x5')
+      (window.location.pathname !== '/live-matrix/4x4' && window.location.pathname !== '/live-matrix/5x5')
     ) {
       // call encoded stop
       this.stopEncodedLive(index);
@@ -656,7 +657,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     // normal HLS stop: call API stoplive with streamsessionid
     const postData = { streamsessionid: player.sessionId };
     const apiEndpoint = API_ENDPOINTS.HLS_STOP_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
-    this.http.post<any>(apiEndpoint, postData).subscribe({
+    this.http.post<any>(apiEndpoint, postData, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }),
+    }).subscribe({
       next: () => {
         player.sessionId = 0;
         const vid = this.getVideoElement(index);
@@ -810,10 +817,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   getNodeName(nodeName: string): string {
     let max = 11;
     const path = window.location.pathname;
-    if (path === '/live_matrix/2x2') max = 20;
-    else if (path === '/live_matrix/3x3') max = 15;
-    else if (path === '/live_matrix/4x4') max = 7;
-    else if (path === '/live_matrix/5x5') max = 7;
+    if (path === '/live-matrix/2x2') max = 20;
+    else if (path === '/live-matrix/3x3') max = 15;
+    else if (path === '/live-matrix/4x4') max = 7;
+    else if (path === '/live-matrix/5x5') max = 7;
     nodeName = String(nodeName || '');
     return nodeName.length <= max ? nodeName : nodeName.substr(0, max - 2) + '..';
   }
@@ -840,9 +847,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   }
   private getApiEndpointGoToPreset() {
     return this.getApiEndpoint('gotopreset').replace('{0}', this.rootconfig.serverid);
-  }
-  private getApiEndpointStopLive() {
-    return this.getApiEndpoint('stoplive').replace('{0}', this.rootconfig.serverid);
   }
 
   // placeholder for constructing endpoints exactly like your old helpers
@@ -887,7 +891,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     });
 
     // if (matrixItem) {
-    //   this.router.navigate(['/live_matrix', matrixItem.label]);
+    //   this.router.navigate(['/live-matrix', matrixItem.label]);
     //   this.generateCameraDraggable();
     // }
   }
@@ -1083,13 +1087,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     // keep the handler exact to preserve logic and comments
     const handler = (channelToPlay: any) => {
 
-      if (this.getLocationPath() == "/live_matrix/2x2") {
+      if (this.getLocationPath() == "/live-matrix/2x2") {
         this.limit = 4;
-      } else if (this.getLocationPath() == "/live_matrix/3x3") {
+      } else if (this.getLocationPath() == "/live-matrix/3x3") {
         this.limit = 9;
-      } else if (this.getLocationPath() == "/live_matrix/4x4") {
+      } else if (this.getLocationPath() == "/live-matrix/4x4") {
         this.limit = 16;
-      } else if (this.getLocationPath() == "/live_matrix/5x5") {
+      } else if (this.getLocationPath() == "/live-matrix/5x5") {
         this.limit = 25;
       }
 
@@ -1323,7 +1327,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
   startPlaying(index: number) {
 
-    if (this.getLocationPath() != "/live_matrix/4x4" && this.getLocationPath() != "/live_matrix/5x5" && (this.serverConfiguration) &&
+    if (this.getLocationPath() != "/live-matrix/4x4" && this.getLocationPath() != "/live-matrix/5x5" && (this.serverConfiguration) &&
       this.serverConfiguration.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType == "encoded") {
 
       /** Encoded */
@@ -1351,7 +1355,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         "withaudio": false
       };
 
-      if (this.getLocationPath() == "/live_matrix/1x1") {
+      if (this.getLocationPath() == "/live-matrix/1x1") {
         postData.resolutionwidth = 1024;
         postData.resolutionheight = 860;
       }

@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { interval, Subject, Subscription } from 'rxjs';
 
 interface CameraNode {
@@ -87,15 +87,25 @@ export class TreeComponent implements OnInit {
   analyticTypes$ = new Subject<any>();
   private statusIntervalSub?: Subscription;
   private destroy$ = new Subject<void>();
+  currentRoute: string = '';
 
   constructor(
     private http: HttpClient,
     private cookieService:CookieService,
     private router:Router
-  ) {}
+  ) {
+     this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.currentRoute = event.urlAfterRedirects;
+      }
+    });
+  }
+ 
+  @Input() hideTreeNodes: boolean = false;
 
   @Output() channelClickedEvent = new EventEmitter<any>();
   @Output() serverConfig = new EventEmitter<any>();
+  @Output() analyticsConfig = new EventEmitter<any>();
 
   ngOnInit(): void {
     // Initialize dropZones if needed
@@ -196,12 +206,12 @@ export class TreeComponent implements OnInit {
   buildJunctionTree(serverid:string) {
     const apiEndpoint = API_ENDPOINTS.LOCATION_TREE.replace('{serverid}', serverid);
     const headers = new HttpHeaders({
-    'Content-Type': 'application/json',
-    'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
-    'Authorization': `Bearer ${this.cookieService.get('authToken')}`
-  });
+      'Content-Type': 'application/json',
+      'Cookies': `JSESSIONID=${this.cookieService.get('vSessionId')}`,  // or your API expects 'X-Session-Token'
+      'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    });
     this.loading = true;
-    this.http.get<any>(apiEndpoint, {headers}).pipe(take(1)).subscribe({
+    this.http.get<any>(apiEndpoint, { headers }).pipe(take(1)).subscribe({
       next: response => {
         if (response.result) {
           let rawData = response.result;
@@ -435,7 +445,7 @@ export class TreeComponent implements OnInit {
             };
             this.analytictypes[index] = analytic;
           });
-
+          this.analyticsConfig.emit(this.rootconfig.analytictypes);
           // 🔊 Equivalent to $rootScope.$broadcast('analytictypes', ...)
           this.analyticTypes$.next(this.rootconfig.analytictypes);
           // console.log(this.rootconfig.analytictypes, this.analytictypes);
@@ -464,20 +474,19 @@ export class TreeComponent implements OnInit {
 
     this.http.get<any>(apiUrl, { headers }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (response) => {
-        console.log("response", response);
-        
+        // console.log("response", response);
         if (response?.result?.length > 0) {
           response.result.forEach((data: any) => {
-            console.log("resp",response.result);
+            // console.log("resp",response.result);
             
             const name = data.channelname || `Channel ${data.channelid}`;
-            console.log(`Channel: ${name}, Status: ${data.statustext}`);
+            // console.log(`Channel: ${name}, Status: ${data.statustext}`);
             this.updateTreeStatus(this.displayTree, data);
             this.updateTreeStatus(this.originalCameraTree, data);
           });
 
           // 🔊 Equivalent to `$rootScope.$broadcast('camerastatus', result)`
-          console.log('Camera Status Updated:', response.result);
+          // console.log('Camera Status Updated:', response.result);
         }
       },
       error: (error) => {

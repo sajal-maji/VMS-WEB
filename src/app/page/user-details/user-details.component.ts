@@ -1,15 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { debug } from 'console';
+import { TreeComponent } from '../tree/tree.component';
+import { HeaderComponent } from "../header/header.component";
+import { API_ENDPOINTS } from '../../config/api-endpoints';
+import { CookieService } from 'ngx-cookie-service';
+import { take } from 'rxjs';
+import * as CryptoJS from 'crypto-js';
+import { FooterComponent } from "../footer/footer.component"; 
 
 @Component({
   selector: 'app-user-details',
   standalone: true,
-  imports: [ReactiveFormsModule,CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, TreeComponent, HeaderComponent, FooterComponent],
   templateUrl: './user-details.component.html',
   styleUrls: ['./user-details.component.css']
 })
@@ -22,6 +29,7 @@ export class UserDetailsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
+    private cookies:CookieService,
     private http: HttpClient,
     private router: Router
   ) {}
@@ -54,9 +62,10 @@ export class UserDetailsComponent implements OnInit {
     };
 
     this.userForm = this.fb.group({
+      userid: ['', ],
       fullname: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      mobile: ['', Validators.required,Validators.pattern(/^[0-9]{10}$/)],
+      mobile: ['',Validators.pattern(/^[0-9]{10}$/)],
       securityquestion1: [this.model.securityquestion1, Validators.required],
       securityanswer1: ['',],
       securityquestion2: [this.model.securityquestion2, Validators.required],
@@ -79,68 +88,28 @@ export class UserDetailsComponent implements OnInit {
   }
 
   validateForm(): boolean {
-    // if (this.userForm.invalid) {
-    //   this.errorMessage = 'Please fill all required fields!';
-    //   return false;
-    // }
+    if (this.userForm.invalid) {
+      this.errorMessage = 'Please fill all required fields!';
+      return false;
+    }
     return true;
   }
 
-  save(): void {
-    this.errorMessage = undefined;
-    debugger
-    if (!this.userForm.valid) {
-      return;
-    }
-
-    const user = this.userForm.value;
-
-    // Sanitize inputs
-    Object.keys(user).forEach(key => {
-      user[key] = this.sanitizeInput(user[key]);
-    });
-
-    // Map security questions
-    user.securityquestion1 = this.model.securityQuestionSet_1.find(
-      (q: any) => q.id === user.securityquestion1
-    )?.name;
-    user.securityquestion2 = this.model.securityQuestionSet_2.find(
-      (q: any) => q.id === user.securityquestion2
-    )?.name;
-
-    // Hash security answers if not masked
-    // if (user.securityanswer1 !== '**********') {
-    //   user.securityanswer1 = CryptoJS.SHA512(user.securityanswer1).toString();
-    // }
-    // if (user.securityanswer2 !== '**********') {
-    //   user.securityanswer2 = CryptoJS.SHA512(user.securityanswer2).toString();
-    // }
-
-    this.http.post('proxy', {
-      method: 'POST',
-      url: this.getAPIUrl('updateUser'),
-      payload: JSON.stringify(user)
-    }).subscribe({
-      next: () => {
-        alert('User Details Successfully Updated!');
-        location.reload();
-      },
-      error: (err) => {
-        if (err.status === 401) {
-          this.router.navigate(['ivmsweb/login']);
-        } else {
-          alert(err.error?.message || 'An error occurred!');
-        }
-      }
-    });
+  OnLoad(event: any){
+    console.log("Hi events",event);
   }
 
   loadData(): void {
-    this.http.post('proxy', {
-      method: 'GET',
-      url: this.getAPIUrl('getUserbySession')
-    }).subscribe({
+    const url = API_ENDPOINTS.USER_SESSION;
+    this.http.get<any>(url, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }), 
+    }).pipe(take(1)).subscribe({
       next: (res: any) => {
+        console.log(res.result)
         if (res?.result?.length > 0) {
           const user = res.result[0];
           this.userForm.patchValue(user);
@@ -172,12 +141,75 @@ export class UserDetailsComponent implements OnInit {
       if (q2) this.userForm.patchValue({ securityquestion2: q2.id });
     }
 
-    // if (user.securityanswer1) this.userForm.patchValue({ securityanswer1: '**********' });
-    // if (user.securityanswer2) this.userForm.patchValue({ securityanswer2: '**********' });
+    if (user.securityanswer1) {
+      console.log(user.securityanswer1);
+      this.userForm.patchValue({ securityanswer1: '**********' });
+    }
+    if (user.securityanswer2) {
+      console.log(user.securityanswer1);
+      this.userForm.patchValue({ securityanswer2: '**********' });
+    }
   }
 
-  getAPIUrl(endpoint: string): string {
-    // Replace with your actual base URL builder logic
-    return `/api/${endpoint}`;
+  save(): void {
+    this.errorMessage = undefined;
+    // debugger
+    if (!this.userForm.valid) {
+      return;
+    }
+
+    const user = this.userForm.value;
+    console.log("user", user);
+    
+
+    // Sanitize inputs
+    Object.keys(user).forEach(key => {
+      user[key] = this.sanitizeInput(user[key]);
+    });
+
+    // Map security questions
+    user.securityquestion1 = this.model.securityQuestionSet_1.find(
+      (q: any) => q.id === Number(user.securityquestion1)
+    )?.name;
+    user.securityquestion2 = this.model.securityQuestionSet_2.find(
+      (q: any) => q.id === Number(user.securityquestion2)
+    )?.name;
+
+    console.log(user.securityquestion1, user.securityquestion2)
+
+    // Hash security answers if not masked
+    if (user.securityanswer1 !== '**********') {
+      user.securityanswer1 = CryptoJS.SHA512(user.securityanswer1).toString();
+    }
+    if (user.securityanswer2 !== '**********') {
+      user.securityanswer2 = CryptoJS.SHA512(user.securityanswer2).toString();
+    }
+
+    const url = API_ENDPOINTS.UPDATE_USER;
+    const payload = JSON.stringify(user);
+    this.http.post<any>(url, user, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }),
+    }).subscribe({
+      next: () => {
+        alert('User Details Successfully Updated!');
+        location.reload();
+      },
+      error: (err) => {
+        if (err.status === 401) {
+          this.router.navigate(['ivmsweb/login']);
+        } else {
+          alert(err.error?.message || 'An error occurred!');
+        }
+      }
+    });
   }
+
+  // getAPIUrl(endpoint: string): string {
+  //   // Replace with your actual base URL builder logic
+  //   return `/api/${endpoint}`;
+  // }
 }

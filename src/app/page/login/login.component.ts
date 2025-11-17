@@ -3,11 +3,12 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
-import * as CryptoJS from 'crypto-js'; 
+import * as CryptoJS from 'crypto-js';
+import { FooterComponent } from "../footer/footer.component"; 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, FooterComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'] // keep your CSS
 })
@@ -53,7 +54,7 @@ export class LoginComponent implements OnInit {
     const hash = window.location.hash;
     const successtoInput = document.querySelector<HTMLInputElement>('input[name="successto"]');
     const failtoInput = document.querySelector<HTMLInputElement>('input[name="failto"]');
-    if (successtoInput) successtoInput.value = '/ivmsweb/live_matrix' + hash;
+    if (successtoInput) successtoInput.value = '/ivmsweb/live-matrix' + hash;
     if (failtoInput) failtoInput.value = '/ivmsweb' + hash;
   }
 

@@ -1,23 +1,29 @@
-/* -------------------------
-   ORIGINAL OneXOneComponent
-   (kept exactly as you provided)
-   ------------------------- */
-
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, Renderer2, ViewChildren, computed, effect, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, computed, ElementRef, inject, OnDestroy, OnInit, QueryList, Renderer2, ViewChildren } from '@angular/core';
+import { TreeComponent } from "../tree/tree.component";
+import { HeaderComponent } from "../header/header.component";
+import { LayoutService } from '../live-matrix/layout.service';
+import { interval, Subscription, take, timer } from 'rxjs';
+import { StreamingService } from '../../store/service/commonService/streaming.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { VideoStreamService } from '../../store/service/video-stream.service';
+import { CookieService } from 'ngx-cookie-service';
+import Hls from 'hls.js';
+import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
-import { interval, Subscription, timer } from 'rxjs';
-import Hls from 'hls.js';
-import { StreamingService } from '../../../store/service/commonService/streaming.service';
-import { VideoStreamService } from '../../../store/service/video-stream.service';
+import { RouterLink } from '@angular/router';
+import { FooterComponent } from "../footer/footer.component";
+
 type Player = {
+  motionclips: never[];
+  barclips: never[];
+  webrtcURL: string;
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
   speaker_txt?: string;
   isSpeakerOn?: any;
   elem_id: string;
+  disable_controls: boolean;
   waitinggolla_id?: string;
   controls_id?: string;
   channelId: number;
@@ -36,6 +42,7 @@ type Player = {
   streamingParameters?: any;
   videoInfoIntervalSub?: Subscription | null;
   streamType?: number;
+  date?: number;
 };
 
 const liveHlsJsConfig = {
@@ -44,13 +51,17 @@ const liveHlsJsConfig = {
 };
 
 @Component({
-  selector: 'one-x-one',
+  selector: 'app-archive',
   standalone: true,
-  imports: [CommonModule, FormsModule,RouterLink],
-  templateUrl: './one-x-one.component.html',
-  styleUrls: ['./one-x-one.component.css']
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, RouterLink, FooterComponent],
+  templateUrl: './archive.component.html',
+  styleUrl: './archive.component.css'
 })
-export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy  {
+
+
+  private readonly layout = inject(LayoutService);
+  readonly selectedLayout = computed(() => this.layout.selectedLayout());
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
 
   players: Player[] = [];
@@ -59,7 +70,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
   currentPlayer: any = {};
   allPresets: any[] = [];
   vSessionId = ''; // if you used vsessionid in original
-  serverConfiguration: any = null;
+  serverConfiguration: any = {};
   rootconfig: any = {}; // replace or inject as needed
   sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = { matrix: '2x2', channels: [], matrixUrl: '' };
   currentTime = '';
@@ -69,21 +80,61 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   matrixItems: any[] = []; // fix: used in *ngFor
   model: any = { error: '' };
+
+   speedDisplay: number = 1;
+  updateSpeedMultiplier: number = 1;
+  selectedSpeed: number = 1000;
+
+  isFastBackwardClicked: boolean = false;
+  isFastForwardClicked: boolean = false;
+  isPlayPauseClicked: boolean = false;
+  isFrameByFrameBackwardClicked: boolean = false;
+  isFrameByFrameForwardClicked: boolean = false;
+
+  counter: number = 0;
+  archivestarted: boolean = false;
+  endtimestamp: number = 0;
+
+  // Placeholder timers
+  countInterval: any;
+  progressInterval: any;
+  isDropdownOpen: boolean = false;
+  selectedDate: number = Date.now();
+  selectedDateStr: string = new Date().toISOString().split('T')[0];
+  isLoading: boolean = false;
+  barsection: any = {}; 
+
   constructor(
     private renderer: Renderer2,
     private streamSvc: StreamingService,
     private http: HttpClient,
-    private videoneticsRTC: VideoStreamService
+    private videoneticsRTC: VideoStreamService,
+    private cookies:CookieService,
+    public layoutService: LayoutService,
   ) {} 
 
   ngOnInit(): void {
-    this.initPlayers(25);
+    if(this.layoutService.selectedLayout()==='1x1'){
+      this.initPlayers(1);
+    }else if(this.layoutService.selectedLayout()==='2x2'){
+      this.initPlayers(4);
+
+    }
+    else if(this.layoutService.selectedLayout()==='3x3'){
+      this.initPlayers(9);
+
+    }
+    else if(this.layoutService.selectedLayout()==='4x4'){
+      this.initPlayers(24);
+
+    }
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
     this.subscriptions.push(t);
-
+    console.log("players", this.players);
+    
     // start keepalive behavior for live sessions (if required)
-    this.liveKeepAlive();
+    // this.liveKeepAlive();
   }
 
   ngAfterViewInit(): void {
@@ -111,6 +162,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
         elem_id: `video${i}`,
         waitinggolla_id: `golla${i}`,
         controls_id: `controls${i}`,
+        disable_controls: false,
         channelId: -1,
         channelName: i.toString().padStart(2, '0'),
         sessionId: 0,
@@ -121,10 +173,33 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
         webrtc: undefined,
         hlsPlayer: undefined,
         streamType: -1,
-        videoInfoIntervalSub: null
+        videoInfoIntervalSub: null,
+        date: this.selectedDate,
+        motionclips: [],
+        barclips: [],
+        webrtcURL: ''
       });
     }
   }
+  onDateChange(event: Event, index: number): void {
+    const input = event.target as HTMLInputElement;
+    if (input?.value) {
+      this.selectedDate = new Date(input.value).getTime(); // convert to epoch
+      this.players.forEach(p => p.date = this.selectedDate);
+      console.log("Updated epoch:", this.selectedDate, input.value);
+      // Update all players
+      this.players.forEach(p => (p.date = this.selectedDate));
+      this.startPlaying(index);
+    }
+  }
+
+  convertEpochToDateString(epoch: number): string {
+    return new Date(epoch).toISOString().split('T')[0];
+  }
+
+  toggleDropDown(): void {
+  this.isDropdownOpen = !this.isDropdownOpen;
+}
 
   /* ============================
      HLS playback utilities
@@ -165,7 +240,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
     player.hlsURL = hlsUrl;
     player.isplaying = true;
-    this.manageVideoInfoInterval(index);
+    // this.manageVideoInfoInterval(index);
   }
 
   private stopHls(index: number) {
@@ -197,13 +272,13 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
      Encoded (MJPEG) handling
      ============================ */
 
-  startEncodedLive(index: number) {
+  startEncodedArchive(index: number) {
     if (index < 0) return;
     const player = this.players[index];
     // build endpoint like your original: encodedStartlive + channel + '/200/100/0'
     const apiEndpoint = this.getApiEndpointEncodedStart(player.channelId);
 
-    this.streamSvc.startEncodedLive(apiEndpoint).subscribe({
+    this.streamSvc.startEncodedArchive(apiEndpoint).subscribe({
       next: (response: any) => {
         const result = response?.result?.[0];
         if (!result) return;
@@ -215,7 +290,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
         this.requestFrames(index);
       },
       error: (err:any) => {
-        console.error('startEncodedLive error', err);
+        console.error('startEncodedArchive error', err);
         if (err?.data?.code === 3037) {
           const vid = this.getVideoElement(index);
           if (vid) vid.setAttribute('poster', '/images/restricted_view_image.jpg');
@@ -224,13 +299,13 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  stopEncodedLive(index: number) {
+  stopEncodedArchive(index: number) {
     if (index < 0) return;
     const player = this.players[index];
     if (!player.mjpeg_sessionId) return;
     const apiEndpoint = this.getApiEndpointEncodedStop(player.mjpeg_sessionId);
 
-    this.streamSvc.stopEncodedLive(apiEndpoint).subscribe({
+    this.streamSvc.stopEncodedArchive(apiEndpoint).subscribe({
       next: () => {
         // stop polling and reset
         if (player.sessionId === 0) player.isplaying = false;
@@ -273,7 +348,14 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
   }
+  // setLayout(size: number) {
+  //     this.gridSize = size;
+  //   }
 
+    get gridTemplate() {
+      // Example: 2x2 -> "repeat(2, 1fr)"
+      return `repeat(${2}, 1fr)`;
+    }
   loadSnap(blobData: Blob | null, index: number) {
     if (!blobData) {
       setTimeout(() => this.requestFrames(index), 500);
@@ -321,7 +403,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
         // When args present, reattach previously detached HLS to the player slot
         if (args) {
           // stop encoded for ptz index
-          this.stopEncodedLive(this.ptzindex);
+          this.stopEncodedArchive(this.ptzindex);
 
           // attach hls from currentPlayer to actual slot
           const video = this.getVideoElement(this.ptzindex);
@@ -356,7 +438,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
         } else {
           // just stop encoded and remove ptz info
-          this.stopEncodedLive(this.ptzindex);
+          this.stopEncodedArchive(this.ptzindex);
           this.ptzindex = -1;
           this.currentPlayer = {};
           this.ptzplayer = {};
@@ -401,10 +483,25 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getVideoInfo(index: number) {
     const player = this.players[index];
+    console.log("channel", player.channelId);
+    
     if (player.channelId > -1 && player && player.streamType !== undefined && player.streamType > -1) {
-      const apiUrl = this.getApiEndpointStreamingParameter(player.channelId, player.streamType);
-      this.streamSvc.getStreamingParameters(apiUrl).subscribe({
-        next: (response: any) => player.streamingParameters = response?.result ?? null,
+      const apiUrl = API_ENDPOINTS.VIDEO_INFO
+      .replace('{serverid}', this.serverConfiguration.serverid)
+      .replace('{channelid}', player.channelId.toString())
+      .replace('{streamindex}', player.streamType.toString());
+      this.http.get<any>(apiUrl, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          'Authorization': `Bearer ${this.cookies.get('authToken')}`
+        }),
+      }).pipe(take(1)).subscribe({
+        next: (response: any) => {
+          console.log("response", response);
+          player.streamingParameters = response?.result ?? null;
+          console.log("streamingParameters", player.streamingParameters);
+        },
         error: (err:any) => {
           console.error('Error fetching streaming parameters', err);
           player.streamingParameters = null;
@@ -443,24 +540,165 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
      Misc: Play / Pause / Screenshot
      ============================ */
 
-  playPause(index: number) {
-    const player = this.players[index];
-    if (!player) return;
+  playPause(index: number): void {
+    this.isPlayPauseClicked = !this.isPlayPauseClicked;
+    const siteId = this.rootconfig?.siteid;
+    const channelId = this.players[index]?.channelId;
+    const starttimestamp = Math.abs(this.endtimestamp) + this.counter * 1000;
 
-    // if encoded mode, handle accordingly (left as TODO if you have special behavior)
-    if (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType === 'encoded') {
-      // encoded-specific play/pause if required
-      return;
-    }
+    this.players[index].isplaying = !this.players[index].isplaying;
+    const video = document.getElementById(this.players[index].elem_id) as HTMLVideoElement;
 
-    const video = this.getVideoElement(index);
-    if (!video) return;
-    if (player.isplaying) {
-      video.pause();
+    if (this.players[index].isplaying) {
+      this.archivestarted = false;
+      this.players[index].webrtc?.resumeWebRTC();
+      this.countStart();
+      this.archivestarted = true;
+      this.stop();
+      this.counter = 0;
+      this.countStart();
     } else {
-      video.play().catch(e => console.error(e));
+      this.players[index].webrtc?.pauseWebRTC();
+      this.stopUpdatingProgressBar();
     }
-    player.isplaying = !player.isplaying;
+
+    this.isFastBackwardClicked = false;
+    this.isFastForwardClicked = false;
+  }
+
+  /** ---------------------------
+   *  Change Playback Speed
+   * -------------------------- */
+  changeSpeed(speed: number): void {
+    this.updateSpeedMultiplier = speed;
+
+    if (speed === 0.125) {
+      this.selectedSpeed = 8000;
+      this.speedDisplay = -8;
+    } else if (speed === 0.25) {
+      this.selectedSpeed = 4000;
+      this.speedDisplay = -4;
+    } else if (speed === 0.5) {
+      this.selectedSpeed = 2000;
+      this.speedDisplay = -2;
+    } else if (speed === 1) {
+      this.selectedSpeed = 1000;
+      this.speedDisplay = 1;
+    } else if (speed === 2) {
+      this.selectedSpeed = 500;
+      this.speedDisplay = 2;
+    } else if (speed === 4) {
+      this.selectedSpeed = 250;
+      this.speedDisplay = 4;
+    } else if (speed === 8) {
+      this.selectedSpeed = 125;
+      this.speedDisplay = 8;
+    }
+
+    this.stop();
+    this.counter = 0;
+    this.countStart();
+
+    this.players.forEach((player, index) => {
+      if (player && player.webrtc) {
+        if (this.isFastBackwardClicked) {
+          player.webrtc.backwardWebRTC(this.updateSpeedMultiplier);
+          console.log(`Speed set to backward for player ${index} at multiplier ${this.updateSpeedMultiplier}`);
+        } else if (this.isFastForwardClicked) {
+          player.webrtc.forwardWebRTC(this.updateSpeedMultiplier);
+          console.log(`Speed set to forward for player ${index} at multiplier ${this.updateSpeedMultiplier}`);
+        } else if (this.isFrameByFrameBackwardClicked) {
+          player.webrtc.frameByFrameBackwardWebRTC();
+          console.log(`Frame-by-frame backward for player ${index}`);
+        } else if (this.isFrameByFrameForwardClicked) {
+          player.webrtc.frameByFrameForwardWebRTC();
+          console.log(`Frame-by-frame forward for player ${index}`);
+        } else {
+          player.webrtc.normalWebRTC(this.updateSpeedMultiplier);
+          console.log(`Speed set to normal for player ${index} at multiplier ${this.updateSpeedMultiplier}`);
+        }
+      }
+    });
+  }
+
+  /** ---------------------------
+   *  Fast Backward
+   * -------------------------- */
+  fastBackward(index: number): void {
+    const player = this.players[index];
+    if (this.isFastBackwardClicked) {
+      player.webrtc?.normalWebRTC(this.updateSpeedMultiplier);
+    } else {
+      player.webrtc?.backwardWebRTC(this.updateSpeedMultiplier);
+    }
+
+    this.resetPlaybackFlags();
+  }
+
+  /** ---------------------------
+   *  Fast Forward
+   * -------------------------- */
+  fastForward(index: number): void {
+    const player = this.players[index];
+    if (this.isFastForwardClicked) {
+      player.webrtc?.normalWebRTC(this.updateSpeedMultiplier);
+    } else {
+      player.webrtc?.forwardWebRTC(this.updateSpeedMultiplier);
+    }
+
+    this.resetPlaybackFlags();
+  }
+
+  /** ---------------------------
+   *  Frame-by-Frame Backward
+   * -------------------------- */
+  frameByFrameBackward(index: number): void {
+    const player = this.players[index];
+    if (this.isFrameByFrameBackwardClicked) {
+      player.webrtc?.normalWebRTC(this.updateSpeedMultiplier);
+    } else {
+      player.webrtc?.frameByFrameBackwardWebRTC();
+    }
+
+    this.resetPlaybackFlags();
+  }
+
+  /** ---------------------------
+   *  Frame-by-Frame Forward
+   * -------------------------- */
+  frameByFrameForward(index: number): void {
+    const player = this.players[index];
+    if (this.isFrameByFrameForwardClicked) {
+      player.webrtc?.normalWebRTC(this.updateSpeedMultiplier);
+    } else {
+      player.webrtc?.frameByFrameForwardWebRTC();
+    }
+
+    this.resetPlaybackFlags();
+  }
+
+  /** ---------------------------
+   *  Helper Functions
+   * -------------------------- */
+  countStart(): void {
+    this.countInterval = setInterval(() => {
+      this.counter++;
+    }, 1000);
+  }
+
+  stop(): void {
+    clearInterval(this.countInterval);
+  }
+
+  stopUpdatingProgressBar(): void {
+    clearInterval(this.progressInterval);
+  }
+
+  resetPlaybackFlags(): void {
+    this.isFastBackwardClicked = false;
+    this.isFastForwardClicked = false;
+    this.isFrameByFrameBackwardClicked = false;
+    this.isFrameByFrameForwardClicked = false;
   }
 
   screenshot(index: number) {
@@ -600,17 +838,23 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
     // if encoded/videonetics encoded path:
     if (
       (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration?.videoneticsStreamType === 'encoded') &&
-      (window.location.pathname !== '/live-matrix/4x4' && window.location.pathname !== '/live-matrix/5x5')
+      (window.location.pathname !== '/live_matrix/4x4' && window.location.pathname !== '/live_matrix/5x5')
     ) {
       // call encoded stop
-      this.stopEncodedLive(index);
+      this.stopEncodedArchive(index);
       return;
     }
 
     // normal HLS stop: call API stoplive with streamsessionid
     const postData = { streamsessionid: player.sessionId };
-    const apiEndpoint = this.getApiEndpointStopLive(); // build like your AngularJS helper
-    this.streamSvc.stopLive(apiEndpoint, postData).subscribe({
+    const apiEndpoint = API_ENDPOINTS.HLS_STOP_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+    this.http.post<any>(apiEndpoint, postData, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }),
+    }).subscribe({
       next: () => {
         player.sessionId = 0;
         const vid = this.getVideoElement(index);
@@ -676,20 +920,65 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
      Keep Alive for sessions
      ============================ */
 
+  // liveKeepAlive() {
+  //   // interval to ping keepalive API for sessionid > 0
+  //   this.keepAliveSub = interval(30_000).subscribe(() => {
+  //     this.players.forEach((player, idx) => {
+  //       if (player.channelId > -1 && player.sessionId > 0) {
+  //         const apiUrl = this.getApiEndpointKeepAlive();
+  //         const payload = { streamsessionid: player.sessionId, channelid: player.channelId };
+  //         this.streamSvc.proxyRequest('POST', apiUrl, payload).subscribe({
+  //           next: () => {},
+  //           error: (err:any) => {
+  //             if (err?.status !== 401 && err?.error?.code !== 3113) {
+  //               player.error = err?.error?.message ?? player.error;
+  //               if (err?.error?.code === 3551) {
+  //                 // session expired/closed by server
+  //                 player.channelId = -1;
+  //                 player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
+  //                 player.hlsURL = '';
+  //                 player.sessionId = 0;
+  //                 player.status = undefined;
+  //                 player.ptz_control = false;
+  //                 player.isplaying = false;
+  //                 if (player.hlsPlayer) { try { player.hlsPlayer.destroy(); } catch (e) {} player.hlsPlayer = undefined; }
+  //               }
+  //             } else {
+  //               console.error('Invalid session');
+  //             }
+  //           }
+  //         });
+  //       }
+  //     });
+  //   });
+  // }
   liveKeepAlive() {
-    // interval to ping keepalive API for sessionid > 0
+    // Ping every 30 seconds
     this.keepAliveSub = interval(30_000).subscribe(() => {
       this.players.forEach((player, idx) => {
         if (player.channelId > -1 && player.sessionId > 0) {
-          const apiUrl = this.getApiEndpointKeepAlive();
-          const payload = { streamsessionid: player.sessionId, channelid: player.channelId };
-          this.streamSvc.proxyRequest('POST', apiUrl, payload).subscribe({
-            next: () => {},
-            error: (err:any) => {
+          const apiUrl = API_ENDPOINTS.KEEP_ALIVE_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+          const payload = {
+            streamsessionid: player.sessionId,
+            channelid: player.channelId
+          };
+
+          this.http.post<any>(apiUrl, payload, {
+            headers: new HttpHeaders({
+              'Content-Type': 'application/json',
+              'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+              'Authorization': `Bearer ${this.cookies.get('authToken')}`
+            }),
+          }).subscribe({
+            next: (res: any) => {
+              // API success — you can log or handle response if needed
+              console.log(`Keepalive success for channel ${player.channelId}`);
+            },
+            error: (err: any) => {
               if (err?.status !== 401 && err?.error?.code !== 3113) {
                 player.error = err?.error?.message ?? player.error;
                 if (err?.error?.code === 3551) {
-                  // session expired/closed by server
+                  // Session expired/closed by server
                   player.channelId = -1;
                   player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
                   player.hlsURL = '';
@@ -697,7 +986,10 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
                   player.status = undefined;
                   player.ptz_control = false;
                   player.isplaying = false;
-                  if (player.hlsPlayer) { try { player.hlsPlayer.destroy(); } catch (e) {} player.hlsPlayer = undefined; }
+                  if (player.hlsPlayer) {
+                    try { player.hlsPlayer.destroy(); } catch (e) {}
+                    player.hlsPlayer = undefined;
+                  }
                 }
               } else {
                 console.error('Invalid session');
@@ -716,10 +1008,10 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
   getNodeName(nodeName: string): string {
     let max = 11;
     const path = window.location.pathname;
-    if (path === '/live-matrix/2x2') max = 20;
-    else if (path === '/live-matrix/3x3') max = 15;
-    else if (path === '/live-matrix/4x4') max = 7;
-    else if (path === '/live-matrix/5x5') max = 7;
+    if (path === '/live_matrix/2x2') max = 20;
+    else if (path === '/live_matrix/3x3') max = 15;
+    else if (path === '/live_matrix/4x4') max = 7;
+    else if (path === '/live_matrix/5x5') max = 7;
     nodeName = String(nodeName || '');
     return nodeName.length <= max ? nodeName : nodeName.substr(0, max - 2) + '..';
   }
@@ -732,10 +1024,10 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
   private getApiEndpointEncodedStart(channelId: number) {
     // return final string for encodedStartlive + channel/size/audio params
     // Replace with your actual endpoint builder
-    return `/V1/REST/${this.rootconfig.serverid}/encoded/startlive/${channelId}/200/100/0`;
+    return `/V1/REST/${this.rootconfig.serverid}/encoded/startArchive/${channelId}/200/100/0`;
   }
   private getApiEndpointEncodedStop(mjpegSessionId: number) {
-    return `/V1/REST/${this.rootconfig.serverid}/encoded/stoplive/${mjpegSessionId}`;
+    return `/V1/REST/${this.rootconfig.serverid}/encoded/startArchive/${mjpegSessionId}`;
   }
   private getApiEndpointPtz(channelId: number, command: string) {
     // original: getAPIEndpoint("ptzcontrol") + players[ptzindex].channelId + "/" + command + "/" + 5
@@ -747,15 +1039,6 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
   private getApiEndpointGoToPreset() {
     return this.getApiEndpoint('gotopreset').replace('{0}', this.rootconfig.serverid);
   }
-  private getApiEndpointStreamingParameter(channelId: number, streamType: number) {
-    return `${this.getApiEndpoint('getstreamingparameter')}/${channelId}/${streamType}`;
-  }
-  private getApiEndpointStopLive() {
-    return this.getApiEndpoint('stoplive').replace('{0}', this.rootconfig.serverid);
-  }
-  private getApiEndpointKeepAlive() {
-    return this.getApiEndpoint('keepalivelive').replace('{0}', this.rootconfig.serverid);
-  }
 
   // placeholder for constructing endpoints exactly like your old helpers
   private getApiEndpoint(name: string): string {
@@ -766,9 +1049,8 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
       'gotopreset': '/api/gotopreset/{0}',
       'getstreamingparameter': '/api/getstreamingparameter',
       'stoplive': '/api/stoplive/{0}',
-      'keepalivelive': '/api/keepalivelive/{0}',
-      'encodedStartlive': '/api/encoded/startlive/',
-      'encodedStoplive': '/api/encoded/stoplive/'
+      'encodedStartarchive': '/api/encoded/startarchive/',
+      'encodedStoparchive': '/api/encoded/stoparchive/'
     };
     return endpoints[name] || `/${name}`;
   }
@@ -800,7 +1082,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     // if (matrixItem) {
-    //   this.router.navigate(['/live-matrix', matrixItem.label]);
+    //   this.router.navigate(['/live_matrix', matrixItem.label]);
     //   this.generateCameraDraggable();
     // }
   }
@@ -847,27 +1129,6 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       console.error('No video is currently playing or player is not ready. Speaker cannot be toggled.');
-    }
-  }
-
-  // ✅ toggleMicrophone
-  toggleMicrophone(index: number): void {
-    const player = this.players[index];
-    if (player && player.status === 0) {
-      const video = document.getElementById(player.elem_id) as HTMLVideoElement;
-      if (!video) return;
-
-      if (player.isMicrophoneOn) {
-        video.volume = 0;
-        player.isMicrophoneOn = false;
-        player.microphone_txt = 'Microphone is off';
-      } else {
-        video.volume = 1;
-        player.isMicrophoneOn = true;
-        player.microphone_txt = 'Microphone is on';
-      }
-    } else {
-      console.error('No video is currently playing or player is not ready. Microphone cannot be toggled.');
     }
   }
 
@@ -996,13 +1257,13 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
     // keep the handler exact to preserve logic and comments
     const handler = (channelToPlay: any) => {
 
-      if (this.getLocationPath() == "/live-matrix/2x2") {
+      if (this.getLocationPath() == "/live_matrix/2x2") {
         this.limit = 4;
-      } else if (this.getLocationPath() == "/live-matrix/3x3") {
+      } else if (this.getLocationPath() == "/live_matrix/3x3") {
         this.limit = 9;
-      } else if (this.getLocationPath() == "/live-matrix/4x4") {
+      } else if (this.getLocationPath() == "/live_matrix/4x4") {
         this.limit = 16;
-      } else if (this.getLocationPath() == "/live-matrix/5x5") {
+      } else if (this.getLocationPath() == "/live_matrix/5x5") {
         this.limit = 25;
       }
 
@@ -1054,7 +1315,7 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Append the original channelClicked logic (converted) — preserved comments and flow
   channelClicked(channelToPlay: any, fromMatrixUrl?: any) {
-
+    console.log("channelToPlay",channelToPlay);
     if (channelToPlay?.index) {
       // Click Action
       var alreadyPlayingIndex = -1; var availableIndex = -1;
@@ -1069,17 +1330,20 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       if (alreadyPlayingIndex < 0 && availableIndex > -1) {
-
+        console.log("channelToPlay",channelToPlay);
         this.players[availableIndex]["channelId"] = channelToPlay.id;
         this.players[availableIndex]["channelName"] = channelToPlay.name;
         if (channelToPlay.configurationType && channelToPlay.configurationType == "1") {
           this.players[availableIndex]["ptz_control"] = true;
         }
+        this.players = [...this.players];
+        console.log("Updated Player:", this.players[availableIndex]);
 
         this.players[availableIndex]["status"] = channelToPlay.status;
 
         this.count++;
         this.startPlaying(availableIndex);
+        // this.liveKeepAlive();
 
         this.setVideoMatrixUrlChannels(availableIndex, channelToPlay.id.toString());
 
@@ -1108,19 +1372,22 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       // Drag Action
+      console.log("channelToPlay", channelToPlay);
+      // this.getVideoInfo(channelToPlay.id);
       let availableIdx = channelToPlay.index - 1;
       if (availableIdx < 0) { availableIdx = 0; }
       // loop all and find if already playing
       var alreadyPlayingIndex = -1;
       this.players.forEach((player, innerIndex) => {
-        if (player.channelId === channelToPlay.channelId) {
+        if (player.channelId === channelToPlay.id) {
           alreadyPlayingIndex = innerIndex;
         }
+        // console.log('innerindex', innerIndex,alreadyPlayingIndex);
       });
 
       if (alreadyPlayingIndex < 0 && this.players[availableIdx]["channelId"] <= -1 && this.players[availableIdx]["sessionId"] <= 0) {
-        this.players[availableIdx]["channelId"] = channelToPlay.channelId;
-        this.players[availableIdx]["channelName"] = channelToPlay.channelName;
+        this.players[availableIdx]["channelId"] = channelToPlay.id;
+        this.players[availableIdx]["channelName"] = channelToPlay.name;
         if ((channelToPlay.configurationType) && channelToPlay.configurationType == "1") {
           this.players[availableIdx]["ptz_control"] = true;
         }
@@ -1133,8 +1400,9 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.count++;
         this.startPlaying(availableIdx);
+        // this.getVideoInfo(channelToPlay.id);
 
-        this.setVideoMatrixUrlChannels(availableIdx, channelToPlay.channelId.toString());
+        this.setVideoMatrixUrlChannels(availableIdx, channelToPlay.id.toString());
       }
     }
   }
@@ -1205,215 +1473,395 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
      We'll create a wrapper similar to the original which picks encoded vs HLS vs WebRTC paths
      ============================ */
 
-  startPlaying(index: number) {
 
-    if (this.getLocationPath() != "/live-matrix/4x4" && this.getLocationPath() != "/live-matrix/5x5" && (this.serverConfiguration) &&
-      this.serverConfiguration.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType == "encoded") {
+  OnClick(event: any) {
+  const availableIndex = this.players.findIndex(p => p.channelId === -1);
+  const channelToPlay = {
+    id: event.id.toString(),
+    name: event.name,
+    configurationType: event.configurationType,
+    status: event.status,
+    index: availableIndex !== -1 ? availableIndex : 0
+  };
 
-      /** Encoded */
-      this.startEncodedLive(index);
+  console.log("Clicked Event:", channelToPlay);
+  this.channelClicked(channelToPlay);
+}
 
-    } else {
-      /*var postData = { "resolutionwidth": 800, "resolutionheight": 700, "withaudio": false };*/
-
-      const elem = document.getElementById(this.players[index]["elem_id"]);
-      let width = elem ? (elem as HTMLElement).offsetWidth : 0;
-      let height = elem ? (elem as HTMLElement).offsetHeight : 0;
-
-      if (width <= 0) {
-        width = 200;
-      }
-
-      if (height <= 0) {
-        height = 100;
-      }
-
-      var postData: any = {
-        "channelid": this.players[index]["channelId"],
-        "resolutionwidth": width,
-        "resolutionheight": height,
-        "withaudio": false
-      };
-
-      if (this.getLocationPath() == "/live-matrix/1x1") {
-        postData.resolutionwidth = 1024;
-        postData.resolutionheight = 860;
-      }
-      this.players[index]["error"] = "Waiting for video ....";
-      const waitinggollaId = this.players[index]['waitinggolla_id'];
-      const waitingElem = waitinggollaId ? document.getElementById(waitinggollaId) : null;
-      if (waitingElem) waitingElem.style.display = 'block';
-      if (waitingElem) waitingElem.style.display = 'block';
-
-      // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
-      if (this.serverConfiguration &&
-        this.serverConfiguration.streamingMode == (this.rootconfig?.WEBRTC_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
-        /** WebRTC */
-        // Make proxy POST similar to original $http.post to "proxy" with payload holding the actual REST call
-        this.proxyRequestPost(this.getApiEndpoint("startwebrtclive"), postData).then((response: any) => {
-          this.players[index]["error"] = "";
-          if (waitingElem) waitingElem.style.display = 'none';
-
-          this.players[index]["sessionId"] = new Date().getTime();
-
-          if (this.players[index]["channelId"] > -1) {
-
-            var streamingResponse = response?.result?.[0];
-            this.players[index]["streamType"] = streamingResponse.streamType;
-            var videoElement = this.getVideoElement(index);
-            var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-            // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
-            // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
-            
-            var webrtc = new (window as any).VideoneticsRTC(webrtcURL, videoElement);
-            
-
-            try {
-              this.players[index]["webrtc"] = webrtc;
-              this.players[index]["webrtc"].start(streamingResponse.serverId, streamingResponse.channelId,
-                streamingResponse.startTimestamp);
-              console.log("streamingResponse",streamingResponse, streamingResponse.startTimestamp);
-            } catch (error) {
-
-              console.log("WebRTC playing, error: ", error);
-
-              var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-              var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
-              this.players[index]["webrtc"] = webrtc;
-              if (this.players[index]["webrtc"].onconnect) this.players[index]["webrtc"].onconnect();
-            }
-            this.players[index]["isplaying"] = true;
-
-          } else {
-            this.count--;
-            this.stopPlaying(index);
-
-            this.players[index]["sessionId"] = 0;
-          }
-        }).catch((response: any) => {
-          if (waitingElem) waitingElem.style.display = 'none';
-
-          this.players[index]["webrtc"] = undefined;
-          this.players[index]["sessionId"] = 0;
-          this.players[index]["mjpeg_sessionId"] = 0;
-
-          if (response && response.data && response.data["code"] == 3037) {
-            const ele = document.getElementById(this.players[index]["elem_id"]);
-            if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-          }
-
-          if (response.status != 401 && response.data["code"] != 3113) {
-            if (this.players[index]["channelId"] > -1) {
-              this.count--;
-              this.players[index]["error"] = response.data.message;
-              this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
-              this.players[index]["channelId"] = -1;
-              this.players[index]["recoverDecodingErrorDate"] = null;
-              this.players[index]["recoverSwapAudioCodecDate"] = null;
-              this.players[index]["ptz_control"] = false;
-              this.players[index]["status"] = undefined;
-              this.players[index]["isplaying"] = false;
-
-              setTimeout(() => {
-                this.players[index]["error"] = "";
-
-                const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
-
-              }, 5 * 1000);
-            }
-
-          } else {
-            // emulate invalid session
-            console.error('Invalid session');
-          }
-        });
-
-      } else {
-
-        /** HLS */
-        this.proxyRequestPost(this.getApiEndpoint("startlive"), postData).then((response: any) => {
-          this.players[index]["error"] = "";
-          if (waitingElem) waitingElem.style.display = 'none';
-          this.players[index]["streamType"] = response?.result?.[0]?.streamType;
-
-          this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
-
-          if (this.players[index]["channelId"] > -1) {
-            this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
-            this.players[index]["isplaying"] = true;
-
-            if ((Hls as any).isSupported && (Hls as any).isSupported()) {
-
-              var video = this.getVideoElement(index);
-              this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
-
-              setTimeout(() => {
-                if (this.players[index]["channelId"] > -1) {
-                  // $scope.players[index]["hlsPlayer"].loadSource($scope.players[index]["hlsURL"]);
-                  try {
-                    (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
-                    (this.players[index]["hlsPlayer"] as any).attachMedia(video);
-                    video?.play().catch(() => {});
-                  } catch (e) {
-                    console.error('HLS attach/play error', e);
-                  }
-                }
-              }, 2000);
-
-              // onEventsMediaAttached/onEventsMediaDetached/onEventsError etc. can be implemented as needed
-            } else {
-              this.players[index]["error"] = "HLS video is not supported in your browser!";
-            }
-          } else {
-            this.count--;
-            this.stopPlaying(index);
-
-            this.players[index]["sessionId"] = 0;
-          }
-        }).catch((response: any) => {
-          if (waitingElem) waitingElem.style.display = 'none';
-
-          this.players[index]["hlsURL"] = "";
-          this.players[index]["sessionId"] = 0;
-          this.players[index]["mjpeg_sessionId"] = 0;
-
-          if (response && response.data && response.data["code"] == 3037) {
-
-            const ele = document.getElementById(this.players[index]["elem_id"]);
-            if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-          }
-
-          if (response.status != 401 && response.data["code"] != 3113) {
-            if (this.players[index]["channelId"] > -1) {
-              this.count--;
-              this.players[index]["error"] = response.data.message;
-              this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
-              this.players[index]["channelId"] = -1;
-              this.players[index]["recoverDecodingErrorDate"] = null;
-              this.players[index]["recoverSwapAudioCodecDate"] = null;
-              this.players[index]["ptz_control"] = false;
-              this.players[index]["status"] = undefined;
-              this.players[index]["isplaying"] = false;
-              if ((this.players[index]["hlsPlayer"])) { try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch(e) {} }
-
-              setTimeout(() => {
-                this.players[index]["error"] = "";
-
-                const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
-
-              }, 5 * 1000);
-            }
-
-          } else {
-            // invalid session
-            console.error('Invalid session');
-          }
-        });
-      }
-    }
+  OnLoad(event: any) {
+    // console.log(event);
+    this.serverConfiguration = event;
+    console.log("server config",this.serverConfiguration);
   }
+
+
+  // startPlaying(index: number) {
+
+  //   if (this.getLocationPath() != "/archive-matrix/4x4" && this.getLocationPath() != "/archive-matrix/5x5" && (this.serverConfiguration) &&
+  //     this.serverConfiguration.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType == "encoded") {
+
+  //     /** Encoded */
+  //     this.stopEncodedArchive(index);
+
+  //   } else {
+  //     /*var postData = { "resolutionwidth": 800, "resolutionheight": 700, "withaudio": false };*/
+
+  //     const elem = document.getElementById(this.players[index]["elem_id"]);
+  //     let width = elem ? (elem as HTMLElement).offsetWidth : 0;
+  //     let height = elem ? (elem as HTMLElement).offsetHeight : 0;
+
+  //     if (width <= 0) {
+  //       width = 200;
+  //     }
+
+  //     if (height <= 0) {
+  //       height = 100;
+  //     }
+
+  //     var postData: any = {
+  //       "channelid": this.players[index]["channelId"],
+  //       "starttimestamp": this.selectedDate,
+  //       "resolutionwidth": width,
+  //       "resolutionheight": height,
+  //       "withaudio": false
+  //     };
+  //     console.log("selecteddate", this.selectedDate);
+  //     console.log("postdata", postData)
+
+  //     if (this.getLocationPath() == "/live_matrix/1x1") {
+  //       postData.resolutionwidth = 1024;
+  //       postData.resolutionheight = 860;
+  //     }
+  //     this.players[index]["error"] = "Waiting for video ....";
+  //     const waitinggollaId = this.players[index]['waitinggolla_id'];
+  //     const waitingElem = waitinggollaId ? document.getElementById(waitinggollaId) : null;
+  //     if (waitingElem) waitingElem.style.display = 'block';
+  //     if (waitingElem) waitingElem.style.display = 'block';
+  //     const apiUrl = API_ENDPOINTS.WEBRTC_ARCHIVE.replace('{serverid}', this.serverConfiguration.serverid);
+  //     // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
+  //     if (this.serverConfiguration &&
+  //       this.serverConfiguration.streamingMode == (this.rootconfig?.WEBRTC_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
+  //       /** WebRTC */
+  //       this.http.post(apiUrl, postData, {
+  //         headers: new HttpHeaders({
+  //           'Content-Type': 'application/json',
+  //           'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+  //           'Authorization': `Bearer ${this.cookies.get('authToken')}`
+  //         }),
+  //       })
+  //       .subscribe({
+  //         next: (response: any) => {
+  //           console.log("res", response);
+  //           this.players[index]["error"] = "";
+  //           if (waitingElem) waitingElem.style.display = 'none';
+
+  //           this.players[index]["sessionId"] = new Date().getTime();
+
+  //           if (this.players[index]["channelId"] > -1) {
+
+  //             var streamingResponse = response?.result?.[0];
+  //             this.players[index]["streamType"] = streamingResponse.streamType;
+  //             var videoElement = this.getVideoElement(index);
+  //             var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
+  //             // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
+  //             // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
+              
+  //             var webrtc: any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+              
+
+  //             try {
+  //               this.players[index]["webrtc"] = webrtc;
+  //               this.players[index]["webrtc"].start(streamingResponse.serverId, streamingResponse.channelId,
+  //                 streamingResponse.startTimestamp);
+  //               console.log("streamingResponse",streamingResponse, streamingResponse.startTimestamp);
+  //             } catch (error) {
+
+  //               console.log("WebRTC playing, error: ", error);
+
+  //               var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
+  //               var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+  //               this.players[index]["webrtc"] = webrtc;
+  //               if (this.players[index]["webrtc"].onconnect) this.players[index]["webrtc"].onconnect();
+  //             }
+  //             this.players[index]["isplaying"] = true;
+  //             // this.manageVideoInfoInterval(index);
+  //           } else {
+  //             this.count--;
+  //             this.stopPlaying(index);
+
+  //             this.players[index]["sessionId"] = 0;
+  //           }
+  //         },
+  //         error: (response: any) => {
+  //           console.log("response", response?.error);
+  //           if (waitingElem) waitingElem.style.display = 'none';
+
+  //           this.players[index]["hlsURL"] = "";
+  //           this.players[index]["sessionId"] = 0;
+  //           this.players[index]["mjpeg_sessionId"] = 0;
+
+  //           if (response?.error?.code === 3037) {
+  //             const ele = document.getElementById(this.players[index]["elem_id"]);
+  //             if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
+  //           }
+
+  //           if (response.status !== 401 && response?.error?.code !== 3113) {
+  //             if (this.players[index]["channelId"] > -1) {
+  //               this.count--;
+  //               this.players[index]["error"] = response?.error?.message || 'Stream error';
+  //               this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+
+  //               this.players[index]["channelId"] = -1;
+  //               this.players[index]["recoverDecodingErrorDate"] = null;
+  //               this.players[index]["recoverSwapAudioCodecDate"] = null;
+  //               this.players[index]["ptz_control"] = false;
+  //               this.players[index]["status"] = undefined;
+  //               this.players[index]["isplaying"] = false;
+
+  //               if (this.players[index]["hlsPlayer"]) {
+  //                 try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+  //               }
+
+  //               setTimeout(() => {
+  //                 this.players[index]["error"] = "";
+  //                 const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
+  //                 if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+  //               }, 5000);
+  //             }
+  //           } else {
+  //             console.error('Invalid session');
+  //           }
+  //         }
+  //       })
+
+  //     } else {
+  //       const apiUrl = API_ENDPOINTS.HLS_START_ARCHIVE.replace('{serverid}', this.serverConfiguration.serverid);
+  //       /** HLS */
+  //       this.http.post<any>(apiUrl, postData, {
+  //         headers: new HttpHeaders({
+  //           'Content-Type': 'application/json',
+  //           'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+  //           'Authorization': `Bearer ${this.cookies.get('authToken')}`
+  //         }),
+  //       })
+  //       .subscribe({
+  //         next: (response: any) => {
+  //           console.log("response", response?.result);
+
+  //           this.players[index]["error"] = "";
+  //           if (waitingElem) waitingElem.style.display = 'none';
+  //           this.players[index]["streamType"] = response?.result?.[0]?.streamType;
+  //           this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
+
+  //           if (this.players[index]["channelId"] > -1) {
+  //             this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
+  //             this.players[index]["isplaying"] = true;
+
+  //             if ((Hls as any).isSupported && (Hls as any).isSupported()) {
+  //               const video = this.getVideoElement(index);
+  //               this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
+
+  //               setTimeout(() => {
+  //                 if (this.players[index]["channelId"] > -1) {
+  //                   try {
+  //                     (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
+  //                     (this.players[index]["hlsPlayer"] as any).attachMedia(video);
+  //                     video?.play().catch(() => {});
+  //                   } catch (e) {
+  //                     console.error('HLS attach/play error', e);
+  //                   }
+  //                 }
+  //               }, 2000);
+  //             } else {
+  //               this.players[index]["error"] = "HLS video is not supported in your browser!";
+  //             }
+  //             // this.manageVideoInfoInterval(index);
+  //           } else {
+  //             this.count--;
+  //             this.stopPlaying(index);
+  //             this.players[index]["sessionId"] = 0;
+  //           }
+  //         },
+
+  //         error: (response: any) => {
+  //           console.log("response", response?.error);
+  //           if (waitingElem) waitingElem.style.display = 'none';
+
+  //           this.players[index]["hlsURL"] = "";
+  //           this.players[index]["sessionId"] = 0;
+  //           this.players[index]["mjpeg_sessionId"] = 0;
+
+  //           if (response?.error?.code === 3037) {
+  //             const ele = document.getElementById(this.players[index]["elem_id"]);
+  //             if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
+  //           }
+
+  //           if (response.status !== 401 && response?.error?.code !== 3113) {
+  //             if (this.players[index]["channelId"] > -1) {
+  //               this.count--;
+  //               this.players[index]["error"] = response?.error?.message || 'Stream error';
+  //               this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+
+  //               this.players[index]["channelId"] = -1;
+  //               this.players[index]["recoverDecodingErrorDate"] = null;
+  //               this.players[index]["recoverSwapAudioCodecDate"] = null;
+  //               this.players[index]["ptz_control"] = false;
+  //               this.players[index]["status"] = undefined;
+  //               this.players[index]["isplaying"] = false;
+
+  //               if (this.players[index]["hlsPlayer"]) {
+  //                 try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+  //               }
+
+  //               setTimeout(() => {
+  //                 this.players[index]["error"] = "";
+  //                 const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
+  //                 if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+  //               }, 5000);
+  //             }
+  //           } else {
+  //             console.error('Invalid session');
+  //           }
+  //         }
+  //       });
+  //     }
+  //   }
+  // }
+  
+  startPlaying(index: number, barsection?: any): void {
+  this.isLoading = false;
+
+  const player = this.players[index];
+  const channelId = player.channelId;
+  const starttimestamp = player.date;
+
+  const postData: any = {
+    resolutionwidth: 200,
+    resolutionheight: 100,
+    withaudio: false,
+    starttimestamp: barsection ? barsection.starttimestamp : starttimestamp,
+    channelid: channelId
+  };
+
+  player.error = "Waiting for video ....";
+  player.disable_controls = true;
+
+  const waitingElement = player.waitinggolla_id
+  ? document.getElementById(player.waitinggolla_id)
+  : null;
+
+  if (waitingElement) waitingElement.style.display = "block";
+
+  this.endtimestamp = starttimestamp!;
+
+  const apiUrl = API_ENDPOINTS.WEBRTC_ARCHIVE.replace('{serverid}', this.serverConfiguration.serverid);
+
+  const payload = {
+    method: "POST",
+    url: apiUrl,
+    payload: JSON.stringify(postData)
+  };
+
+  this.http.post(apiUrl, postData, 
+    { headers:  new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+        'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      }),
+    })
+    .subscribe({
+      next: (response: any) => {
+        player.error = "";
+        if (waitingElement) waitingElement.style.display = "none";
+        player.sessionId = new Date().getTime();
+
+        if (player.channelId > -1) {
+          const streamingResponse = response.result[0];
+          player.streamType = streamingResponse.streamType;
+
+          const videoElement = document.getElementById(player.elem_id) as HTMLVideoElement;
+          let webrtcURL = `/${streamingResponse.privateAddress}:${streamingResponse.serverPort}`;
+          var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+
+          this.archivestarted = true;
+          this.barsection = barsection;
+          this.changeSpeed(1);
+
+          try {
+            player.webrtc = webrtc;
+            player.webrtc.start(streamingResponse.serverId, channelId, streamingResponse.startTimestamp);
+          } catch (error) {
+            console.log("WebRTC playing, error:", error);
+            webrtcURL = `/${streamingResponse.publicAddress}:${streamingResponse.serverPort}`;
+            var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+            player.webrtc = webrtc;
+            player.webrtc.start(streamingResponse.serverId, channelId, streamingResponse.startTimestamp);
+          }
+
+          player.webrtcURL = webrtcURL;
+          player.isplaying = true;
+
+          this.stop();
+          this.counter = 0;
+          this.countstart();
+
+        } else {
+          // this.stopAllArchivePlaying(player.sessionId);
+
+          if (player.webrtc) {
+            player.webrtc.stop();
+          }
+
+          player.sessionId = 0;
+          player.webrtc = undefined;
+
+          setTimeout(() => {
+            const elem = document.querySelector(`#${player.elem_id}`) as HTMLVideoElement;
+            if (elem) elem.setAttribute("poster", "images/postervtpl_new.jpg");
+          }, 1000);
+        }
+      },
+
+      error: (response: any) => {
+        player.disable_controls = false;
+        if (waitingElement) waitingElement.style.display = "none";
+        player.webrtc = undefined;
+        player.sessionId = 0;
+
+        if (response?.data?.code === 3037) {
+          const elem = document.getElementById(player.elem_id);
+          if (elem) elem.setAttribute("poster", "images/restricted_view_image.jpg");
+        }
+
+        if (response.status !== 401 && response.data?.code !== 3113) {
+          if (player.channelId > -1) {
+            player.error = response.data?.message;
+          }
+
+          setTimeout(() => {
+            this.count--;
+            // this.channelCleared.emit(player.channelId);
+
+            player.channelId = -1;
+            player.channelName = (index + 1 <= 9 ? `0${index + 1}` : `${index + 1}`);
+            player.error = "";
+            player.motionclips = [];
+            player.barclips = [];
+            player.webrtc = undefined;
+
+            const elem = document.querySelector(`#${player.elem_id}`) as HTMLVideoElement;
+            if (elem) elem.setAttribute("poster", "images/postervtpl_new.jpg");
+          }, 5000);
+        } else {
+          location.reload();
+        }
+      }
+    });
+}
+  countstart() {
+    throw new Error('Method not implemented.');
+  }
+
 
   // Provide a light options/actionsMenu equivalent (converted)
   options = {
@@ -1476,39 +1924,5 @@ export class OneXOneComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // stopPlaying was already defined above (kept original); nothing to duplicate here.
 
-  /* ============================
-     Helper functions used in the appended converted logic
-     ============================ */
-
-  // Proxy a POST request to the backend 'proxy' behavior similar to your AngularJS proxy call
-  // We return a Promise so we can easily use then/catch in the startPlaying wrapper above.
-  private proxyRequestPost(apiNameOrEndpoint: string, payload: any): Promise<any> {
-    // In AngularJS original they POST to "proxy" with payload: { method: "POST", url: <api url>, "payload": JSON.stringify(postData) }
-    // Here we attempt to call streamSvc.proxyRequest or fallback to HttpClient.
-    const url = this.getApiEndpoint(apiNameOrEndpoint) || apiNameOrEndpoint;
-    // If streamSvc has a proxyRequest that returns Observable, use it.
-    try {
-      if (this.streamSvc && (this.streamSvc as any).proxyRequest) {
-        return new Promise((resolve, reject) => {
-          (this.streamSvc as any).proxyRequest('POST', url, payload).subscribe({
-            next: (res: any) => resolve(res),
-            error: (err: any) => reject(err)
-          });
-        });
-      }
-    } catch (e) {
-      // ignore and fallback
-    }
-
-    // fallback: direct HttpClient post to the url (assuming a CORS-allowed direct endpoint)
-    return this.http.post(url, payload).toPromise();
-  }
-
-  /* ============================
-     Small AngularJS helpers emulation (to keep code identical)
-     ============================ */
+  
 }
-
-// -----------------------------
-// Helper utility functions outside class (kept as plain functions to avoid touching original lines)
-// -----------------------------

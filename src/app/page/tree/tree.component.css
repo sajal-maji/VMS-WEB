@@ -63,6 +63,10 @@
   flex-grow: 1;
   overflow-y: auto;
   padding: 12px 8px;
+  max-height: 100vh; /* or any specific height, e.g. 600px */
+  overflow-x: hidden;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #f0f3f4 #1c1c1c; 
 }
 
 /* --- TREE STRUCTURE --- */

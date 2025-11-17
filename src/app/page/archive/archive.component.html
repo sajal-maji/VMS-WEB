@@ -1,0 +1,338 @@
+<div class="archive-container">
+  <!-- Left sidebar (Tree) -->
+  <div class="sidebar">
+    <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
+    <app-footer></app-footer>
+  </div>
+
+  <!-- Right section (Header + Main content) -->
+  <div class="main-section">
+    <app-header></app-header>
+
+    <div
+      class="video-grid"
+      [ngStyle]="{ 'grid-template-columns': gridTemplate }"
+      class="col-lg-6 col-md-6 col-sm-6 col-xs-12 player_container"
+      style="padding: 0px 2px;"
+      *ngFor="let player of players; let i = index"
+    >
+      <div
+        class="calendar-container"
+        style="position: relative; top: 10px; right: 20px; display: flex; justify-content: end; gap: 8px;"
+      >
+        <input
+          type="datetime-local"
+          class="form-control"
+          style="width: 180px; background-color: #2a2f3a; color: white; border: 1px solid #555; border-radius: 4px; padding: 4px 6px;"
+          [(ngModel)]="selectedDateStr"
+          (change)="onDateChange($event, i)"
+        />
+      </div>
+
+      <div
+        class="col-lg-12 col-md-12 col-sm-12 col-xs-12 ui-droppable video-container"
+        [attr.context-menu]="options.actionsMenu"
+        [attr.model]="i"
+      >
+        <div
+          class="col-lg-12 col-md-12 col-sm-12 col-xs-12 video-header"
+          style="display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; padding: 5px 8px;"
+        >
+          <!-- Left: Camera + Audio/Mic Icons + Channel Name -->
+          <div
+            class="d-flex align-items-center"
+            style="display: flex; align-items: center; flex-shrink: 1; min-width: 0;"
+          >
+            <div
+              class="video-header-icon d-flex align-items-center"
+              style="display: flex; align-items: center; flex-shrink: 0; margin-left: 15px;"
+            >
+              <img
+                [src]="player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'"
+                *ngIf="player.status == undefined"
+                (click)="toggleSpeaker(i)"
+                [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
+              />
+              <img src="/images/camera/CameraIconIdle.png" *ngIf="player.status == undefined" />
+              <img
+                [src]="player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'"
+                *ngIf="!player['ptz_control'] && player.status == 0"
+                (click)="toggleSpeaker(i)"
+                [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
+              />
+
+              <div
+                class="col-lg-5 col-md-5 col-sm-6 col-xs-7 d-flex align-items-center"
+                style="padding: 0px 12px; gap: 0px;"
+              >
+                <div style="width: 60px;">
+                  <button
+                    class="grid-button"
+                    type="button"
+                    (click)="navigator.clipboard.writeText(sendMatrix.matrixUrl)"
+                    style="width: 32px !important;"
+                  >
+                    <i class="fa fa-copy" aria-hidden="true"></i>
+                  </button>
+                </div>
+
+                <img
+                  src="/images/camera/CameraLiveAndRecordingIcon.png"
+                  *ngIf="!player['ptz_control'] && player.status == 0"
+                />
+              </div>
+            </div>
+
+            <div
+              class="video-header-title text-truncate"
+              style="font-weight: 500; padding-left: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+              [attr.title]="player.channelName"
+            >
+              {{ player.channelName }}
+            </div>
+          </div>
+
+          <!-- Right: Control Buttons -->
+          <div
+            class="video-header-icon d-flex align-items-center"
+            style="display: flex; align-items: center; gap: 0px; flex-shrink: 0; padding: 0 45px"
+          >
+            <img
+              (click)="showPTZControl(i)"
+              src="/images/PTZIcon.png"
+              *ngIf="player['ptz_control']"
+              [attr.title]="'PTZ Control'"
+            />
+
+            <img
+              (click)="screenshotClicked(i)"
+              src="/images/ScreenshotIcon.png"
+              *ngIf="player['sessionId'] != 0 || player['mjpeg_sessionId'] != 0"
+              [attr.title]="'Take Snap'"
+            />
+
+            <img (click)="closeClicked(i)" src="/images/CloseIcon.png" [attr.title]="'Stop Playing'" />
+          </div>
+        </div>
+
+        <div
+          class="video-container-centeredOverlay"
+          [id]="player.waitinggolla_id"
+          style="display: none;"
+        >
+          <span class="video-container-centeredOverlay-helper"></span>
+          <img src="/images/loadinghome.gif" alt="loading" />
+        </div>
+
+        <video
+          [id]="player.elem_id"
+          [attr.index]="i + 1"
+          poster="images/postervtpl_new.jpg"
+          class="ui-droppable video-elem"
+        ></video>
+
+        <!-- Playback Controls -->
+        <div class="video-controls">
+          <table width="100%" border="0">
+            <tbody>
+              <tr>
+                <td width="45%" align="center">
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="toggleFullScreen(i)"
+                  >
+                    <span
+                      class="fa fa-arrows-alt"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="'Full Screen'"
+                    ></span>
+                  </button>
+                </td>
+
+                <td width="55%" align="center" style="padding: 15px;">
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="frameByFrameBackward(i)"
+                    [disabled]="player.hlsURL == '' && !player.webrtc"
+                  >
+                    <span
+                      class="fa fa-caret-left"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="'FrameByFrameBackward'"
+                    ></span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="fastBackward(i)"
+                    [disabled]="player.hlsURL == '' && !player.webrtc"
+                  >
+                    <span
+                      class="fa fa-backward"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="'Backward'"
+                    ></span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="playPause(i)"
+                    [disabled]="player.hlsURL == '' && !player.webrtc"
+                  >
+                    <span
+                      [class.fa-play]="!player.isplaying"
+                      [class.fa-pause]="player.isplaying"
+                      class="fa"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="player.isplaying ? 'Pause' : 'Play'"
+                    ></span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="fastForward(i)"
+                    [disabled]="player.hlsURL == '' && !player.webrtc"
+                  >
+                    <span
+                      class="fa fa-forward"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="'Forward'"
+                    ></span>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-default"
+                    aria-label="hidden"
+                    (click)="frameByFrameForward(i)"
+                    [disabled]="player.hlsURL == '' && !player.webrtc"
+                  >
+                    <span
+                      class="fa fa-caret-right"
+                      aria-hidden="true"
+                      data-toggle="tooltip"
+                      [attr.title]="'FrameByFrameForward'"
+                    ></span>
+                  </button>
+
+                  <div class="dropup" style="display: inline-block; vertical-align: middle;">
+                    <button
+                      type="button"
+                      class="btn btn-default dropdown-toggle"
+                      [disabled]="player.hlsURL == '' && !player.webrtc"
+                      style="border: 1px solid #323845;"
+                      data-toggle="dropdown"
+                      aria-haspopup="true"
+                      [attr.aria-expanded]="isDropdownOpen"
+                      (click)="toggleDropDown()"
+                      aria-label="hidden"
+                    >
+                      {{ speedDisplay }}x
+                    </button>
+
+                    <ul class="dropdown-menu" style="background-color: #1e2129; min-width: 30px !important;">
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.125)" style="color: white;">-8x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.25)" style="color: white;">-4x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.5)" style="color: white;">-2x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(1)" style="color: white;">1x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(2)" style="color: white;">2x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(4)" style="color: white;">4x</a></li>
+                      <li><a href="javascript:void(0)" (click)="changeSpeed(8)" style="color: white;">8x</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ✅ Recording & Motion Progress Sections -->
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text" style="text-align: left;">
+            Recording
+          </div>
+          <fieldset
+            id="recording-progress1"
+            class="col-lg-11 col-md-10 col-sm-12 col-xs-12 recording-progress"
+            [disabled]="player.disable_controls"
+          >
+            <span
+              *ngFor="let barsection of player.barclips"
+              class="pointer recording-section"
+              [ngStyle]="{
+                    'margin-left': $any(barsection).marginleft,
+                    width: $any(barsection).width
+                }"
+                [attr.title]="
+                    ($any(barsection).starttimestamp | date: 'dd MMM yyyy hh:mm:ss a') +
+                    ' to ' +
+                    ($any(barsection).endtimestamp | date: 'dd MMM yyyy hh:mm:ss a')
+                "
+              (click)="startPlaying(i, barsection)"
+             
+              
+            >
+              &nbsp;
+            </span>
+          </fieldset>
+        </div>
+
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text">
+            Motion
+          </div>
+          <!-- <fieldset
+            id="motion-progress1"
+            class="col-lg-11 col-md-10 col-sm-12 col-xs-12 motion-progress"
+            [disabled]="player.disable_controls"
+          >
+            <span
+              *ngFor="let motionclip of player.motionclips"
+              [ngStyle]="{ 'margin-left': motionclip.marginleft, width: motionclip.width }"
+              class="pointer motion-section"
+              [attr.title]="
+                (motionclip.startTimestamp | date:'hh:mm:ss a') +
+                ' to ' +
+                (motionclip.endTimestamp | date:'hh:mm:ss a')
+              "
+              (click)="startMotionPlaying(i, motionclip)"
+            >
+              &nbsp;
+            </span>
+          </fieldset> -->
+        </div>
+
+        <span
+          class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center custom-small"
+          style="min-height: 22px; color: #fcb614;"
+        >
+          {{ player.error }}
+        </span>
+      </div>
+
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" [id]="player.controls_id">
+        <span
+          class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center error custom-small"
+          style="min-height: 10px;"
+        >
+          {{ player.error }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
