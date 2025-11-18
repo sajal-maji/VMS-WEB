@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { CookieService } from 'ngx-cookie-service';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 
 export interface LoginRequest {

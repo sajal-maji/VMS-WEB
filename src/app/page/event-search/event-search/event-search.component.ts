@@ -7,7 +7,7 @@ import { TreeComponent } from "../../tree/tree.component";
 import { API_ENDPOINTS } from '../../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 import { FooterComponent } from "../../footer/footer.component";
 
 @Component({
