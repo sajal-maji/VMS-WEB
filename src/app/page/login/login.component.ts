@@ -5,10 +5,11 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
 import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from "../footer/footer.component"; 
+import { Router, RouterLink } from '@angular/router';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, FooterComponent, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'] // keep your CSS
 })
@@ -26,6 +27,7 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder, 
     private sanitizer: DomSanitizer,
     private authStore: AuthStore,
+    private router: Router
     ) {}
 
   ngOnInit(): void {
@@ -103,5 +105,9 @@ export class LoginComponent implements OnInit {
     this.authStore.login({ userid, password });
     this.errorMessage = '';
     this.submitted = false;
+  }
+
+  forgotPassword(): void {
+    this.router.navigate(['/ivmsweb/forgot-password']);
   }
 }
