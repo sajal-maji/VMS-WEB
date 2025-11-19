@@ -560,6 +560,19 @@ export class TreeComponent implements OnInit {
   //     this.isLocation = false;
   //   }
   // }
+
+  showUserDetails(): void {
+    this.router.navigate(['/ivmsweb/user-details']);
+  }
+
+  showChangePassword(): void {
+    this.router.navigate(['/ivmsweb/change-password']);
+  }
+
+  showEvents(): void {
+    this.router.navigate(['/ivmsweb/event-search']);
+  }
+
 }
 
 

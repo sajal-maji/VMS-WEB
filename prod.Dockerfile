@@ -33,7 +33,7 @@ COPY --from=builder /app/dist/vms-web-angular-revamp/browser/ ./
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # IMPORTANT: Expose both HTTP and HTTPS
-EXPOSE 80
-EXPOSE 443
+EXPOSE 800
+EXPOSE 8443
 
 CMD ["nginx", "-g", "daemon off;"]

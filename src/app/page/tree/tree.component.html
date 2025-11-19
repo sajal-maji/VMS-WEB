@@ -189,14 +189,14 @@
         <div
           class="location"
           >
-          <a class="field-link-name" routerLink="/ivmsweb/user-details">
+          <a class="field-link-name" routerLink="/ivmsweb/user-details" (click)="showUserDetails()">
             <img src="images/User.png" alt="loading"/> User Details
           </a>
         </div>
       </li>
       <li class="parent_li">
         <div class="location">
-          <a class="field-link-name" routerLink="/ivmsweb/change-password">
+          <a class="field-link-name" routerLink="/ivmsweb/change-password" (click)="showChangePassword()">
             <img src="images/Setting.png"/> Change Password
           </a>
         </div>
@@ -212,7 +212,7 @@
         <div
           class="location"
           >
-          <a class= "field-link-name" routerLink="/ivmsweb/event-search">
+          <a class= "field-link-name" routerLink="/ivmsweb/event-search" (click)="showEvents()">
             <img src="images/EventList.png" alt="loading"/> All Events
           </a>
         </div>

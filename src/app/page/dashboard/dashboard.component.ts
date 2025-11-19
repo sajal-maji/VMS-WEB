@@ -68,7 +68,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   allPresets: any[] = [];
   vSessionId = ''; // if you used vsessionid in original
   serverConfiguration: any = {};
-  rootconfig: any = {}; // replace or inject as needed
+  rootconfig: any = {
+    VIDEONETICS_STREAMING_MODE: 1,
+    VSTREAMER_STREAMING_MODE: 2,
+    WEBRTC_STREAMING_MODE: 3
+  };
+ // replace or inject as needed
   sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = { matrix: '2x2', channels: [], matrixUrl: '' };
   currentTime = '';
   private subscriptions: Subscription[] = [];
@@ -1305,18 +1310,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
 
   OnClick(event: any) {
-  const availableIndex = this.players.findIndex(p => p.channelId === -1);
-  const channelToPlay = {
-    id: event.id.toString(),
-    name: event.name,
-    configurationType: event.configurationType,
-    status: event.status,
-    index: availableIndex !== -1 ? availableIndex : 0
-  };
+    const availableIndex = this.players.findIndex(p => p.channelId === -1);
+    const channelToPlay = {
+      id: event.id.toString(),
+      name: event.name,
+      configurationType: event.configurationType,
+      status: event.status,
+      index: availableIndex !== -1 ? availableIndex : 0
+    };
 
-  console.log("Clicked Event:", channelToPlay);
-  this.channelClicked(channelToPlay);
-}
+    console.log("Clicked Event:", channelToPlay);
+    this.channelClicked(channelToPlay);
+  }
 
   OnLoad(event: any) {
     // console.log(event);
@@ -1365,6 +1370,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       if (waitingElem) waitingElem.style.display = 'block';
       if (waitingElem) waitingElem.style.display = 'block';
       const apiUrl = API_ENDPOINTS.WEBRTC_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+      console.log("rootConfig", this.rootconfig);
+      
       // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
       if (this.serverConfiguration &&
         this.serverConfiguration.streamingMode == (this.rootconfig?.WEBRTC_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
