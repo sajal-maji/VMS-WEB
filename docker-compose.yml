@@ -2,8 +2,12 @@ version: "3.9"
 
 services:
   vms-web:
-    image: vtpl/vms-web-new:latest
+    image: vtpl/vms-web-new:1.0
     container_name: vms-web
     restart: always
     ports:
-      - "800:3000"
+      - "800:80"     # HTTP on 800
+      - "8443:443"   # HTTPS on 8443
+    volumes:
+      - ./ssl:/etc/nginx/ssl
+

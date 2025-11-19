@@ -26,12 +26,14 @@ FROM nginx:stable-alpine AS runner
 
 WORKDIR /usr/share/nginx/html
 
-# IMPORTANT: Copy Angular browser build output
+# Copy Angular build files
 COPY --from=builder /app/dist/vms-web-angular-revamp/browser/ ./ 
 
-# SPA routing config
+# Copy NGINX config supporting SPA + HTTPS
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# IMPORTANT: Expose both HTTP and HTTPS
 EXPOSE 80
+EXPOSE 443
 
 CMD ["nginx", "-g", "daemon off;"]
