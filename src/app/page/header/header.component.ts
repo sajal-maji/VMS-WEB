@@ -69,6 +69,7 @@ export class HeaderComponent {
     // redirect or handle logout
     this.cookies.delete('authToken', '/');
     this.cookies.delete('vSessionId', '/');
-    window.location.href = '/ivmsweb/signout?successto=/ivmsweb/login';
+    // window.location.href = '/ivmsweb/signout?successto=/ivmsweb/login';
+    this.router.navigate(['/ivmsweb/login']);
   }
 }

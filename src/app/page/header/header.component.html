@@ -31,11 +31,11 @@
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Profile')"
     >Profile</a>
-    <a
+    <!-- <a
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Configuration')"
-    >Configuration</a>
+    >Configuration</a> -->
   </nav>
 
   <div class="nav-right">
@@ -48,6 +48,6 @@
         <a (click)="selectLayout('4x4')">4x4</a>
       </div>
     </div>
-    <a href="ivmsweb/login" class="signout" (click)="signOut()">Signout</a>
+    <a routerLink="/ivmsweb/login" class="signout" (click)="signOut()">Signout</a>
   </div>
 </header>
