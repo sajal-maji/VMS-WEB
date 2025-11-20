@@ -43,20 +43,6 @@ export class ForgotPasswordComponent implements OnInit {
     // Future initialization logic if needed
   }
 
-  /** Get API endpoint by name */
-  getAPIEndpoint(endpointname: string): string {
-    // Replace this with your actual endpoints config
-    return (window as any).endpoints[endpointname];
-  }
-
-  /** Replace {serverid} placeholders in API URLs */
-  getAPIUrl(apiUrl: string, serverid?: string): string {
-    if (apiUrl.includes('{serverid}')) {
-      apiUrl = apiUrl.replace('{serverid}', serverid || '');
-    }
-    return apiUrl;
-  }
-
   /** Main forgot password method */
   forgotPassword(): void {
     // Reset password input type toggles (UI logic from jQuery replaced with plain JS)
@@ -90,7 +76,8 @@ export class ForgotPasswordComponent implements OnInit {
       const url = API_ENDPOINTS.FORGOT_PASSWORD;
 
       this.http.post(url, postData, {
-        headers: new HttpHeaders({ 'Content-Type': 'application/json',
+        headers: new HttpHeaders({ 
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.cookieService.get('authToken')}`
         }),
       }).subscribe({

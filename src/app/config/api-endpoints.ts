@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
   LOGIN: `${environment.apiBaseUrl}user/login`,
   SIGNIN: `${environment.apiBaseUrl}user/signin`,
   FORGOT_PASSWORD: `${environment.apiBaseUrl}user/forgotpassword/generatelink`,
+  RESET_PASSWORD: `${environment.apiBaseUrl}user/forgotpassword/reset`,
   VALIDATE_KEY: `${environment.apiBaseUrl}user/forgotpassword/validate/{uniquekey}`,
   LOCATION_TREE: `${environment.apiBaseUrl}{serverid}/channel/junction/tree`,
   CHANNEL_STATUS: `${environment.apiBaseUrl}{serverid}/channel/channel/status`,

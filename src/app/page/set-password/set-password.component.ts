@@ -6,6 +6,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import * as CryptoJS from 'crypto-es';
+import { FooterComponent } from "../footer/footer.component";
+import { CookieService } from 'ngx-cookie-service';
 
 export const confirmPasswordValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('newPassword')?.value;
@@ -19,7 +21,7 @@ export const confirmPasswordValidator: ValidatorFn = (control: AbstractControl):
 @Component({
   selector: 'app-set-password',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule ],
+  imports: [ReactiveFormsModule, CommonModule, FooterComponent],
   templateUrl: './set-password.component.html',
   styleUrls: ['./set-password.component.css']
 })
@@ -28,12 +30,15 @@ export class SetPasswordComponent implements OnInit {
   // Flags for UI
   isCheckingKey: boolean = true;
   isKeyValid: boolean = false;
+  submitted:boolean = false;
+  showNew:boolean = false;
+  showConfirm:boolean = false;
 
-  // Error message
-  error_message: string | undefined;
+  error_message: string = '';
+  success_message: string = '';
 
   // Reactive form
-  setPasswordForm: FormGroup;
+  setPasswordForm!: FormGroup;
 
   // Unique key from URL
   uniqueKey: string | null = null;
@@ -43,32 +48,44 @@ export class SetPasswordComponent implements OnInit {
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
-    private router: Router
-  ) {
-    // Initialize reactive form
-    this.setPasswordForm = this.fb.group({
-    newPassword: ['', [
-      Validators.required,
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+*!=]).{8,12}$/)
-    ]],
-    confirmNewPassword: ['', Validators.required]
-  }, { validators: confirmPasswordValidator });
-  }
+    private router: Router,
+    private cookieService:CookieService,
+  ) {}
 
-  model = {
-    newPassword: undefined as string | undefined,
-    confirmnewPassword: undefined as string | undefined,
-    redirecturl: location.origin + '/ivmsweb/set-password',
-    userid: undefined as string | undefined,
-    expiryTime: undefined as string | undefined,
-    uniquekey: undefined as string | undefined,
-    email: undefined as string | undefined
-  };
+  model = {};
 
   ngOnInit(): void {
     // Get unique key from query parameter
     this.uniqueKey = this.route.snapshot.queryParamMap.get('uk');
     console.log("unique", this.uniqueKey);
+
+    this.setPasswordForm = this.fb.group({
+      userid: ['',],
+      newpassword: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
+        ]
+      ],
+      confirmPassword: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
+        ]
+      ]
+    });
+
+    this.model = {
+      newPassword: '',
+      confirmnewPassword: '',
+      redirecturl: location.origin + '/ivmsweb/set-password',
+      userid: '',
+      expiryTime: '',
+      uniquekey: '',
+      email: ''
+    }
     // this.model.uniquekey = this.uniqueKey || undefined;
 
     // Validate the key
@@ -79,11 +96,20 @@ export class SetPasswordComponent implements OnInit {
     }
   }
 
-  // Toggle password visibility
-  togglePasswordField(fieldId: string): void {
-    const input = document.getElementById(fieldId) as HTMLInputElement;
-    if (!input) return;
-    input.type = input.type === 'password' ? 'text' : 'password';
+  toggleNewPassword(): void {
+    this.showNew = !this.showNew;
+    const input = document.getElementById('new-password-field') as HTMLInputElement;
+    if (input) input.type = this.showNew ? 'text' : 'password';
+  } 
+  
+  toggleConfirmNewPassword(): void {
+    this.showConfirm = !this.showConfirm;
+    const input = document.getElementById('confirm-new-password-field') as HTMLInputElement;
+    if (input) input.type = this.showConfirm ? 'text' : 'password';
+  }
+
+  sanitizeInput(value: string): string {
+    return value ? this.sanitizer.sanitize(1, value) || '' : '';
   }
 
   // Validate unique key via API
@@ -112,14 +138,19 @@ export class SetPasswordComponent implements OnInit {
     const url = API_ENDPOINTS.VALIDATE_KEY.replace('{uniquekey}', uniqueKey);
 
     this.http.get(url, {
-      headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+      headers: new HttpHeaders({ 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+      })
     }).subscribe({
       next: (response: any) => {
         this.isCheckingKey = false;
 
-        if (response.status === 200 && response.data?.result?.length > 0) {
+        if (response.status === 200 && response.result?.length > 0) {
           this.isKeyValid = true;
-          this.model.userid = response.result[0].userid;
+          const setPassword = response.result[0];
+          this.setPasswordForm.patchValue(setPassword);
+          // this.model.userid = response.result[0].userid;
         } else {
           this.router.navigateByUrl('/ivmsweb/not-found');
         }
@@ -131,67 +162,69 @@ export class SetPasswordComponent implements OnInit {
     });
   }
   
-  get formControls() {
+  get f() {
     return this.setPasswordForm.controls;
-  }
-  // Validate password rules
-  validate(): void {
-    debugger
-    this.error_message = undefined;
-    const pattern = /^(?=.{8,16})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+*!=]).*$/;
-
-    if (!this.formControls["newPassword"].value?.trim()) {
-      this.error_message = 'New Password is required!';
-      return;
-    }
-
-    if (!this.formControls["confirmNewPassword"].value?.trim()) {
-      this.error_message = 'Confirm New Password is required!';
-      return;
-    }
-
-    if (this.formControls["newPassword"].value.length > 16) {
-      this.error_message = 'New Password cannot have more than 16 characters!';
-      return;
-    }
-
-    if (!pattern.test(this.formControls["newPassword"].value)) {
-      this.error_message = 'Min 8 character & Max 16 character. New Password must contain at least one small & one capital alphabet, one numeric digit, and one special character.';
-      return;
-    }
-
-    if (this.formControls["newPassword"].value !== this.formControls["confirmNewPassword"].value) {
-      this.error_message = 'Password Mismatch!';
-      return;
-    }
   }
 
   // Submit password
   save(): void {
-    // Reset password fields type
-    ['new-password-field', 'confirm-new-password-field'].forEach(id => {
-      const input = document.getElementById(id) as HTMLInputElement;
-      if (input) input.type = 'password';
+    this.submitted = true;
+
+    if (!this.setPasswordForm.valid) {
+      return;
+    }
+
+    const setPassword = this.setPasswordForm.value;
+
+    Object.keys(setPassword).forEach(key => {
+      setPassword[key] = this.sanitizeInput(setPassword[key]);
     });
 
-    this.validate();
+    // this.validate();
 
     if (this.error_message) return;
 
-    // Encrypt password
-    if (this.formControls['newPassword'].value.trim()) {
-      // const firstEncrypt = CryptoJS.SHA512(newPassword).toString();
-      // this.formControlsnewPassword = firstEncrypt;
-      // this.formControlsconfirmNewPassword = firstEncrypt;
-    }
+    let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.password).toString();
+    firstEncryptCurrPass = CryptoJS.SHA512(firstEncryptCurrPass).toString();
+    setPassword.password = firstEncryptCurrPass;
 
     const postData = {
-      newpassword: this.formControls['newPassword'].value,
-      confirmnewpassword: this.formControls['confirmNewPassword'].value,
-      // userid: this.formControlsuserid,
-      // redirecturl: this.formControlsredirecturl,
-      // uniquekey: this.formControlsuniquekey
+      userid: setPassword.userid,
+      password: setPassword.password,
+      newpassword: setPassword.newpassword,
+      redirecturl:setPassword.redirecturl,
+      uniquekey: setPassword.uniquekey
     };
+
+    const url = API_ENDPOINTS.RESET_PASSWORD;
+
+    this.http.post<any>(url, postData, {
+      headers: new HttpHeaders({ 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+      }),
+    }).subscribe({
+      next: (response: any) => {
+        console.log("response", response);
+        
+        // Success modal equivalent (replacing jQuery Confirm)
+        this.success_message = 'Password is Reset now!';
+        setTimeout(() => {
+          this.success_message = '';
+          this.router.navigateByUrl('ivmsweb/login');
+        }, 2000);
+      },
+      error: (response: any) => {
+        this.error_message = response?.error?.message || 'Something went wrong!';
+        this.success_message = '';
+
+        // Auto-clear error message after a few seconds (optional)
+        setTimeout(() => {
+          this.error_message = '';
+          location.reload();
+        }, 3000);
+      }
+    })
 
     // this.passwordService.resetPassword(postData).subscribe({
     //   next: () => {
