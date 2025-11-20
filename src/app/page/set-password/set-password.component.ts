@@ -9,15 +9,6 @@ import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from "../footer/footer.component";
 import { CookieService } from 'ngx-cookie-service';
 
-export const confirmPasswordValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
-  const password = control.get('newPassword')?.value;
-  const confirmPassword = control.get('confirmNewPassword')?.value;
-  if (password && confirmPassword && password !== confirmPassword) {
-    return { passwordMismatch: true };
-  }
-  return null;
-};
-
 @Component({
   selector: 'app-set-password',
   standalone: true,
@@ -74,12 +65,15 @@ export class SetPasswordComponent implements OnInit {
           Validators.required,
           Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
         ]
-      ]
+      ],
+      redirecturl: ['',],
+      uniquekey: ['',],
+      expiryTime: ['',]
     });
 
     this.model = {
-      newPassword: '',
-      confirmnewPassword: '',
+      newpassword: '',
+      confirmPassword: '',
       redirecturl: location.origin + '/ivmsweb/set-password',
       userid: '',
       expiryTime: '',
@@ -149,7 +143,9 @@ export class SetPasswordComponent implements OnInit {
         if (response.status === 200 && response.result?.length > 0) {
           this.isKeyValid = true;
           const setPassword = response.result[0];
+          console.log("set password",setPassword)
           this.setPasswordForm.patchValue(setPassword);
+          console.log("set password",this.setPasswordForm)
           // this.model.userid = response.result[0].userid;
         } else {
           this.router.navigateByUrl('/ivmsweb/not-found');
@@ -176,6 +172,7 @@ export class SetPasswordComponent implements OnInit {
 
     const setPassword = this.setPasswordForm.value;
 
+    console.log("sp",setPassword);
     Object.keys(setPassword).forEach(key => {
       setPassword[key] = this.sanitizeInput(setPassword[key]);
     });
@@ -192,7 +189,7 @@ export class SetPasswordComponent implements OnInit {
     const postData = {
       userid: setPassword.userid,
       newpassword: setPassword.newpassword,
-      confirmnewpassword: setPassword.confirmPassword,
+      // confirmnewpassword: setPassword.confirmPassword,
       redirecturl:setPassword.redirecturl,
       uniquekey: setPassword.uniquekey
     };
@@ -209,11 +206,11 @@ export class SetPasswordComponent implements OnInit {
         console.log("response", response);
         
         // Success modal equivalent (replacing jQuery Confirm)
-        this.success_message = 'Password is Reset now!';
+        this.success_message = 'Password has been reset!';
         setTimeout(() => {
           this.success_message = '';
           this.router.navigateByUrl('ivmsweb/login');
-        }, 2000);
+        }, 1000);
       },
       error: (response: any) => {
         this.error_message = response?.error?.message || 'Something went wrong!';
@@ -223,7 +220,7 @@ export class SetPasswordComponent implements OnInit {
         setTimeout(() => {
           this.error_message = '';
           location.reload();
-        }, 3000);
+        }, 1000);
       }
     })
   }
