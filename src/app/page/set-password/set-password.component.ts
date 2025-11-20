@@ -184,14 +184,15 @@ export class SetPasswordComponent implements OnInit {
 
     if (this.error_message) return;
 
-    let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.password).toString();
+    let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.newpassword).toString();
     firstEncryptCurrPass = CryptoJS.SHA512(firstEncryptCurrPass).toString();
-    setPassword.password = firstEncryptCurrPass;
+    setPassword.newpassword = firstEncryptCurrPass;
+    setPassword.confirmPassword = firstEncryptCurrPass;
 
     const postData = {
       userid: setPassword.userid,
-      password: setPassword.password,
       newpassword: setPassword.newpassword,
+      confirmnewpassword: setPassword.confirmPassword,
       redirecturl:setPassword.redirecturl,
       uniquekey: setPassword.uniquekey
     };
@@ -225,19 +226,5 @@ export class SetPasswordComponent implements OnInit {
         }, 3000);
       }
     })
-
-    // this.passwordService.resetPassword(postData).subscribe({
-    //   next: () => {
-    //     alert('Password Successfully Updated!');
-    //     this.model.newPassword = '';
-    //     this.model.confirmNewPassword = '';
-    //     this.router.navigate(['/']);
-    //   },
-    //   error: (response) => {
-    //     this.model.newPassword = '';
-    //     this.model.confirmNewPassword = '';
-    //     alert('Error: ' + response.error.message);
-    //   }
-    // });
   }
 }
