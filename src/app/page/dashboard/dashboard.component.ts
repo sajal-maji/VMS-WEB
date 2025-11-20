@@ -1468,7 +1468,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
           }
         })
 
-      } else {
+      } else if (this.serverConfiguration &&
+        this.serverConfiguration.streamingMode == (this.rootconfig?.VSTREAMER_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
+        
         const apiUrl = API_ENDPOINTS.HLS_START_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
         /** HLS */
         this.http.post<any>(apiUrl, postData, {
