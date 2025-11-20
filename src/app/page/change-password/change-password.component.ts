@@ -33,6 +33,8 @@ export class ChangePasswordComponent implements OnInit {
 
   isLoading:boolean = false;
   submitted:boolean = false;
+  error_message: string = '';
+  success_message: string = '';
 
   changePassForm!: FormGroup;
   
@@ -104,7 +106,7 @@ export class ChangePasswordComponent implements OnInit {
         if (err.status === 401) {
           this.router.navigate(['ivmsweb/login']);
         } else {
-          alert(err.error?.message || 'Error loading user data!');
+          this.error_message = err.error?.message || 'Error loading user data!';
         }
       }
     });
@@ -182,9 +184,21 @@ export class ChangePasswordComponent implements OnInit {
       }).subscribe({
         next: (response: any) => {
           console.log("response", response);
-          alert('Password Changed successfully');
-          this.router.navigate(['ivmsweb/login']);
+          this.success_message = 'Password Changed successfully';
+          setTimeout(() => {
+            this.success_message = '';
+            this.router.navigateByUrl('ivmsweb/login');
+          }, 1000);
           this.isLoading = false;
+        },
+        error: (response: any) => {
+          this.error_message = response?.error?.message || 'Something went wrong!';
+          this.success_message = '';
+
+          // Auto-clear error message after a few seconds (optional)
+          setTimeout(() => {
+            location.reload();
+          }, 3000);
         }
       });
       // console.log('Saved:', this.model);

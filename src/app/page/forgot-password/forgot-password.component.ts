@@ -28,7 +28,8 @@ export class ForgotPasswordComponent implements OnInit {
 
   securityquestion1: any;
   securityquestion2: any;
-  error_message: string | undefined;
+  error_message: string = '';
+  success_message: string = '';
   captcha_image: any;
 
   constructor(
@@ -97,12 +98,22 @@ export class ForgotPasswordComponent implements OnInit {
           console.log("response", response);
           
           // Success modal equivalent (replacing jQuery Confirm)
-          alert('Password Reset Link Is Successfully Sent!');
+          this.success_message = 'Password Reset Link Is Successfully Sent!';
           this.model.email = undefined;
-          this.router.navigateByUrl('ivmsweb/login');
+          setTimeout(() => {
+            this.success_message = '';
+            this.router.navigateByUrl('ivmsweb/login');
+          }, 2000);
         },
         error: (response: any) => {
-          alert(response?.error?.message || 'Something went wrong!');
+          this.error_message = response?.error?.message || 'Something went wrong!';
+          this.success_message = '';
+
+          // Auto-clear error message after a few seconds (optional)
+          setTimeout(() => {
+            this.error_message = '';
+            location.reload();
+          }, 3000);
         }
       });
     }, 1000);

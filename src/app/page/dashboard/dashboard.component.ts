@@ -1468,98 +1468,100 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
           }
         })
 
-      } else if (this.serverConfiguration &&
-        this.serverConfiguration.streamingMode == (this.rootconfig?.VSTREAMER_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
+      } else {
         
         const apiUrl = API_ENDPOINTS.HLS_START_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
-        /** HLS */
-        this.http.post<any>(apiUrl, postData, {
-          headers: new HttpHeaders({
-            'Content-Type': 'application/json',
-            'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-            'Authorization': `Bearer ${this.cookies.get('authToken')}`
-          }),
-        })
-        .subscribe({
-          next: (response: any) => {
-            console.log("response", response?.result);
+        if (this.serverConfiguration &&
+          this.serverConfiguration.streamingMode == (this.rootconfig?.VSTREAMER_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
+          /** HLS */
+          this.http.post<any>(apiUrl, postData, {
+            headers: new HttpHeaders({
+              'Content-Type': 'application/json',
+              'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
+              'Authorization': `Bearer ${this.cookies.get('authToken')}`
+            }),
+          })
+          .subscribe({
+            next: (response: any) => {
+              console.log("response", response?.result);
 
-            this.players[index]["error"] = "";
-            if (waitingElem) waitingElem.style.display = 'none';
-            this.players[index]["streamType"] = response?.result?.[0]?.streamType;
-            this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
+              this.players[index]["error"] = "";
+              if (waitingElem) waitingElem.style.display = 'none';
+              this.players[index]["streamType"] = response?.result?.[0]?.streamType;
+              this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
 
-            if (this.players[index]["channelId"] > -1) {
-              this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
-              this.players[index]["isplaying"] = true;
-
-              if ((Hls as any).isSupported && (Hls as any).isSupported()) {
-                const video = this.getVideoElement(index);
-                this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
-
-                setTimeout(() => {
-                  if (this.players[index]["channelId"] > -1) {
-                    try {
-                      (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
-                      (this.players[index]["hlsPlayer"] as any).attachMedia(video);
-                      video?.play().catch(() => {});
-                    } catch (e) {
-                      console.error('HLS attach/play error', e);
-                    }
-                  }
-                }, 2000);
-              } else {
-                this.players[index]["error"] = "HLS video is not supported in your browser!";
-              }
-              this.manageVideoInfoInterval(index);
-            } else {
-              this.count--;
-              this.stopPlaying(index);
-              this.players[index]["sessionId"] = 0;
-            }
-          },
-
-          error: (response: any) => {
-            console.log("response", response?.error);
-            if (waitingElem) waitingElem.style.display = 'none';
-
-            this.players[index]["hlsURL"] = "";
-            this.players[index]["sessionId"] = 0;
-            this.players[index]["mjpeg_sessionId"] = 0;
-
-            if (response?.error?.code === 3037) {
-              const ele = document.getElementById(this.players[index]["elem_id"]);
-              if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-            }
-
-            if (response.status !== 401 && response?.error?.code !== 3113) {
               if (this.players[index]["channelId"] > -1) {
-                this.count--;
-                this.players[index]["error"] = response?.error?.message || 'Stream error';
-                this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+                this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
+                this.players[index]["isplaying"] = true;
 
-                this.players[index]["channelId"] = -1;
-                this.players[index]["recoverDecodingErrorDate"] = null;
-                this.players[index]["recoverSwapAudioCodecDate"] = null;
-                this.players[index]["ptz_control"] = false;
-                this.players[index]["status"] = undefined;
-                this.players[index]["isplaying"] = false;
+                if ((Hls as any).isSupported && (Hls as any).isSupported()) {
+                  const video = this.getVideoElement(index);
+                  this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
 
-                if (this.players[index]["hlsPlayer"]) {
-                  try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+                  setTimeout(() => {
+                    if (this.players[index]["channelId"] > -1) {
+                      try {
+                        (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
+                        (this.players[index]["hlsPlayer"] as any).attachMedia(video);
+                        video?.play().catch(() => {});
+                      } catch (e) {
+                        console.error('HLS attach/play error', e);
+                      }
+                    }
+                  }, 2000);
+                } else {
+                  this.players[index]["error"] = "HLS video is not supported in your browser!";
                 }
-
-                setTimeout(() => {
-                  this.players[index]["error"] = "";
-                  const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                  if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
-                }, 5000);
+                this.manageVideoInfoInterval(index);
+              } else {
+                this.count--;
+                this.stopPlaying(index);
+                this.players[index]["sessionId"] = 0;
               }
-            } else {
-              console.error('Invalid session');
+            },
+
+            error: (response: any) => {
+              console.log("response", response?.error);
+              if (waitingElem) waitingElem.style.display = 'none';
+
+              this.players[index]["hlsURL"] = "";
+              this.players[index]["sessionId"] = 0;
+              this.players[index]["mjpeg_sessionId"] = 0;
+
+              if (response?.error?.code === 3037) {
+                const ele = document.getElementById(this.players[index]["elem_id"]);
+                if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
+              }
+
+              if (response.status !== 401 && response?.error?.code !== 3113) {
+                if (this.players[index]["channelId"] > -1) {
+                  this.count--;
+                  this.players[index]["error"] = response?.error?.message || 'Stream error';
+                  this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+
+                  this.players[index]["channelId"] = -1;
+                  this.players[index]["recoverDecodingErrorDate"] = null;
+                  this.players[index]["recoverSwapAudioCodecDate"] = null;
+                  this.players[index]["ptz_control"] = false;
+                  this.players[index]["status"] = undefined;
+                  this.players[index]["isplaying"] = false;
+
+                  if (this.players[index]["hlsPlayer"]) {
+                    try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+                  }
+
+                  setTimeout(() => {
+                    this.players[index]["error"] = "";
+                    const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
+                    if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+                  }, 5000);
+                }
+              } else {
+                console.error('Invalid session');
+              }
             }
-          }
-        });
+          });
+        }
       }
     }
   }

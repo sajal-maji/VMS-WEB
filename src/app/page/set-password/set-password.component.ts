@@ -5,6 +5,8 @@ import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validatio
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
+import * as CryptoJS from 'crypto-es';
+
 export const confirmPasswordValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('newPassword')?.value;
   const confirmPassword = control.get('confirmNewPassword')?.value;
@@ -72,8 +74,8 @@ export class SetPasswordComponent implements OnInit {
     // Validate the key
     if (this.uniqueKey) {
       this.checkValidKey(this.uniqueKey);
-    } else {
-      this.router.navigate(['ivmsweb/not-found']);
+    // } else {
+    //   this.router.navigate(['ivmsweb/not-found']);
     }
   }
 
@@ -178,7 +180,7 @@ export class SetPasswordComponent implements OnInit {
 
     // Encrypt password
     if (this.formControls['newPassword'].value.trim()) {
-      // const firstEncrypt = CryptoJS.SHA512(this.formControlsnewPassword).toString();
+      // const firstEncrypt = CryptoJS.SHA512(newPassword).toString();
       // this.formControlsnewPassword = firstEncrypt;
       // this.formControlsconfirmNewPassword = firstEncrypt;
     }

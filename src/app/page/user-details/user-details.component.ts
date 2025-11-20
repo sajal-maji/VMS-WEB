@@ -24,7 +24,8 @@ export class UserDetailsComponent implements OnInit {
 
   userForm!: FormGroup;
   model: any = {};
-  errorMessage?: string;
+  error_message: string ='';
+  success_message: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -89,7 +90,7 @@ export class UserDetailsComponent implements OnInit {
 
   validateForm(): boolean {
     if (this.userForm.invalid) {
-      this.errorMessage = 'Please fill all required fields!';
+      this.error_message = 'Please fill all required fields!';
       return false;
     }
     return true;
@@ -120,7 +121,7 @@ export class UserDetailsComponent implements OnInit {
         if (err.status === 401) {
           this.router.navigate(['ivmsweb/login']);
         } else {
-          alert(err.error?.message || 'Error loading user data!');
+          this.error_message = err.error?.message || 'Error loading user data!';
         }
       }
     });
@@ -152,7 +153,7 @@ export class UserDetailsComponent implements OnInit {
   }
 
   save(): void {
-    this.errorMessage = undefined;
+    this.error_message = '';
     // debugger
     if (!this.userForm.valid) {
       return;
@@ -186,7 +187,6 @@ export class UserDetailsComponent implements OnInit {
     }
 
     const url = API_ENDPOINTS.UPDATE_USER;
-    const payload = JSON.stringify(user);
     this.http.post<any>(url, user, {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
@@ -195,14 +195,24 @@ export class UserDetailsComponent implements OnInit {
       }),
     }).subscribe({
       next: () => {
-        alert('User Details Successfully Updated!');
-        location.reload();
+        this.success_message = 'User Details Successfully Updated!';
+        setTimeout(() => {
+          this.success_message = '';
+          location.reload();
+          // this.router.navigate(['ivmsweb/login']);
+        }, 1000);
       },
       error: (err) => {
         if (err.status === 401) {
           this.router.navigate(['ivmsweb/login']);
         } else {
-          alert(err.error?.message || 'An error occurred!');
+          this.error_message = err.error?.message || 'An error occurred!';
+          this.success_message = '';
+
+          // Auto-clear error message after a few seconds (optional)
+          setTimeout(() => {
+            this.error_message = '';
+          }, 1000);
         }
       }
     });
