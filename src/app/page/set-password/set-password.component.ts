@@ -79,7 +79,7 @@ export class SetPasswordComponent implements OnInit {
       ],
       redirecturl: [''],
       uniquekey: [''],
-      expiryTime: [''],
+      expirytime: [''],
     });
 
     this.model = {
@@ -156,9 +156,7 @@ export class SetPasswordComponent implements OnInit {
           if (response.status === 200 && response.result?.length > 0) {
             this.isKeyValid = true;
             const setPassword = response.result[0];
-            console.log('set password', setPassword);
             this.setPasswordForm.patchValue(setPassword);
-            console.log('set password', this.setPasswordForm);
             // this.model.userid = response.result[0].userid;
           } else {
             this.router.navigateByUrl('/ivmsweb/not-found');
@@ -185,32 +183,31 @@ export class SetPasswordComponent implements OnInit {
 
     const setPassword = this.setPasswordForm.value;
 
-    console.log('sp', setPassword);
     Object.keys(setPassword).forEach((key) => {
       setPassword[key] = this.sanitizeInput(setPassword[key]);
     });
 
     // this.validate();
 
-    if (this.error_message) return;
+    // if (this.error_message) return;
 
     let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.newpassword).toString();
-    firstEncryptCurrPass = CryptoJS.SHA512(firstEncryptCurrPass).toString();
     setPassword.newpassword = firstEncryptCurrPass;
+    
     setPassword.confirmPassword = firstEncryptCurrPass;
+
+    // console.log("set Pass", setPassword);
 
     const postData = {
       userid: setPassword.userid,
       newpassword: setPassword.newpassword,
-      // confirmnewpassword: setPassword.confirmPassword,
       redirecturl: setPassword.redirecturl,
       uniquekey: setPassword.uniquekey,
     };
 
-    console.log("postData", postData);
+    console.log("set Pass", postData);
 
     const url = API_ENDPOINTS.RESET_PASSWORD;
-
     this.http
       .post<any>(url, postData, {
         headers: new HttpHeaders({
@@ -221,8 +218,6 @@ export class SetPasswordComponent implements OnInit {
       .subscribe({
         next: (response: any) => {
           console.log('response', response);
-
-          // Success modal equivalent (replacing jQuery Confirm)
           this.success_message = 'Password has been reset!';
           setTimeout(() => {
             this.success_message = '';

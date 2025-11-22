@@ -188,8 +188,7 @@ export class ChangePasswordComponent implements OnInit {
     };
 
     console.log('change Pass', postData);
-
-    // Your old AngularJS save() logic goes here
+    
     setTimeout(() => {
       const url = API_ENDPOINTS.CHANGE_PASSWORD;
       this.http
@@ -216,8 +215,9 @@ export class ChangePasswordComponent implements OnInit {
 
             // Auto-clear error message after a few seconds (optional)
             setTimeout(() => {
+              this.error_message = '';
               location.reload();
-            }, 3000);
+            }, 1000);
           },
         });
       // console.log('Saved:', this.model);
