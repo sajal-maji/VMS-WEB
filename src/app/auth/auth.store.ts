@@ -46,7 +46,6 @@ export class AuthStore {
           token: res.result[0].vsessionid,
           error: null,
         });
-        console.log(credentials)
         // Set JWT token in cookie, valid for 1 day
         this.cookies.set('vSessionId', res.result[0].vsessionid, 1, '/');
         this.cookies.set('authToken', res.result[0].authToken, 1, '/');

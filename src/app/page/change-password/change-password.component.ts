@@ -188,7 +188,7 @@ export class ChangePasswordComponent implements OnInit {
     };
 
     console.log('change Pass', postData);
-    
+
     setTimeout(() => {
       const url = API_ENDPOINTS.CHANGE_PASSWORD;
       this.http

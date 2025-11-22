@@ -102,8 +102,6 @@ export class LoginComponent implements OnInit {
       password = firstEncrypt;
     }
 
-    console.log(userid, password);
-
     // Remember Me
     if (this.rememberMe) {
       localStorage.setItem('username', userid);

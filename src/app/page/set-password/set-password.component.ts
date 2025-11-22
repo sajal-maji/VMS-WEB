@@ -87,7 +87,7 @@ export class SetPasswordComponent implements OnInit {
       confirmPassword: '',
       redirecturl: location.origin + '/ivmsweb/set-password',
       userid: '',
-      expiryTime: '',
+      expirytime: '',
       uniquekey: '',
       email: '',
     };
@@ -159,12 +159,12 @@ export class SetPasswordComponent implements OnInit {
             this.setPasswordForm.patchValue(setPassword);
             // this.model.userid = response.result[0].userid;
           } else {
-            this.router.navigateByUrl('/ivmsweb/not-found');
+            this.router.navigate(['/ivmsweb/not-found']);
           }
         },
         error: () => {
           this.isCheckingKey = false;
-          this.router.navigateByUrl('/ivmsweb/not-found');
+          this.router.navigate(['/ivmsweb/not-found']);
         },
       });
   }
@@ -193,7 +193,7 @@ export class SetPasswordComponent implements OnInit {
 
     let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.newpassword).toString();
     setPassword.newpassword = firstEncryptCurrPass;
-    
+
     setPassword.confirmPassword = firstEncryptCurrPass;
 
     // console.log("set Pass", setPassword);
@@ -205,7 +205,7 @@ export class SetPasswordComponent implements OnInit {
       uniquekey: setPassword.uniquekey,
     };
 
-    console.log("set Pass", postData);
+    console.log('set Pass', postData);
 
     const url = API_ENDPOINTS.RESET_PASSWORD;
     this.http
@@ -221,7 +221,7 @@ export class SetPasswordComponent implements OnInit {
           this.success_message = 'Password has been reset!';
           setTimeout(() => {
             this.success_message = '';
-            this.router.navigateByUrl('ivmsweb/login');
+            this.router.navigate(['ivmsweb/login']);
           }, 1000);
         },
         error: (response: any) => {
