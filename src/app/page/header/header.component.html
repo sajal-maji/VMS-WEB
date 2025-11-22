@@ -6,7 +6,8 @@
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Dashboard')"
-    >Dashboard</a>
+      >Dashboard</a
+    >
 
     <a
       href="/ivmsweb/event-search"
@@ -14,7 +15,8 @@
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Events')"
-    >Events</a>
+      >Events</a
+    >
 
     <a
       href="/ivmsweb/archive-matrix"
@@ -22,7 +24,8 @@
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Archive')"
-    >Archive</a>
+      >Archive</a
+    >
 
     <a
       href="/ivmsweb/user-details"
@@ -30,7 +33,8 @@
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       (click)="tabChanged('Profile')"
-    >Profile</a>
+      >Profile</a
+    >
     <!-- <a
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
@@ -41,13 +45,14 @@
   <div class="nav-right">
     <div class="dropdown" *ngIf="showDropdown">
       <button class="dropbtn">▦ {{ currentLayout }}</button>
+
       <div class="dropdown-content">
-        <a (click)="selectLayout('1x1')">1x1</a>
-        <a (click)="selectLayout('2x2')">2x2</a>
-        <a (click)="selectLayout('3x3')">3x3</a>
-        <a (click)="selectLayout('4x4')">4x4</a>
+        <a *ngFor="let layout of layout.allowedLayouts()" (click)="selectLayout(layout)">
+          {{ layout }}
+        </a>
       </div>
     </div>
+
     <a routerLink="/ivmsweb/login" class="signout" (click)="signOut()">Signout</a>
   </div>
 </header>

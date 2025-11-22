@@ -1,17 +1,23 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
 import * as CryptoJS from 'crypto-es';
-import { FooterComponent } from "../footer/footer.component"; 
+import { FooterComponent } from '../footer/footer.component';
 import { Router, RouterLink } from '@angular/router';
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, FooterComponent, RouterLink],
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'] // keep your CSS
+  styleUrls: ['./login.component.css'], // keep your CSS
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
@@ -24,11 +30,11 @@ export class LoginComponent implements OnInit {
   site: string | null = null;
 
   constructor(
-    private fb: FormBuilder, 
+    private fb: FormBuilder,
     private sanitizer: DomSanitizer,
     private authStore: AuthStore,
-    private router: Router
-    ) {}
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     // Initialize form
@@ -39,9 +45,11 @@ export class LoginComponent implements OnInit {
         [
           Validators.required,
           // 8-12 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
-        ]
-      ]
+          Validators.pattern(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+          ),
+        ],
+      ],
     });
 
     // Load saved username if "Remember Me" was checked
@@ -76,10 +84,12 @@ export class LoginComponent implements OnInit {
 
     // Reset password field icon
     const toggleElements = document.querySelectorAll('.toggle-password');
-    toggleElements.forEach(el => {
+    toggleElements.forEach((el) => {
       el.classList.remove('fa-eye-slash');
       el.classList.add('fa-eye');
-      const input = document.querySelector<HTMLInputElement>((el as HTMLElement).getAttribute('toggle')!);
+      const input = document.querySelector<HTMLInputElement>(
+        (el as HTMLElement).getAttribute('toggle')!,
+      );
       if (input) input.type = 'password';
     });
 
@@ -91,6 +101,8 @@ export class LoginComponent implements OnInit {
       firstEncrypt = CryptoJS.SHA512(firstEncrypt).toString();
       password = firstEncrypt;
     }
+
+    console.log(userid, password);
 
     // Remember Me
     if (this.rememberMe) {

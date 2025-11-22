@@ -15,12 +15,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     : req;
 
   return next(authorizedRequest).pipe(
-    catchError(err => {
+    catchError((err) => {
       if (err.status === 401) {
         authStore.logout();
         router.navigateByUrl('ivmsweb/login');
       }
       return throwError(() => err);
-    })
+    }),
   );
 };

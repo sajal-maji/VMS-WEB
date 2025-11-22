@@ -9,7 +9,5 @@ export const initialLoginState: LoginState = {
   isLoading: false,
   isAuthenticated: false,
   token: null,
-  error: null
+  error: null,
 };
-
-

@@ -10,7 +10,7 @@
   background: #111317;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #1E2129;
+  border-right: 1px solid #1e2129;
   overflow: hidden;
   font-family: 'Titillium Web', sans-serif;
 }
@@ -19,7 +19,7 @@
 .sidebar-logo {
   text-align: center;
   padding: 24px 0 12px 0;
-  border-bottom: 1px solid #1E2129;
+  border-bottom: 1px solid #1e2129;
 }
 
 .sidebar-logo img {
@@ -31,16 +31,16 @@
 .sidebar-search {
   position: relative;
   padding: 12px 24px 12px 24px;
-  border-bottom: 1px solid #1E2129;
+  border-bottom: 1px solid #1e2129;
 }
 
 .sidebar-search input.search {
   width: 100%;
-  background: #1E2129;
-  border: 1px solid #1E2129;
+  background: #1e2129;
+  border: 1px solid #1e2129;
   border-radius: 4px;
   padding: 8px 32px 8px 12px;
-  color: #BABFCC;
+  color: #babfcc;
   font-size: 14px;
   font-weight: 600;
 }
@@ -66,7 +66,7 @@
   max-height: 100vh; /* or any specific height, e.g. 600px */
   overflow-x: hidden;
   scrollbar-width: thin; /* For Firefox */
-  scrollbar-color: #f0f3f4 #1c1c1c; 
+  scrollbar-color: #f0f3f4 #1c1c1c;
 }
 
 /* --- TREE STRUCTURE --- */
@@ -83,23 +83,25 @@
 .location {
   padding: 10px 16px;
   background: #111317;
-  color: #BABFCC;
+  color: #babfcc;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
   margin-bottom: 4px;
 }
 
 .location:hover {
-  background: #1E2129;
+  background: #1e2129;
   color: #fff;
 }
 
 /* Active node (checked in Angular) */
-.location[style*="rgba(38, 170, 225, 0.07)"] {
+.location[style*='rgba(38, 170, 225, 0.07)'] {
   background: rgba(38, 170, 225, 0.07);
   border-left: 3px solid #26aae1;
   color: #ffffff;
@@ -116,7 +118,7 @@
 /* Tree indentation for nested ULs */
 .tree ul {
   padding-left: 20px;
-  border-left: 1px solid #1E2129;
+  border-left: 1px solid #1e2129;
 }
 
 /* Icons */
@@ -140,6 +142,8 @@
 }
 
 /* --- GENERAL EFFECTS --- */
-.tree, .location, .sidebar {
+.tree,
+.location,
+.sidebar {
   transition: all 0.25s ease-in-out;
 }

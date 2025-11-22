@@ -30,8 +30,8 @@ export const DEFAULT_POST_CONFIG: PostInterceptorConfig = {
   enableRequestValidation: true,
   enableResponseValidation: true,
   customHeaders: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 };
 
 export const DEFAULT_AUTH_CONFIG: AuthInterceptorConfig = {
@@ -43,5 +43,5 @@ export const DEFAULT_AUTH_CONFIG: AuthInterceptorConfig = {
   enableCache: false,
   tokenHeader: 'Authorization',
   tokenPrefix: 'Bearer ',
-  excludeAuthUrls: ['/login', '/register', '/forgot-password']
+  excludeAuthUrls: ['/login', '/register', '/forgot-password'],
 };

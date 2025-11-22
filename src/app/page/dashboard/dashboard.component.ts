@@ -3,7 +3,20 @@
    (kept exactly as you provided)
    ------------------------- */
 
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, Renderer2, ViewChildren, computed, effect, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  QueryList,
+  Renderer2,
+  ViewChildren,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -17,7 +30,7 @@ import { VideoStreamService } from '../../store/service/video-stream.service';
 import { StreamingService } from '../../store/service/commonService/streaming.service';
 import { CookieService } from 'ngx-cookie-service';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
-import { FooterComponent } from "../footer/footer.component";
+import { FooterComponent } from '../footer/footer.component';
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -46,17 +59,17 @@ type Player = {
 
 const liveHlsJsConfig = {
   maxBufferLength: 30,
-  liveDurationInfinity: true
+  liveDurationInfinity: true,
 };
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,        // ✅ must be standalone for lazy-loading
+  standalone: true, // ✅ must be standalone for lazy-loading
   imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly layout = inject(LayoutService);
   readonly selectedLayout = computed(() => this.layout.selectedLayout());
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
@@ -68,13 +81,17 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   allPresets: any[] = [];
   vSessionId = ''; // if you used vsessionid in original
   serverConfiguration: any = {};
-  rootconfig: any = {
-    VIDEONETICS_STREAMING_MODE: 1,
-    VSTREAMER_STREAMING_MODE: 2,
-    WEBRTC_STREAMING_MODE: 3
+  rootconfig: any = {};
+
+  VIDEONETICS_STREAMING_MODE = 1;
+  VSTREAMER_STREAMING_MODE = 2;
+  WEBRTC_STREAMING_MODE = 3;
+  // replace or inject as needed
+  sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = {
+    matrix: '2x2',
+    channels: [],
+    matrixUrl: '',
   };
- // replace or inject as needed
-  sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = { matrix: '2x2', channels: [], matrixUrl: '' };
   currentTime = '';
   private subscriptions: Subscription[] = [];
   private keepAliveSub?: Subscription;
@@ -87,33 +104,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     private streamSvc: StreamingService,
     private http: HttpClient,
     private videoneticsRTC: VideoStreamService,
-    private cookies:CookieService,
+    private cookies: CookieService,
     public layoutService: LayoutService,
-  ) {} 
+  ) {}
 
   ngOnInit(): void {
-    if(this.layoutService.selectedLayout()==='1x1'){
+    if (this.layoutService.selectedLayout() === '1x1') {
       this.initPlayers(1);
-    }else if(this.layoutService.selectedLayout()==='2x2'){
+    } else if (this.layoutService.selectedLayout() === '2x2') {
       this.initPlayers(4);
-
-    }
-    else if(this.layoutService.selectedLayout()==='3x3'){
+    } else if (this.layoutService.selectedLayout() === '3x3') {
       this.initPlayers(9);
-
-    }
-    else if(this.layoutService.selectedLayout()==='4x4'){
+    } else if (this.layoutService.selectedLayout() === '4x4') {
       this.initPlayers(24);
-
     }
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
     this.subscriptions.push(t);
-    console.log("players", this.players);
-    
+    console.log('players', this.players);
 
     // start keepalive behavior for live sessions (if required)
-    // this.liveKeepAlive();
+    this.liveKeepAlive();
   }
 
   ngAfterViewInit(): void {
@@ -130,7 +141,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       p.hlsPlayer?.destroy();
       p.videoInfoIntervalSub?.unsubscribe();
     });
-    this.subscriptions.forEach(s => s.unsubscribe());
+    this.subscriptions.forEach((s) => s.unsubscribe());
     this.keepAliveSub?.unsubscribe();
   }
 
@@ -151,7 +162,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         webrtc: undefined,
         hlsPlayer: undefined,
         streamType: -1,
-        videoInfoIntervalSub: null
+        videoInfoIntervalSub: null,
       });
     }
   }
@@ -167,7 +178,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
     // destroy existing HLS
     if (player.hlsPlayer) {
-      try { player.hlsPlayer.destroy(); } catch (e) { /* ignore */ }
+      try {
+        player.hlsPlayer.destroy();
+      } catch (e) {
+        /* ignore */
+      }
       player.hlsPlayer = undefined;
     }
 
@@ -175,14 +190,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = hlsUrl;
       video.load();
-      video.play().catch(err => console.error('video.play error', err));
+      video.play().catch((err) => console.error('video.play error', err));
     } else if (Hls.isSupported()) {
       const hls = new Hls(liveHlsJsConfig);
       player.hlsPlayer = hls;
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(err => console.error('video.play error', err));
+        video.play().catch((err) => console.error('video.play error', err));
       });
 
       // Optional: bind events similar to your old `onEvents*` callbacks
@@ -202,7 +217,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     const player = this.players[index];
     if (!player) return;
     if (player.hlsPlayer) {
-      try { player.hlsPlayer.destroy(); } catch (e) { /* ignore */ }
+      try {
+        player.hlsPlayer.destroy();
+      } catch (e) {
+        /* ignore */
+      }
       player.hlsPlayer = undefined;
     }
     const video = this.getVideoElement(index);
@@ -220,7 +239,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   private getVideoElement(index: number): HTMLVideoElement | null {
     const arr = this.videoRefs?.toArray() || [];
     const ref = arr[index];
-    return ref ? ref.nativeElement : document.getElementById(this.players[index].elem_id) as HTMLVideoElement | null;
+    return ref
+      ? ref.nativeElement
+      : (document.getElementById(this.players[index].elem_id) as HTMLVideoElement | null);
   }
 
   /* ============================
@@ -239,18 +260,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         if (!result) return;
         player.mjpeg_sessionId = result.sessionid;
         // your original constructed hlsURL used vsessionid + /channel/ + channelId
-        player.hlsURL = (result.hlsurl ?? '') + (this.vSessionId ? this.vSessionId : '') + '/channel/' + player.channelId;
+        player.hlsURL =
+          (result.hlsurl ?? '') +
+          (this.vSessionId ? this.vSessionId : '') +
+          '/channel/' +
+          player.channelId;
         player.isplaying = true;
         // Start requesting frames (snapshot based) because encoded stream was being polled in original code
         this.requestFrames(index);
       },
-      error: (err:any) => {
+      error: (err: any) => {
         console.error('startEncodedLive error', err);
         if (err?.data?.code === 3037) {
           const vid = this.getVideoElement(index);
           if (vid) vid.setAttribute('poster', '/images/restricted_view_image.jpg');
         }
-      }
+      },
     });
   }
 
@@ -268,9 +293,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         if (vid) vid.setAttribute('poster', '/images/postervtpl_new.jpg');
         this.cancelVideoInfoInterval(index);
       },
-      error: (err:any) => {
+      error: (err: any) => {
         console.debug('stopEncodedLive error', err);
-      }
+      },
     });
   }
 
@@ -283,7 +308,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       next: (blob: Blob) => {
         this.loadSnap(blob, index);
       },
-      error: (err:any) => {
+      error: (err: any) => {
         // if server returned JSON error inside blob (your AngularJS readAsText logic)
         const reader = new FileReader();
         reader.onloadend = (e) => {
@@ -300,26 +325,30 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
           }
         };
         reader.readAsText(err?.error || err?.message || '');
-      }
+      },
     });
   }
   // setLayout(size: number) {
   //     this.gridSize = size;
   //   }
 
-    get gridTemplate() {
-      // Example: 2x2 -> "repeat(2, 1fr)"
-      return `repeat(${2}, 1fr)`;
-    }
+  get gridTemplate() {
+    // Example: 2x2 -> "repeat(2, 1fr)"
+    return `repeat(${2}, 1fr)`;
+  }
   loadSnap(blobData: Blob | null, index: number) {
     if (!blobData) {
       setTimeout(() => this.requestFrames(index), 500);
       return;
     }
-    const urlObject = (window.URL || (window as any).webkitURL);
+    const urlObject = window.URL || (window as any).webkitURL;
     let imageURL: string | null = null;
     if (imageURL) {
-      try { urlObject.revokeObjectURL(imageURL); } catch (e) { /* ignore */ }
+      try {
+        urlObject.revokeObjectURL(imageURL);
+      } catch (e) {
+        /* ignore */
+      }
     }
     imageURL = urlObject.createObjectURL(blobData);
     if (this.players[index].isplaying) {
@@ -339,7 +368,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     player.recoverDecodingErrorDate = null;
     player.recoverSwapAudioCodecDate = null;
     if (player.hlsPlayer) {
-      try { player.hlsPlayer.destroy(); } catch (e) {}
+      try {
+        player.hlsPlayer.destroy();
+      } catch (e) {}
       player.hlsPlayer = undefined;
     }
   }
@@ -352,7 +383,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     // This mirrors original logic: if we had started encoded MJPEG and saved currentPlayer, reattach HLS, else just hide.
     if (this.serverConfiguration && this.serverConfiguration.streamingMode) {
       if (
-        this.serverConfiguration.streamingMode === (this.rootconfig?.VIDEONETICS_STREAMING_MODE ?? 'VIDEONETICS') &&
+        this.serverConfiguration.streamingMode ===
+          (this.rootconfig?.VIDEONETICS_STREAMING_MODE ?? 'VIDEONETICS') &&
         this.serverConfiguration.videoneticsStreamType !== 'encoded'
       ) {
         // When args present, reattach previously detached HLS to the player slot
@@ -390,7 +422,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
             }
             this.currentPlayer = {};
           });
-
         } else {
           // just stop encoded and remove ptz info
           this.stopEncodedLive(this.ptzindex);
@@ -398,9 +429,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
           this.currentPlayer = {};
           this.ptzplayer = {};
         }
-      } else if (this.serverConfiguration.streamingMode === (this.rootconfig?.WEBRTC_STREAMING_MODE ?? 'WEBRTC')) {
+      } else if (
+        this.serverConfiguration.streamingMode ===
+        (this.rootconfig?.WEBRTC_STREAMING_MODE ?? 'WEBRTC')
+      ) {
         if (this.ptzplayer?.webrtc) {
-          try { this.ptzplayer.webrtc.stop(); } catch (e) {}
+          try {
+            this.ptzplayer.webrtc.stop();
+          } catch (e) {}
         }
         this.ptzplayer.webrtc = undefined;
         this.ptzindex = -1;
@@ -423,12 +459,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         this.ptzplayer.error = response?.data?.message ?? response?.message ?? '';
         setTimeout(() => (this.ptzplayer.error = ''), 2000);
       },
-      error: (err:any) => {
+      error: (err: any) => {
         if (err?.status !== 401 && err?.error?.code !== 3113) {
           this.players[this.ptzindex].error = err?.error?.message ?? 'PTZ error';
           setTimeout(() => (this.players[this.ptzindex].error = ''), 2000);
         }
-      }
+      },
     });
   }
 
@@ -438,36 +474,46 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
   getVideoInfo(index: number) {
     const player = this.players[index];
-    console.log("channel", player.channelId);
-    
-    if (player.channelId > -1 && player && player.streamType !== undefined && player.streamType > -1) {
-      const apiUrl = API_ENDPOINTS.VIDEO_INFO
-      .replace('{serverid}', this.serverConfiguration.serverid)
-      .replace('{channelid}', player.channelId.toString())
-      .replace('{streamindex}', player.streamType.toString());
-      this.http.get<any>(apiUrl, {
-        headers: new HttpHeaders({
-          'Content-Type': 'application/json',
-          'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-          'Authorization': `Bearer ${this.cookies.get('authToken')}`
-        }),
-      }).pipe(take(1)).subscribe({
-        next: (response: any) => {
-          console.log("response", response);
-          player.streamingParameters = response?.result ?? null;
-          console.log("streamingParameters", player.streamingParameters);
-        },
-        error: (err:any) => {
-          console.error('Error fetching streaming parameters', err);
-          player.streamingParameters = null;
-        }
-      });
+    console.log('channel', player.channelId);
+
+    if (
+      player.channelId > -1 &&
+      player &&
+      player.streamType !== undefined &&
+      player.streamType > -1
+    ) {
+      const apiUrl = API_ENDPOINTS.VIDEO_INFO.replace(
+        '{serverid}',
+        this.serverConfiguration.serverid,
+      )
+        .replace('{channelid}', player.channelId.toString())
+        .replace('{streamindex}', player.streamType.toString());
+      this.http
+        .get<any>(apiUrl, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+            Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+            Authorization: `Bearer ${this.cookies.get('authToken')}`,
+          }),
+        })
+        .pipe(take(1))
+        .subscribe({
+          next: (response: any) => {
+            console.log('response', response);
+            player.streamingParameters = response?.result ?? null;
+            console.log('streamingParameters', player.streamingParameters);
+          },
+          error: (err: any) => {
+            console.error('Error fetching streaming parameters', err);
+            player.streamingParameters = null;
+          },
+        });
     } else {
       player.streamingParameters = null;
     }
   }
 
-  private manageVideoInfoInterval(index: number,player?: Player, ) {
+  private manageVideoInfoInterval(index: number, player?: Player) {
     if (player?.isplaying) {
       if (!player.videoInfoIntervalSub) {
         player.videoInfoIntervalSub = interval(5000).subscribe(() => this.getVideoInfo(index));
@@ -500,7 +546,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     if (!player) return;
 
     // if encoded mode, handle accordingly (left as TODO if you have special behavior)
-    if (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType === 'encoded') {
+    if (
+      this.serverConfiguration?.isVideoneticsStreamMode &&
+      this.serverConfiguration.videoneticsStreamType === 'encoded'
+    ) {
       // encoded-specific play/pause if required
       return;
     }
@@ -510,7 +559,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     if (player.isplaying) {
       video.pause();
     } else {
-      video.play().catch(e => console.error(e));
+      video.play().catch((e) => console.error(e));
     }
     player.isplaying = !player.isplaying;
   }
@@ -523,7 +572,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       const video = this.getVideoElement(index);
       if (!video) return;
 
-      if (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType === 'encoded') {
+      if (
+        this.serverConfiguration?.isVideoneticsStreamMode &&
+        this.serverConfiguration.videoneticsStreamType === 'encoded'
+      ) {
         // encoded snapshot is poster attribute
         const image = video.getAttribute('poster') || '';
         this.downloadDataUrl(image, `Channel_${player.channelName}_${Date.now()}.png`);
@@ -568,7 +620,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     if (!el) return;
     const header = document.getElementById(el.id + 'header');
     const handle = header || el;
-    let pos3 = 0, pos4 = 0, pos1 = 0, pos2 = 0;
+    let pos3 = 0,
+      pos4 = 0,
+      pos1 = 0,
+      pos2 = 0;
 
     const onMouseDown = (e: MouseEvent) => {
       e.preventDefault();
@@ -584,8 +639,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       pos2 = pos4 - e.clientY;
       pos3 = e.clientX;
       pos4 = e.clientY;
-      el.style.top = (el.offsetTop - pos2) + 'px';
-      el.style.left = (el.offsetLeft - pos1) + 'px';
+      el.style.top = el.offsetTop - pos2 + 'px';
+      el.style.left = el.offsetLeft - pos1 + 'px';
     };
 
     const onClose = () => {
@@ -610,14 +665,18 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       this.hidePTZControl();
     }
 
-    if (player.channelId > -1 && (player.sessionId > 0 || (player.mjpeg_sessionId !== undefined && player.mjpeg_sessionId > 0))) {
+    if (
+      player.channelId > -1 &&
+      (player.sessionId > 0 || (player.mjpeg_sessionId !== undefined && player.mjpeg_sessionId > 0))
+    ) {
       this.stopPlaying(selectedIndex);
     }
 
     // broadcast channel cleared (replace with your event bus if needed)
     // decrement count etc. (you can keep a count property if needed)
     player.channelId = -1;
-    player.channelName = ((selectedIndex + 1) <= 9 ? '0' + (selectedIndex + 1) : (selectedIndex + 1).toString());
+    player.channelName =
+      selectedIndex + 1 <= 9 ? '0' + (selectedIndex + 1) : (selectedIndex + 1).toString();
     player.hlsURL = '';
     player.sessionId = 0;
     player.error = '';
@@ -628,7 +687,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     player.status = undefined;
     player.isplaying = false;
     player.webrtc = undefined;
-    if (player.hlsPlayer) { try { player.hlsPlayer.destroy(); } catch (e) {} player.hlsPlayer = undefined; }
+    if (player.hlsPlayer) {
+      try {
+        player.hlsPlayer.destroy();
+      } catch (e) {}
+      player.hlsPlayer = undefined;
+    }
 
     // update matrix URL if necessary (keep your prev logic)
   }
@@ -641,7 +705,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     // If your app uses a streamingMode flag for WebRTC
     if (this.serverConfiguration?.streamingMode === this.rootconfig?.WEBRTC_STREAMING_MODE) {
       if (player.webrtc) {
-        try { player.webrtc.stop(); } catch (e) {}
+        try {
+          player.webrtc.stop();
+        } catch (e) {}
       }
       player.sessionId = 0;
       const vid = this.getVideoElement(index);
@@ -651,8 +717,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
     // if encoded/videonetics encoded path:
     if (
-      (this.serverConfiguration?.isVideoneticsStreamMode && this.serverConfiguration?.videoneticsStreamType === 'encoded') &&
-      (window.location.pathname !== '/live-matrix/4x4' && window.location.pathname !== '/live-matrix/5x5')
+      this.serverConfiguration?.isVideoneticsStreamMode &&
+      this.serverConfiguration?.videoneticsStreamType === 'encoded' &&
+      window.location.pathname !== '/live-matrix/4x4' &&
+      window.location.pathname !== '/live-matrix/5x5'
     ) {
       // call encoded stop
       this.stopEncodedLive(index);
@@ -661,29 +729,34 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
     // normal HLS stop: call API stoplive with streamsessionid
     const postData = { streamsessionid: player.sessionId };
-    const apiEndpoint = API_ENDPOINTS.HLS_STOP_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
-    this.http.post<any>(apiEndpoint, postData, {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }),
-    }).subscribe({
-      next: () => {
-        player.sessionId = 0;
-        const vid = this.getVideoElement(index);
-        if (vid) vid.setAttribute('poster', '/images/postervtpl_new.jpg');
-        this.stopHls(index);
-      },
-      error: (err:any) => {
-        if (err?.status !== 401 && err?.error?.code !== 3113) {
-          console.error('stopPlaying error', err);
-        } else {
-          // invalid session
-          console.error('Invalid session', err);
-        }
-      }
-    });
+    const apiEndpoint = API_ENDPOINTS.HLS_STOP_LIVE.replace(
+      '{serverid}',
+      this.serverConfiguration.serverid,
+    );
+    this.http
+      .post<any>(apiEndpoint, postData, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .subscribe({
+        next: () => {
+          player.sessionId = 0;
+          const vid = this.getVideoElement(index);
+          if (vid) vid.setAttribute('poster', '/images/postervtpl_new.jpg');
+          this.stopHls(index);
+        },
+        error: (err: any) => {
+          if (err?.status !== 401 && err?.error?.code !== 3113) {
+            console.error('stopPlaying error', err);
+          } else {
+            // invalid session
+            console.error('Invalid session', err);
+          }
+        },
+      });
   }
 
   /* ============================
@@ -699,14 +772,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       next: (res: any) => {
         this.allPresets = res?.result ?? [];
       },
-      error: (err:any) => {
+      error: (err: any) => {
         if (err?.status === 401) {
           console.error('Invalid session');
         } else {
           this.players[ptzIndex].error = err?.error?.message ?? 'Error getting presets';
           setTimeout(() => (this.players[ptzIndex].error = ''), 2000);
         }
-      }
+      },
     });
   }
 
@@ -715,7 +788,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     const postData = {
       channelid: this.players[this.ptzindex].channelId,
       presetname: ptzPresetModel,
-      ptzspeed: 5
+      ptzspeed: 5,
     };
     const apiUrl = this.getApiEndpointGoToPreset();
     this.streamSvc.goToPreset(apiUrl, postData).subscribe({
@@ -723,10 +796,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         this.ptzplayer.error = res?.data?.message ?? res?.message ?? '';
         setTimeout(() => (this.ptzplayer.error = ''), 2000);
       },
-      error: (err:any) => {
+      error: (err: any) => {
         this.players[this.ptzindex].error = err?.error?.message ?? 'Goto preset error';
         setTimeout(() => (this.players[this.ptzindex].error = ''), 2000);
-      }
+      },
     });
   }
 
@@ -771,45 +844,52 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     this.keepAliveSub = interval(30_000).subscribe(() => {
       this.players.forEach((player, idx) => {
         if (player.channelId > -1 && player.sessionId > 0) {
-          const apiUrl = API_ENDPOINTS.KEEP_ALIVE_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
+          const apiUrl = API_ENDPOINTS.KEEP_ALIVE_LIVE.replace(
+            '{serverid}',
+            this.serverConfiguration.serverid,
+          );
           const payload = {
             streamsessionid: player.sessionId,
-            channelid: player.channelId
+            channelid: player.channelId,
           };
 
-          this.http.post<any>(apiUrl, payload, {
-            headers: new HttpHeaders({
-              'Content-Type': 'application/json',
-              'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-              'Authorization': `Bearer ${this.cookies.get('authToken')}`
-            }),
-          }).subscribe({
-            next: (res: any) => {
-              // API success — you can log or handle response if needed
-              console.log(`Keepalive success for channel ${player.channelId}`);
-            },
-            error: (err: any) => {
-              if (err?.status !== 401 && err?.error?.code !== 3113) {
-                player.error = err?.error?.message ?? player.error;
-                if (err?.error?.code === 3551) {
-                  // Session expired/closed by server
-                  player.channelId = -1;
-                  player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
-                  player.hlsURL = '';
-                  player.sessionId = 0;
-                  player.status = undefined;
-                  player.ptz_control = false;
-                  player.isplaying = false;
-                  if (player.hlsPlayer) {
-                    try { player.hlsPlayer.destroy(); } catch (e) {}
-                    player.hlsPlayer = undefined;
+          this.http
+            .post<any>(apiUrl, payload, {
+              headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+                Authorization: `Bearer ${this.cookies.get('authToken')}`,
+              }),
+            })
+            .subscribe({
+              next: (res: any) => {
+                // API success — you can log or handle response if needed
+                console.log(`Keepalive success for channel ${player.channelId}`);
+              },
+              error: (err: any) => {
+                if (err?.status !== 401 && err?.error?.code !== 3113) {
+                  player.error = err?.error?.message ?? player.error;
+                  if (err?.error?.code === 3551) {
+                    // Session expired/closed by server
+                    player.channelId = -1;
+                    player.channelName = idx < 9 ? '0' + (idx + 1) : '' + (idx + 1);
+                    player.hlsURL = '';
+                    player.sessionId = 0;
+                    player.status = undefined;
+                    player.ptz_control = false;
+                    player.isplaying = false;
+                    if (player.hlsPlayer) {
+                      try {
+                        player.hlsPlayer.destroy();
+                      } catch (e) {}
+                      player.hlsPlayer = undefined;
+                    }
                   }
+                } else {
+                  console.error('Invalid session');
                 }
-              } else {
-                console.error('Invalid session');
-              }
-            }
-          });
+              },
+            });
         }
       });
     });
@@ -848,7 +928,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     return `/V1/REST/${this.rootconfig.serverid}/${this.getApiEndpoint('ptzcontrol')}${channelId}/${command}/5`;
   }
   private getApiEndpointGetPreset(channelid: number) {
-    return this.getApiEndpoint('getpreset').replace('{0}', this.rootconfig.serverid) + `/${channelid}`;
+    return (
+      this.getApiEndpoint('getpreset').replace('{0}', this.rootconfig.serverid) + `/${channelid}`
+    );
   }
   private getApiEndpointGoToPreset() {
     return this.getApiEndpoint('gotopreset').replace('{0}', this.rootconfig.serverid);
@@ -858,19 +940,21 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   private getApiEndpoint(name: string): string {
     // Implement mapping of endpoints (example)
     const endpoints: Record<string, string> = {
-      'ptzcontrol': '/api/ptzcontrol/',
-      'getpreset': '/api/getpreset/{0}/{1}',
-      'gotopreset': '/api/gotopreset/{0}',
-      'getstreamingparameter': '/api/getstreamingparameter',
-      'stoplive': '/api/stoplive/{0}',
-      'encodedStartlive': '/api/encoded/startlive/',
-      'encodedStoplive': '/api/encoded/stoplive/'
+      ptzcontrol: '/api/ptzcontrol/',
+      getpreset: '/api/getpreset/{0}/{1}',
+      gotopreset: '/api/gotopreset/{0}',
+      getstreamingparameter: '/api/getstreamingparameter',
+      stoplive: '/api/stoplive/{0}',
+      encodedStartlive: '/api/encoded/startlive/',
+      encodedStoplive: '/api/encoded/stoplive/',
     };
     return endpoints[name] || `/${name}`;
   }
-   clearAllPlayers(matrixItem?: any): void {
+  clearAllPlayers(matrixItem?: any): void {
     this.players.forEach((player, index) => {
-      const waitingElem = player.waitinggolla_id ? document.getElementById(player.waitinggolla_id):'';
+      const waitingElem = player.waitinggolla_id
+        ? document.getElementById(player.waitinggolla_id)
+        : '';
       if (waitingElem) waitingElem.style.display = 'none';
 
       if (player.channelId > -1 && (player.sessionId > 0 || (player.mjpeg_sessionId ?? 0) > 0)) {
@@ -878,7 +962,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       }
 
       player.channelId = -1;
-      player.channelName = (index + 1 <= 9 ? '0' + (index + 1) : (index + 1).toString());
+      player.channelName = index + 1 <= 9 ? '0' + (index + 1) : (index + 1).toString();
       player.hlsURL = '';
       player.sessionId = 0;
       player.error = '';
@@ -891,7 +975,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       player.webrtc = undefined;
 
       if (player.hlsPlayer) {
-        try { player.hlsPlayer.destroy(); } catch {}
+        try {
+          player.hlsPlayer.destroy();
+        } catch {}
       }
     });
 
@@ -942,7 +1028,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         player.speaker_txt = 'Speaker is on';
       }
     } else {
-      console.error('No video is currently playing or player is not ready. Speaker cannot be toggled.');
+      console.error(
+        'No video is currently playing or player is not ready. Speaker cannot be toggled.',
+      );
     }
   }
 
@@ -963,7 +1051,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         player.microphone_txt = 'Microphone is on';
       }
     } else {
-      console.error('No video is currently playing or player is not ready. Microphone cannot be toggled.');
+      console.error(
+        'No video is currently playing or player is not ready. Microphone cannot be toggled.',
+      );
     }
   }
 
@@ -1035,14 +1125,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
     console.log('PTZ control opened for player', this.ptzindex);
   }
 
-  
-
   generateCameraDraggable() {
     console.log('Regenerating draggable cameras');
   }
 
-
-/* -------------------------
+  /* -------------------------
    APPENDED: Converted AngularJS controller logic
    (kept original comments exactly as requested)
    ------------------------- */
@@ -1080,8 +1167,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   // helper to emit root events (maps to $rootScope.$emit / $broadcast)
   private emitRootEvent(eventName: string, payload?: any) {
     const arr = this.rootEvents.get(eventName) || [];
-    arr.forEach(h => {
-      try { h(payload); } catch (e) { console.error('root event handler error', e); }
+    arr.forEach((h) => {
+      try {
+        h(payload);
+      } catch (e) {
+        console.error('root event handler error', e);
+      }
     });
   }
 
@@ -1091,23 +1182,21 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
   private attachChannelClickedListener() {
     // keep the handler exact to preserve logic and comments
     const handler = (channelToPlay: any) => {
-
-      if (this.getLocationPath() == "/live-matrix/2x2") {
+      if (this.getLocationPath() == '/live-matrix/2x2') {
         this.limit = 4;
-      } else if (this.getLocationPath() == "/live-matrix/3x3") {
+      } else if (this.getLocationPath() == '/live-matrix/3x3') {
         this.limit = 9;
-      } else if (this.getLocationPath() == "/live-matrix/4x4") {
+      } else if (this.getLocationPath() == '/live-matrix/4x4') {
         this.limit = 16;
-      } else if (this.getLocationPath() == "/live-matrix/5x5") {
+      } else if (this.getLocationPath() == '/live-matrix/5x5') {
         this.limit = 25;
       }
 
       if (channelToPlay.isjunction) {
-        this.model.error = "Please choose a camera.";
+        this.model.error = 'Please choose a camera.';
         //			$timeout(function() { $scope.model.error = ""; channelToPlay.checked = false; }, 1000);
         return;
       } else {
-
         if (!channelToPlay.checked) {
           this.channelClicked(channelToPlay);
           return;
@@ -1150,10 +1239,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
   // Append the original channelClicked logic (converted) — preserved comments and flow
   channelClicked(channelToPlay: any, fromMatrixUrl?: any) {
-    console.log("channelToPlay",channelToPlay);
+    console.log('channelToPlay', channelToPlay);
     if (channelToPlay?.index) {
       // Click Action
-      var alreadyPlayingIndex = -1; var availableIndex = -1;
+      var alreadyPlayingIndex = -1;
+      var availableIndex = -1;
 
       this.players.forEach((player, innerIndex) => {
         if (player.channelId === channelToPlay.id && player.channelId > -1) {
@@ -1165,52 +1255,60 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       });
 
       if (alreadyPlayingIndex < 0 && availableIndex > -1) {
-        console.log("channelToPlay",channelToPlay);
-        this.players[availableIndex]["channelId"] = channelToPlay.id;
-        this.players[availableIndex]["channelName"] = channelToPlay.name;
-        if (channelToPlay.configurationType && channelToPlay.configurationType == "1") {
-          this.players[availableIndex]["ptz_control"] = true;
+        console.log('channelToPlay', channelToPlay);
+        this.players[availableIndex]['channelId'] = channelToPlay.id;
+        this.players[availableIndex]['channelName'] = channelToPlay.name;
+        if (channelToPlay.configurationType && channelToPlay.configurationType == '1') {
+          this.players[availableIndex]['ptz_control'] = true;
         }
         this.players = [...this.players];
-        console.log("Updated Player:", this.players[availableIndex]);
+        console.log('Updated Player:', this.players[availableIndex]);
 
-        this.players[availableIndex]["status"] = channelToPlay.status;
+        this.players[availableIndex]['status'] = channelToPlay.status;
 
         this.count++;
         this.startPlaying(availableIndex);
         this.liveKeepAlive();
 
         this.setVideoMatrixUrlChannels(availableIndex, channelToPlay.id.toString());
-
       } else if (alreadyPlayingIndex > -1) {
         // Already Playing
-        // clear 
+        // clear
 
         this.count--;
         const waitinggollaId = this.players[alreadyPlayingIndex]['waitinggolla_id'];
         const waitingEl = waitinggollaId ? document.getElementById(waitinggollaId) : null;
         if (waitingEl) waitingEl.style.display = 'none';
         this.stopPlaying(alreadyPlayingIndex);
-        this.players[alreadyPlayingIndex]["channelId"] = -1;
-        this.players[alreadyPlayingIndex]["channelName"] = ((alreadyPlayingIndex + 1) <= 9 ? "0" + (alreadyPlayingIndex + 1) : (alreadyPlayingIndex + 1).toString());
-        this.players[alreadyPlayingIndex]["hlsURL"] = "";
-        this.players[alreadyPlayingIndex]["sessionId"] = 0;
-        this.players[alreadyPlayingIndex]["error"] = "";
-        this.players[alreadyPlayingIndex]["recoverDecodingErrorDate"] = null;
-        this.players[alreadyPlayingIndex]["recoverSwapAudioCodecDate"] = null;
-        this.players[alreadyPlayingIndex]["ptz_control"] = false;
-        this.players[alreadyPlayingIndex]["status"] = undefined;
-        this.players[alreadyPlayingIndex]["isplaying"] = false;
-        this.players[alreadyPlayingIndex]["webrtc"] = undefined;
-  
-        if ((this.players[alreadyPlayingIndex]["hlsPlayer"])) { try { (this.players[alreadyPlayingIndex]["hlsPlayer"] as any).destroy(); } catch(e) {} }
+        this.players[alreadyPlayingIndex]['channelId'] = -1;
+        this.players[alreadyPlayingIndex]['channelName'] =
+          alreadyPlayingIndex + 1 <= 9
+            ? '0' + (alreadyPlayingIndex + 1)
+            : (alreadyPlayingIndex + 1).toString();
+        this.players[alreadyPlayingIndex]['hlsURL'] = '';
+        this.players[alreadyPlayingIndex]['sessionId'] = 0;
+        this.players[alreadyPlayingIndex]['error'] = '';
+        this.players[alreadyPlayingIndex]['recoverDecodingErrorDate'] = null;
+        this.players[alreadyPlayingIndex]['recoverSwapAudioCodecDate'] = null;
+        this.players[alreadyPlayingIndex]['ptz_control'] = false;
+        this.players[alreadyPlayingIndex]['status'] = undefined;
+        this.players[alreadyPlayingIndex]['isplaying'] = false;
+        this.players[alreadyPlayingIndex]['webrtc'] = undefined;
+
+        if (this.players[alreadyPlayingIndex]['hlsPlayer']) {
+          try {
+            (this.players[alreadyPlayingIndex]['hlsPlayer'] as any).destroy();
+          } catch (e) {}
+        }
       }
     } else {
       // Drag Action
-      console.log("channelToPlay", channelToPlay);
+      console.log('channelToPlay', channelToPlay);
       this.getVideoInfo(channelToPlay.id);
       let availableIdx = channelToPlay.index - 1;
-      if (availableIdx < 0) { availableIdx = 0; }
+      if (availableIdx < 0) {
+        availableIdx = 0;
+      }
       // loop all and find if already playing
       var alreadyPlayingIndex = -1;
       this.players.forEach((player, innerIndex) => {
@@ -1220,15 +1318,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
         // console.log('innerindex', innerIndex,alreadyPlayingIndex);
       });
 
-      if (alreadyPlayingIndex < 0 && this.players[availableIdx]["channelId"] <= -1 && this.players[availableIdx]["sessionId"] <= 0) {
-        this.players[availableIdx]["channelId"] = channelToPlay.id;
-        this.players[availableIdx]["channelName"] = channelToPlay.name;
-        if ((channelToPlay.configurationType) && channelToPlay.configurationType == "1") {
-          this.players[availableIdx]["ptz_control"] = true;
+      if (
+        alreadyPlayingIndex < 0 &&
+        this.players[availableIdx]['channelId'] <= -1 &&
+        this.players[availableIdx]['sessionId'] <= 0
+      ) {
+        this.players[availableIdx]['channelId'] = channelToPlay.id;
+        this.players[availableIdx]['channelName'] = channelToPlay.name;
+        if (channelToPlay.configurationType && channelToPlay.configurationType == '1') {
+          this.players[availableIdx]['ptz_control'] = true;
         }
 
-        if ((channelToPlay.status) && channelToPlay.status != "") {
-          this.players[availableIdx]["status"] = channelToPlay.status;
+        if (channelToPlay.status && channelToPlay.status != '') {
+          this.players[availableIdx]['status'] = channelToPlay.status;
         }
 
         this.emitRootEvent('channelDroppedMakeChecked', channelToPlay);
@@ -1244,45 +1346,54 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
   // setVideoMatrixUrlChannels (preserving logic)
   setVideoMatrixUrlChannels(index: number, channelIdStr: string) {
-
     if (this.sendMatrix.channels.length == 0) {
       var channelsLength = 0;
-      if (this.sendMatrix.matrix == "1x1") {
+      if (this.sendMatrix.matrix == '1x1') {
         channelsLength = 1;
-      } else if (this.sendMatrix.matrix == "2x2") {
+      } else if (this.sendMatrix.matrix == '2x2') {
         channelsLength = 4;
-      } else if (this.sendMatrix.matrix == "3x3") {
+      } else if (this.sendMatrix.matrix == '3x3') {
         channelsLength = 9;
-      } else if (this.sendMatrix.matrix == "4x4") {
+      } else if (this.sendMatrix.matrix == '4x4') {
         channelsLength = 16;
-      } else if (this.sendMatrix.matrix == "5x5") {
+      } else if (this.sendMatrix.matrix == '5x5') {
         channelsLength = 25;
       }
       for (var i = 0; i < channelsLength; i++) {
-        this.sendMatrix.channels[i] = "0";
+        this.sendMatrix.channels[i] = '0';
       }
     }
     this.sendMatrix.channels[index] = channelIdStr;
-    this.sendMatrix.matrixUrl = window.location.href.split('?')[0] + "?channels=" + this.sendMatrix.channels.join(",");
+    this.sendMatrix.matrixUrl =
+      window.location.href.split('?')[0] + '?channels=' + this.sendMatrix.channels.join(',');
   }
 
   // Play matrix channels from sendMatrix (converted)
   playMatrixUrlChannels() {
-
     setTimeout(() => {
       var invalidChannelIds: string[] = [];
       this.sendMatrix.channels.forEach((loopChannelId: any, loopIndex: number) => {
         //console.log(channel, loopIndex);
         if (!isNaN(String(loopChannelId).trim() as any)) {
-          if (parseInt(String(loopChannelId).trim(), 10) > -1 && (this.rootconfig["cameramap"] && this.rootconfig["cameramap"]['junction_channel_' + String(loopChannelId).trim()])) {
-            console.debug("valid loopChannelId: ", String(loopChannelId).trim(), ", channel: ", this.rootconfig["cameramap"]['junction_channel_' + String(loopChannelId).trim()]);
+          if (
+            parseInt(String(loopChannelId).trim(), 10) > -1 &&
+            this.rootconfig['cameramap'] &&
+            this.rootconfig['cameramap']['junction_channel_' + String(loopChannelId).trim()]
+          ) {
+            console.debug(
+              'valid loopChannelId: ',
+              String(loopChannelId).trim(),
+              ', channel: ',
+              this.rootconfig['cameramap']['junction_channel_' + String(loopChannelId).trim()],
+            );
 
-            var channel = this.rootconfig["cameramap"]['junction_channel_' + String(loopChannelId).trim()],
+            var channel =
+                this.rootconfig['cameramap']['junction_channel_' + String(loopChannelId).trim()],
               channelToPlay = {
                 channelId: channel.id,
                 channelName: channel.name,
                 configurationType: channel.configurationType,
-                index: loopIndex + 1
+                index: loopIndex + 1,
               };
             this.channelClicked(channelToPlay, true);
           } else if (loopChannelId != '-1') {
@@ -1294,11 +1405,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       });
       if (invalidChannelIds.length > 0) {
         // Use simple confirm using window.confirm to emulate $.confirm used in original.
-        const msg = 'Following channel(s) are invalid: ' + invalidChannelIds.join(",");
+        const msg = 'Following channel(s) are invalid: ' + invalidChannelIds.join(',');
         // display a styled confirm is up to your UI lib; we fallback to alert for now.
         alert('Invalid Channel(s)\n' + msg);
       }
-
     }, 2 * 1000);
   }
 
@@ -1308,40 +1418,40 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
      We'll create a wrapper similar to the original which picks encoded vs HLS vs WebRTC paths
      ============================ */
 
-
   OnClick(event: any) {
-    const availableIndex = this.players.findIndex(p => p.channelId === -1);
+    const availableIndex = this.players.findIndex((p) => p.channelId === -1);
     const channelToPlay = {
       id: event.id.toString(),
       name: event.name,
       configurationType: event.configurationType,
       status: event.status,
-      index: availableIndex !== -1 ? availableIndex : 0
+      index: availableIndex !== -1 ? availableIndex : 0,
     };
 
-    console.log("Clicked Event:", channelToPlay);
+    console.log('Clicked Event:', channelToPlay);
     this.channelClicked(channelToPlay);
   }
 
   OnLoad(event: any) {
     // console.log(event);
     this.serverConfiguration = event;
-    console.log("server config",this.serverConfiguration);
+    console.log('server config', this.serverConfiguration);
   }
 
-
   startPlaying(index: number) {
-
-    if (this.getLocationPath() != "/live-matrix/4x4" && this.getLocationPath() != "/live-matrix/5x5" && (this.serverConfiguration) &&
-      this.serverConfiguration.isVideoneticsStreamMode && this.serverConfiguration.videoneticsStreamType == "encoded") {
-
+    if (
+      this.getLocationPath() != '/live-matrix/4x4' &&
+      this.getLocationPath() != '/live-matrix/5x5' &&
+      this.serverConfiguration &&
+      this.serverConfiguration.isVideoneticsStreamMode &&
+      this.serverConfiguration.videoneticsStreamType == 'encoded'
+    ) {
       /** Encoded */
       this.startEncodedLive(index);
-
     } else {
       /*var postData = { "resolutionwidth": 800, "resolutionheight": 700, "withaudio": false };*/
 
-      const elem = document.getElementById(this.players[index]["elem_id"]);
+      const elem = document.getElementById(this.players[index]['elem_id']);
       let width = elem ? (elem as HTMLElement).offsetWidth : 0;
       let height = elem ? (elem as HTMLElement).offsetHeight : 0;
 
@@ -1354,213 +1464,251 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
       }
 
       var postData: any = {
-        "channelid": this.players[index]["channelId"],
-        "resolutionwidth": width,
-        "resolutionheight": height,
-        "withaudio": false
+        channelid: this.players[index]['channelId'],
+        resolutionwidth: width,
+        resolutionheight: height,
+        withaudio: false,
       };
 
-      if (this.getLocationPath() == "/live-matrix/1x1") {
+      if (this.getLocationPath() == '/live-matrix/1x1') {
         postData.resolutionwidth = 1024;
         postData.resolutionheight = 860;
       }
-      this.players[index]["error"] = "Waiting for video ....";
+      this.players[index]['error'] = 'Waiting for video ....';
       const waitinggollaId = this.players[index]['waitinggolla_id'];
       const waitingElem = waitinggollaId ? document.getElementById(waitinggollaId) : null;
       if (waitingElem) waitingElem.style.display = 'block';
       if (waitingElem) waitingElem.style.display = 'block';
-      const apiUrl = API_ENDPOINTS.WEBRTC_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
-      console.log("rootConfig", this.rootconfig);
-      
+      const apiUrl = API_ENDPOINTS.WEBRTC_LIVE.replace(
+        '{serverid}',
+        this.serverConfiguration.serverid,
+      );
+      console.log('rootConfig', this.rootconfig, this.serverConfiguration);
+
       // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
-      if (this.serverConfiguration &&
-        this.serverConfiguration.streamingMode == (this.rootconfig?.WEBRTC_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
+      if (
+        this.serverConfiguration &&
+        this.serverConfiguration.streamer == this.WEBRTC_STREAMING_MODE
+      ) {
         /** WebRTC */
-        this.http.post(apiUrl, postData, {
-          headers: new HttpHeaders({
-            'Content-Type': 'application/json',
-            'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-            'Authorization': `Bearer ${this.cookies.get('authToken')}`
-          }),
-        })
-        .subscribe({
-          next: (response: any) => {
-            console.log("res", response);
-            this.players[index]["error"] = "";
-            if (waitingElem) waitingElem.style.display = 'none';
-
-            this.players[index]["sessionId"] = new Date().getTime();
-
-            if (this.players[index]["channelId"] > -1) {
-
-              var streamingResponse = response?.result?.[0];
-              this.players[index]["streamType"] = streamingResponse.streamType;
-              var videoElement = this.getVideoElement(index);
-              var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-              // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
-              // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
-              
-              var webrtc: any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
-              
-
-              try {
-                this.players[index]["webrtc"] = webrtc;
-                this.players[index]["webrtc"].start(streamingResponse.serverId, streamingResponse.channelId,
-                  streamingResponse.startTimestamp);
-                console.log("streamingResponse",streamingResponse, streamingResponse.startTimestamp);
-              } catch (error) {
-
-                console.log("WebRTC playing, error: ", error);
-
-                var webrtcURL = "/" + streamingResponse.publicAddress + ":" + streamingResponse.serverPort;
-                var webrtc : any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
-                this.players[index]["webrtc"] = webrtc;
-                if (this.players[index]["webrtc"].onconnect) this.players[index]["webrtc"].onconnect();
-              }
-              this.players[index]["isplaying"] = true;
-              this.manageVideoInfoInterval(index);
-            } else {
-              this.count--;
-              this.stopPlaying(index);
-
-              this.players[index]["sessionId"] = 0;
-            }
-          },
-          error: (response: any) => {
-            console.log("response", response?.error);
-            if (waitingElem) waitingElem.style.display = 'none';
-
-            this.players[index]["hlsURL"] = "";
-            this.players[index]["sessionId"] = 0;
-            this.players[index]["mjpeg_sessionId"] = 0;
-
-            if (response?.error?.code === 3037) {
-              const ele = document.getElementById(this.players[index]["elem_id"]);
-              if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
-            }
-
-            if (response.status !== 401 && response?.error?.code !== 3113) {
-              if (this.players[index]["channelId"] > -1) {
-                this.count--;
-                this.players[index]["error"] = response?.error?.message || 'Stream error';
-                this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
-
-                this.players[index]["channelId"] = -1;
-                this.players[index]["recoverDecodingErrorDate"] = null;
-                this.players[index]["recoverSwapAudioCodecDate"] = null;
-                this.players[index]["ptz_control"] = false;
-                this.players[index]["status"] = undefined;
-                this.players[index]["isplaying"] = false;
-
-                if (this.players[index]["hlsPlayer"]) {
-                  try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
-                }
-
-                setTimeout(() => {
-                  this.players[index]["error"] = "";
-                  const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                  if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
-                }, 5000);
-              }
-            } else {
-              console.error('Invalid session');
-            }
-          }
-        })
-
-      } else {
-        
-        const apiUrl = API_ENDPOINTS.HLS_START_LIVE.replace('{serverid}', this.serverConfiguration.serverid);
-        if (this.serverConfiguration &&
-          this.serverConfiguration.streamingMode == (this.rootconfig?.VSTREAMER_STREAMING_MODE ?? this.serverConfiguration.streamingMode)) {
-          /** HLS */
-          this.http.post<any>(apiUrl, postData, {
+        this.http
+          .post(apiUrl, postData, {
             headers: new HttpHeaders({
               'Content-Type': 'application/json',
-              'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-              'Authorization': `Bearer ${this.cookies.get('authToken')}`
+              Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+              Authorization: `Bearer ${this.cookies.get('authToken')}`,
             }),
           })
           .subscribe({
             next: (response: any) => {
-              console.log("response", response?.result);
-
-              this.players[index]["error"] = "";
+              console.log('res', response);
+              this.players[index]['error'] = '';
               if (waitingElem) waitingElem.style.display = 'none';
-              this.players[index]["streamType"] = response?.result?.[0]?.streamType;
-              this.players[index]["sessionId"] = response?.result?.[0]?.sessionid ?? 0;
 
-              if (this.players[index]["channelId"] > -1) {
-                this.players[index]["hlsURL"] = response?.result?.[0]?.hlsurl ?? '';
-                this.players[index]["isplaying"] = true;
+              this.players[index]['sessionId'] = new Date().getTime();
 
-                if ((Hls as any).isSupported && (Hls as any).isSupported()) {
-                  const video = this.getVideoElement(index);
-                  this.players[index]["hlsPlayer"] = new (Hls as any)(liveHlsJsConfig);
+              if (this.players[index]['channelId'] > -1) {
+                var streamingResponse = response?.result?.[0];
+                this.players[index]['streamType'] = streamingResponse.streamType;
+                var videoElement = this.getVideoElement(index);
+                var webrtcURL =
+                  '/' + streamingResponse.publicAddress + ':' + streamingResponse.serverPort;
+                // var webrtc = new WebRTC(webrtcURL, streamingResponse.serverId, streamingResponse.channelId, -1, 1, streamingResponse.streamType,
+                // 	streamingResponse.startTimestamp, videoElement, streamingResponse.stunIp, streamingResponse.stunPort);
 
-                  setTimeout(() => {
-                    if (this.players[index]["channelId"] > -1) {
-                      try {
-                        (this.players[index]["hlsPlayer"] as any).loadSource(this.players[index]["hlsURL"]);
-                        (this.players[index]["hlsPlayer"] as any).attachMedia(video);
-                        video?.play().catch(() => {});
-                      } catch (e) {
-                        console.error('HLS attach/play error', e);
-                      }
-                    }
-                  }, 2000);
-                } else {
-                  this.players[index]["error"] = "HLS video is not supported in your browser!";
+                var webrtc: any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+
+                try {
+                  this.players[index]['webrtc'] = webrtc;
+                  this.players[index]['webrtc'].start(
+                    streamingResponse.serverId,
+                    streamingResponse.channelId,
+                    streamingResponse.startTimestamp,
+                  );
+                  console.log(
+                    'streamingResponse',
+                    streamingResponse,
+                    streamingResponse.startTimestamp,
+                  );
+                } catch (error) {
+                  console.log('WebRTC playing, error: ', error);
+
+                  var webrtcURL =
+                    '/' + streamingResponse.publicAddress + ':' + streamingResponse.serverPort;
+                  var webrtc: any = new this.videoneticsRTC.VideoneticsRTC(webrtcURL, videoElement);
+                  this.players[index]['webrtc'] = webrtc;
+                  if (this.players[index]['webrtc'].onconnect)
+                    this.players[index]['webrtc'].onconnect();
                 }
+                this.players[index]['isplaying'] = true;
                 this.manageVideoInfoInterval(index);
               } else {
                 this.count--;
                 this.stopPlaying(index);
-                this.players[index]["sessionId"] = 0;
+
+                this.players[index]['sessionId'] = 0;
               }
             },
-
             error: (response: any) => {
-              console.log("response", response?.error);
+              console.log('response', response?.error);
               if (waitingElem) waitingElem.style.display = 'none';
 
-              this.players[index]["hlsURL"] = "";
-              this.players[index]["sessionId"] = 0;
-              this.players[index]["mjpeg_sessionId"] = 0;
+              this.players[index]['hlsURL'] = '';
+              this.players[index]['sessionId'] = 0;
+              this.players[index]['mjpeg_sessionId'] = 0;
 
               if (response?.error?.code === 3037) {
-                const ele = document.getElementById(this.players[index]["elem_id"]);
-                if (ele) (ele as HTMLVideoElement).setAttribute('poster', "images/restricted_view_image.jpg");
+                const ele = document.getElementById(this.players[index]['elem_id']);
+                if (ele)
+                  (ele as HTMLVideoElement).setAttribute(
+                    'poster',
+                    'images/restricted_view_image.jpg',
+                  );
               }
 
               if (response.status !== 401 && response?.error?.code !== 3113) {
-                if (this.players[index]["channelId"] > -1) {
+                if (this.players[index]['channelId'] > -1) {
                   this.count--;
-                  this.players[index]["error"] = response?.error?.message || 'Stream error';
-                  this.emitRootEvent('channelCleared', this.players[index]["channelId"]);
+                  this.players[index]['error'] = response?.error?.message || 'Stream error';
+                  this.emitRootEvent('channelCleared', this.players[index]['channelId']);
 
-                  this.players[index]["channelId"] = -1;
-                  this.players[index]["recoverDecodingErrorDate"] = null;
-                  this.players[index]["recoverSwapAudioCodecDate"] = null;
-                  this.players[index]["ptz_control"] = false;
-                  this.players[index]["status"] = undefined;
-                  this.players[index]["isplaying"] = false;
+                  this.players[index]['channelId'] = -1;
+                  this.players[index]['recoverDecodingErrorDate'] = null;
+                  this.players[index]['recoverSwapAudioCodecDate'] = null;
+                  this.players[index]['ptz_control'] = false;
+                  this.players[index]['status'] = undefined;
+                  this.players[index]['isplaying'] = false;
 
-                  if (this.players[index]["hlsPlayer"]) {
-                    try { (this.players[index]["hlsPlayer"] as any).destroy(); } catch (e) {}
+                  if (this.players[index]['hlsPlayer']) {
+                    try {
+                      (this.players[index]['hlsPlayer'] as any).destroy();
+                    } catch (e) {}
                   }
 
                   setTimeout(() => {
-                    this.players[index]["error"] = "";
-                    const vidElem = document.querySelector("#" + this.players[index]["elem_id"]);
-                    if (vidElem) (vidElem as HTMLVideoElement).setAttribute('poster', 'images/postervtpl_new.jpg');
+                    this.players[index]['error'] = '';
+                    const vidElem = document.querySelector('#' + this.players[index]['elem_id']);
+                    if (vidElem)
+                      (vidElem as HTMLVideoElement).setAttribute(
+                        'poster',
+                        'images/postervtpl_new.jpg',
+                      );
                   }, 5000);
                 }
               } else {
                 console.error('Invalid session');
               }
-            }
+            },
           });
+      } else {
+        const apiUrl = API_ENDPOINTS.HLS_START_LIVE.replace(
+          '{serverid}',
+          this.serverConfiguration.serverid,
+        );
+        if (
+          this.serverConfiguration &&
+          this.serverConfiguration.streamer == this.VSTREAMER_STREAMING_MODE
+        ) {
+          /** HLS */
+          this.http
+            .post<any>(apiUrl, postData, {
+              headers: new HttpHeaders({
+                'Content-Type': 'application/json',
+                Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+                Authorization: `Bearer ${this.cookies.get('authToken')}`,
+              }),
+            })
+            .subscribe({
+              next: (response: any) => {
+                console.log('response', response?.result);
+
+                this.players[index]['error'] = '';
+                if (waitingElem) waitingElem.style.display = 'none';
+                this.players[index]['streamType'] = response?.result?.[0]?.streamType;
+                this.players[index]['sessionId'] = response?.result?.[0]?.sessionid ?? 0;
+
+                if (this.players[index]['channelId'] > -1) {
+                  this.players[index]['hlsURL'] = response?.result?.[0]?.hlsurl ?? '';
+                  this.players[index]['isplaying'] = true;
+
+                  if ((Hls as any).isSupported && (Hls as any).isSupported()) {
+                    const video = this.getVideoElement(index);
+                    this.players[index]['hlsPlayer'] = new (Hls as any)(liveHlsJsConfig);
+
+                    setTimeout(() => {
+                      if (this.players[index]['channelId'] > -1) {
+                        try {
+                          (this.players[index]['hlsPlayer'] as any).loadSource(
+                            this.players[index]['hlsURL'],
+                          );
+                          (this.players[index]['hlsPlayer'] as any).attachMedia(video);
+                          video?.play().catch(() => {});
+                        } catch (e) {
+                          console.error('HLS attach/play error', e);
+                        }
+                      }
+                    }, 2000);
+                  } else {
+                    this.players[index]['error'] = 'HLS video is not supported in your browser!';
+                  }
+                  this.manageVideoInfoInterval(index);
+                } else {
+                  this.count--;
+                  this.stopPlaying(index);
+                  this.players[index]['sessionId'] = 0;
+                }
+              },
+              error: (response: any) => {
+                console.log('response', response?.error);
+                if (waitingElem) waitingElem.style.display = 'none';
+
+                this.players[index]['hlsURL'] = '';
+                this.players[index]['sessionId'] = 0;
+                this.players[index]['mjpeg_sessionId'] = 0;
+
+                if (response?.error?.code === 3037) {
+                  const ele = document.getElementById(this.players[index]['elem_id']);
+                  if (ele)
+                    (ele as HTMLVideoElement).setAttribute(
+                      'poster',
+                      'images/restricted_view_image.jpg',
+                    );
+                }
+
+                if (response.status !== 401 && response?.error?.code !== 3113) {
+                  if (this.players[index]['channelId'] > -1) {
+                    this.count--;
+                    this.players[index]['error'] = response?.error?.message || 'Stream error';
+                    this.emitRootEvent('channelCleared', this.players[index]['channelId']);
+
+                    this.players[index]['channelId'] = -1;
+                    this.players[index]['recoverDecodingErrorDate'] = null;
+                    this.players[index]['recoverSwapAudioCodecDate'] = null;
+                    this.players[index]['ptz_control'] = false;
+                    this.players[index]['status'] = undefined;
+                    this.players[index]['isplaying'] = false;
+
+                    if (this.players[index]['hlsPlayer']) {
+                      try {
+                        (this.players[index]['hlsPlayer'] as any).destroy();
+                      } catch (e) {}
+                    }
+
+                    setTimeout(() => {
+                      this.players[index]['error'] = '';
+                      const vidElem = document.querySelector('#' + this.players[index]['elem_id']);
+                      if (vidElem)
+                        (vidElem as HTMLVideoElement).setAttribute(
+                          'poster',
+                          'images/postervtpl_new.jpg',
+                        );
+                    }, 5000);
+                  }
+                } else {
+                  console.error('Invalid session');
+                }
+              },
+            });
         }
       }
     }
@@ -1568,64 +1716,82 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy  {
 
   // Provide a light options/actionsMenu equivalent (converted)
   options = {
-    "actionsMenu": [
-      ['Clear View', (selectedIndex: number) => {
-        //console.log($itemScope, event, selectedPlayer, text, $li);
-        //	            	debugger;
-        if (document.getElementById("overlay")?.style.display == "block" && this.ptzindex != -1) {
-          this.hidePTZControl();
-        }
-
-        if (typeof this.players[selectedIndex] !== 'undefined') {
-          var selectedPlayer = this.players[selectedIndex],
-            channelId = selectedPlayer["channelId"];
-          if (selectedPlayer && selectedPlayer["channelId"] > -1 && (selectedPlayer["sessionId"] > 0 ||
-            selectedPlayer && (selectedPlayer["mjpeg_sessionId"] > 0))) {
-            this.stopPlaying(selectedIndex);
+    actionsMenu: [
+      [
+        'Clear View',
+        (selectedIndex: number) => {
+          //console.log($itemScope, event, selectedPlayer, text, $li);
+          //	            	debugger;
+          if (document.getElementById('overlay')?.style.display == 'block' && this.ptzindex != -1) {
+            this.hidePTZControl();
           }
 
-          this.emitRootEvent('channelCleared', selectedPlayer["channelId"]);
-          this.count--;
-          selectedPlayer["channelId"] = -1;
-          selectedPlayer["channelName"] = ((selectedIndex + 1) <= 9 ? "0" + (selectedIndex + 1) : (selectedIndex + 1)).toString();
-          selectedPlayer["hlsURL"] = "";
-          selectedPlayer["sessionId"] = 0;
-          selectedPlayer["error"] = "";
-          selectedPlayer["recoverDecodingErrorDate"] = null;
-          selectedPlayer["recoverSwapAudioCodecDate"] = null;
-          selectedPlayer["ptz_control"] = false;
-          selectedPlayer["mjpeg_sessionId"] = 0;
-          selectedPlayer["status"] = undefined;
-          selectedPlayer["isplaying"] = false;
-          selectedPlayer["webrtc"] = undefined;
+          if (typeof this.players[selectedIndex] !== 'undefined') {
+            var selectedPlayer = this.players[selectedIndex],
+              channelId = selectedPlayer['channelId'];
+            if (
+              selectedPlayer &&
+              selectedPlayer['channelId'] > -1 &&
+              (selectedPlayer['sessionId'] > 0 ||
+                (selectedPlayer && selectedPlayer['mjpeg_sessionId'] > 0))
+            ) {
+              this.stopPlaying(selectedIndex);
+            }
 
-          if (selectedPlayer["hlsPlayer"]) { try { (selectedPlayer["hlsPlayer"] as any).destroy(); } catch(e) {} }
+            this.emitRootEvent('channelCleared', selectedPlayer['channelId']);
+            this.count--;
+            selectedPlayer['channelId'] = -1;
+            selectedPlayer['channelName'] = (
+              selectedIndex + 1 <= 9 ? '0' + (selectedIndex + 1) : selectedIndex + 1
+            ).toString();
+            selectedPlayer['hlsURL'] = '';
+            selectedPlayer['sessionId'] = 0;
+            selectedPlayer['error'] = '';
+            selectedPlayer['recoverDecodingErrorDate'] = null;
+            selectedPlayer['recoverSwapAudioCodecDate'] = null;
+            selectedPlayer['ptz_control'] = false;
+            selectedPlayer['mjpeg_sessionId'] = 0;
+            selectedPlayer['status'] = undefined;
+            selectedPlayer['isplaying'] = false;
+            selectedPlayer['webrtc'] = undefined;
 
-          if (this.sendMatrix.channels.indexOf(channelId.toString()) > -1) {
-            this.sendMatrix.channels[this.sendMatrix.channels.indexOf(channelId.toString())] = "-1";
-            this.sendMatrix.matrixUrl = window.location.href.split('?')[0] + "?channels=" + this.sendMatrix.channels.join(",");
+            if (selectedPlayer['hlsPlayer']) {
+              try {
+                (selectedPlayer['hlsPlayer'] as any).destroy();
+              } catch (e) {}
+            }
+
+            if (this.sendMatrix.channels.indexOf(channelId.toString()) > -1) {
+              this.sendMatrix.channels[this.sendMatrix.channels.indexOf(channelId.toString())] =
+                '-1';
+              this.sendMatrix.matrixUrl =
+                window.location.href.split('?')[0] +
+                '?channels=' +
+                this.sendMatrix.channels.join(',');
+            }
           }
-        }
-      }],
-      ['Clear All View', (_selectedIndex: number) => {
-        //console.log($itemScope, event, player, text, $li);
-        if (document.getElementById("overlay")?.style.display == "block" && this.ptzindex != -1) {
-          this.hidePTZControl();
-        }
-        this.clearAllPlayers();
+        },
+      ],
+      [
+        'Clear All View',
+        (_selectedIndex: number) => {
+          //console.log($itemScope, event, player, text, $li);
+          if (document.getElementById('overlay')?.style.display == 'block' && this.ptzindex != -1) {
+            this.hidePTZControl();
+          }
+          this.clearAllPlayers();
 
-        this.sendMatrix.channels.forEach((loopChannel: any, loopIndex: number) => {
-          this.sendMatrix.channels[loopIndex] = "0";
-        });
-        this.sendMatrix.matrixUrl = window.location.href.split('?')[0] + "?channels=" + this.sendMatrix.channels.join(",");
-
-      }]
-    ]
+          this.sendMatrix.channels.forEach((loopChannel: any, loopIndex: number) => {
+            this.sendMatrix.channels[loopIndex] = '0';
+          });
+          this.sendMatrix.matrixUrl =
+            window.location.href.split('?')[0] + '?channels=' + this.sendMatrix.channels.join(',');
+        },
+      ],
+    ],
   };
 
   // clearAllPlayers root listener registration done in attachLegacyListeners
 
   // stopPlaying was already defined above (kept original); nothing to duplicate here.
-
-  
 }

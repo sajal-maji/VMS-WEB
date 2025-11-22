@@ -6,8 +6,6 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './three-x-three.component.html',
-  styleUrl: './three-x-three.component.css'
+  styleUrl: './three-x-three.component.css',
 })
-export class ThreeXThree {
-
-}
+export class ThreeXThree {}

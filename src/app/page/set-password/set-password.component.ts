@@ -1,12 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import * as CryptoJS from 'crypto-es';
-import { FooterComponent } from "../footer/footer.component";
+import { FooterComponent } from '../footer/footer.component';
 import { CookieService } from 'ngx-cookie-service';
 
 @Component({
@@ -14,16 +22,15 @@ import { CookieService } from 'ngx-cookie-service';
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, FooterComponent],
   templateUrl: './set-password.component.html',
-  styleUrls: ['./set-password.component.css']
+  styleUrls: ['./set-password.component.css'],
 })
 export class SetPasswordComponent implements OnInit {
-
   // Flags for UI
   isCheckingKey: boolean = true;
   isKeyValid: boolean = false;
-  submitted:boolean = false;
-  showNew:boolean = false;
-  showConfirm:boolean = false;
+  submitted: boolean = false;
+  showNew: boolean = false;
+  showConfirm: boolean = false;
 
   error_message: string = '';
   success_message: string = '';
@@ -40,7 +47,7 @@ export class SetPasswordComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
     private router: Router,
-    private cookieService:CookieService,
+    private cookieService: CookieService,
   ) {}
 
   model = {};
@@ -48,27 +55,31 @@ export class SetPasswordComponent implements OnInit {
   ngOnInit(): void {
     // Get unique key from query parameter
     this.uniqueKey = this.route.snapshot.queryParamMap.get('uk');
-    console.log("unique", this.uniqueKey);
+    console.log('unique', this.uniqueKey);
 
     this.setPasswordForm = this.fb.group({
-      userid: ['',],
+      userid: [''],
       newpassword: [
         '',
         [
           Validators.required,
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
-        ]
+          Validators.pattern(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+          ),
+        ],
       ],
       confirmPassword: [
         '',
         [
           Validators.required,
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/)
-        ]
+          Validators.pattern(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+          ),
+        ],
       ],
-      redirecturl: ['',],
-      uniquekey: ['',],
-      expiryTime: ['',]
+      redirecturl: [''],
+      uniquekey: [''],
+      expiryTime: [''],
     });
 
     this.model = {
@@ -78,15 +89,15 @@ export class SetPasswordComponent implements OnInit {
       userid: '',
       expiryTime: '',
       uniquekey: '',
-      email: ''
-    }
+      email: '',
+    };
     // this.model.uniquekey = this.uniqueKey || undefined;
 
     // Validate the key
     if (this.uniqueKey) {
       this.checkValidKey(this.uniqueKey);
-    // } else {
-    //   this.router.navigate(['ivmsweb/not-found']);
+      // } else {
+      //   this.router.navigate(['ivmsweb/not-found']);
     }
   }
 
@@ -94,8 +105,8 @@ export class SetPasswordComponent implements OnInit {
     this.showNew = !this.showNew;
     const input = document.getElementById('new-password-field') as HTMLInputElement;
     if (input) input.type = this.showNew ? 'text' : 'password';
-  } 
-  
+  }
+
   toggleConfirmNewPassword(): void {
     this.showConfirm = !this.showConfirm;
     const input = document.getElementById('confirm-new-password-field') as HTMLInputElement;
@@ -131,33 +142,35 @@ export class SetPasswordComponent implements OnInit {
     // Replace {uk} with the actual uniqueKey value
     const url = API_ENDPOINTS.VALIDATE_KEY.replace('{uniquekey}', uniqueKey);
 
-    this.http.get(url, {
-      headers: new HttpHeaders({ 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.cookieService.get('authToken')}`
+    this.http
+      .get(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.cookieService.get('authToken')}`,
+        }),
       })
-    }).subscribe({
-      next: (response: any) => {
-        this.isCheckingKey = false;
+      .subscribe({
+        next: (response: any) => {
+          this.isCheckingKey = false;
 
-        if (response.status === 200 && response.result?.length > 0) {
-          this.isKeyValid = true;
-          const setPassword = response.result[0];
-          console.log("set password",setPassword)
-          this.setPasswordForm.patchValue(setPassword);
-          console.log("set password",this.setPasswordForm)
-          // this.model.userid = response.result[0].userid;
-        } else {
+          if (response.status === 200 && response.result?.length > 0) {
+            this.isKeyValid = true;
+            const setPassword = response.result[0];
+            console.log('set password', setPassword);
+            this.setPasswordForm.patchValue(setPassword);
+            console.log('set password', this.setPasswordForm);
+            // this.model.userid = response.result[0].userid;
+          } else {
+            this.router.navigateByUrl('/ivmsweb/not-found');
+          }
+        },
+        error: () => {
+          this.isCheckingKey = false;
           this.router.navigateByUrl('/ivmsweb/not-found');
-        }
-      },
-      error: () => {
-        this.isCheckingKey = false;
-        this.router.navigateByUrl('/ivmsweb/not-found');
-      }
-    });
+        },
+      });
   }
-  
+
   get f() {
     return this.setPasswordForm.controls;
   }
@@ -172,8 +185,8 @@ export class SetPasswordComponent implements OnInit {
 
     const setPassword = this.setPasswordForm.value;
 
-    console.log("sp",setPassword);
-    Object.keys(setPassword).forEach(key => {
+    console.log('sp', setPassword);
+    Object.keys(setPassword).forEach((key) => {
       setPassword[key] = this.sanitizeInput(setPassword[key]);
     });
 
@@ -190,38 +203,42 @@ export class SetPasswordComponent implements OnInit {
       userid: setPassword.userid,
       newpassword: setPassword.newpassword,
       // confirmnewpassword: setPassword.confirmPassword,
-      redirecturl:setPassword.redirecturl,
-      uniquekey: setPassword.uniquekey
+      redirecturl: setPassword.redirecturl,
+      uniquekey: setPassword.uniquekey,
     };
+
+    console.log("postData", postData);
 
     const url = API_ENDPOINTS.RESET_PASSWORD;
 
-    this.http.post<any>(url, postData, {
-      headers: new HttpHeaders({ 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.cookieService.get('authToken')}`
-      }),
-    }).subscribe({
-      next: (response: any) => {
-        console.log("response", response);
-        
-        // Success modal equivalent (replacing jQuery Confirm)
-        this.success_message = 'Password has been reset!';
-        setTimeout(() => {
-          this.success_message = '';
-          this.router.navigateByUrl('ivmsweb/login');
-        }, 1000);
-      },
-      error: (response: any) => {
-        this.error_message = response?.error?.message || 'Something went wrong!';
-        this.success_message = '';
+    this.http
+      .post<any>(url, postData, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.cookieService.get('authToken')}`,
+        }),
+      })
+      .subscribe({
+        next: (response: any) => {
+          console.log('response', response);
 
-        // Auto-clear error message after a few seconds (optional)
-        setTimeout(() => {
-          this.error_message = '';
-          location.reload();
-        }, 1000);
-      }
-    })
+          // Success modal equivalent (replacing jQuery Confirm)
+          this.success_message = 'Password has been reset!';
+          setTimeout(() => {
+            this.success_message = '';
+            this.router.navigateByUrl('ivmsweb/login');
+          }, 1000);
+        },
+        error: (response: any) => {
+          this.error_message = response?.error?.message || 'Something went wrong!';
+          this.success_message = '';
+
+          // Auto-clear error message after a few seconds (optional)
+          setTimeout(() => {
+            this.error_message = '';
+            location.reload();
+          }, 1000);
+        },
+      });
   }
 }

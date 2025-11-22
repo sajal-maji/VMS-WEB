@@ -8,9 +8,8 @@ describe('OneXOne', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [OneXOne]
-    })
-    .compileComponents();
+      imports: [OneXOne],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(OneXOne);
     component = fixture.componentInstance;

@@ -25,7 +25,7 @@ export class AuthStore {
     isLoading: false,
     isAuthenticated: !!this.cookies.get('JSESSIONID'),
     token: this.cookies.get('JSESSIONID') || null,
-    error: null
+    error: null,
   });
 
   readonly isLoading: Signal<boolean> = computed(() => this.state().isLoading);
@@ -35,34 +35,34 @@ export class AuthStore {
 
   login(credentials: LoginRequest): void {
     if (this.state().isLoading) return;
-    this.state.update(s => ({ ...s, isLoading: true, error: null }));
+    this.state.update((s) => ({ ...s, isLoading: true, error: null }));
 
     const url = `${environment.apiBaseUrl}user/login/web`;
     this.http.post<{ token: string }>(url, credentials, { withCredentials: true }).subscribe({
-      next: (res:any) => {
+      next: (res: any) => {
         this.state.set({
           isLoading: false,
           isAuthenticated: true,
           token: res.result[0].vsessionid,
-          error: null
+          error: null,
         });
+        console.log(credentials)
         // Set JWT token in cookie, valid for 1 day
         this.cookies.set('vSessionId', res.result[0].vsessionid, 1, '/');
         this.cookies.set('authToken', res.result[0].authToken, 1, '/');
-        this.router.navigate(["ivmsweb/live-matrix"])
+        this.router.navigate(['ivmsweb/live-matrix']);
       },
-      
 
       error: (err) => {
         const message = err?.error?.message || 'Login failed';
         this.state.set({
-          isLoading: false, 
+          isLoading: false,
           isAuthenticated: false,
           token: null,
-          error: message
+          error: message,
         });
-      }
-    });                 
+      },
+    });
   }
 
   logout(): void {
@@ -70,7 +70,7 @@ export class AuthStore {
       isLoading: false,
       isAuthenticated: false,
       token: null,
-      error: null
+      error: null,
     });
     // Remove JWT token from cookie
     this.cookies.delete('JSESSIONID', '/');
@@ -79,7 +79,7 @@ export class AuthStore {
   getToken(): string | null {
     // Always read from cookie to ensure latest value
     const token = this.cookies.get('JSESSIONID');
-    this.state.update(s => ({ ...s, token, isAuthenticated: !!token }));
+    this.state.update((s) => ({ ...s, token, isAuthenticated: !!token }));
     return token || null;
   }
 }

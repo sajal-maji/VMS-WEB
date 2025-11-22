@@ -8,9 +8,8 @@ describe('AudioBrodcast', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AudioBrodcast]
-    })
-    .compileComponents();
+      imports: [AudioBrodcast],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(AudioBrodcast);
     component = fixture.componentInstance;

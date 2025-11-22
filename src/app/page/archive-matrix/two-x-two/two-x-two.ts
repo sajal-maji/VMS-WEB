@@ -4,8 +4,6 @@ import { Component } from '@angular/core';
   selector: 'app-two-x-two',
   imports: [],
   templateUrl: './two-x-two.html',
-  styleUrl: './two-x-two.css'
+  styleUrl: './two-x-two.css',
 })
-export class TwoXTwo {
-
-}
+export class TwoXTwo {}

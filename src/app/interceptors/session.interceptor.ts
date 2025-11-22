@@ -11,7 +11,7 @@ export const sessionInterceptor: HttpInterceptorFn = (req, next) => {
   // Only attach if available
   if (vSessionId) {
     const cloned = req.clone({
-      setHeaders: { vSessionId: vSessionId }
+      setHeaders: { vSessionId: vSessionId },
     });
     return next(cloned);
   }

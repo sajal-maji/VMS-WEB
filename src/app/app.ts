@@ -7,11 +7,11 @@ import { CleanupService } from './cleanup.service';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrls: ['./app.css']
+  styleUrls: ['./app.css'],
 })
 export class App {
   protected readonly title = signal('vms-web-angular-revamp');
-   constructor(private cleanupService: CleanupService) {
+  constructor(private cleanupService: CleanupService) {
     // Just injecting activates the HostListener globally
   }
 }

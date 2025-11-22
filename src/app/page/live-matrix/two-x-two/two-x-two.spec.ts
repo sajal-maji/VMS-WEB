@@ -8,9 +8,8 @@ describe('TwoXTwo', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TwoXTwo]
-    })
-    .compileComponents();
+      imports: [TwoXTwo],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(TwoXTwo);
     component = fixture.componentInstance;

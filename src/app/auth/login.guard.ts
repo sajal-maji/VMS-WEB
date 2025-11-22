@@ -4,10 +4,13 @@ import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({ providedIn: 'root' })
 export class LoginGuard implements CanActivate {
-  constructor(private router: Router, private cookie: CookieService) {}
+  constructor(
+    private router: Router,
+    private cookie: CookieService,
+  ) {}
 
   canActivate(): boolean {
-    const isLoggedIn = !!this.cookie.get("vSessionId");
+    const isLoggedIn = !!this.cookie.get('vSessionId');
     if (isLoggedIn) {
       this.router.navigate(['ivmsweb/live-matrix']);
       return false;

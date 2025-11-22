@@ -13,17 +13,31 @@
       class="video-grid"
       [ngStyle]="{ 'grid-template-columns': gridTemplate }"
       class="col-lg-6 col-md-6 col-sm-6 col-xs-12 player_container"
-      style="padding: 0px 2px;"
+      style="padding: 0px 2px"
       *ngFor="let player of players; let i = index"
     >
       <div
         class="calendar-container"
-        style="position: relative; top: 10px; right: 20px; display: flex; justify-content: end; gap: 8px;"
+        style="
+          position: relative;
+          top: 10px;
+          right: 20px;
+          display: flex;
+          justify-content: end;
+          gap: 8px;
+        "
       >
         <input
           type="datetime-local"
           class="form-control"
-          style="width: 180px; background-color: #2a2f3a; color: white; border: 1px solid #555; border-radius: 4px; padding: 4px 6px;"
+          style="
+            width: 180px;
+            background-color: #2a2f3a;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 4px 6px;
+          "
           [(ngModel)]="selectedDateStr"
           (change)="onDateChange($event, i)"
         />
@@ -36,26 +50,36 @@
       >
         <div
           class="col-lg-12 col-md-12 col-sm-12 col-xs-12 video-header"
-          style="display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; padding: 5px 8px;"
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+            padding: 5px 8px;
+          "
         >
           <!-- Left: Camera + Audio/Mic Icons + Channel Name -->
           <div
             class="d-flex align-items-center"
-            style="display: flex; align-items: center; flex-shrink: 1; min-width: 0;"
+            style="display: flex; align-items: center; flex-shrink: 1; min-width: 0"
           >
             <div
               class="video-header-icon d-flex align-items-center"
-              style="display: flex; align-items: center; flex-shrink: 0; margin-left: 15px;"
+              style="display: flex; align-items: center; flex-shrink: 0; margin-left: 15px"
             >
               <img
-                [src]="player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'"
+                [src]="
+                  player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'
+                "
                 *ngIf="player.status == undefined"
                 (click)="toggleSpeaker(i)"
                 [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
               />
               <img src="/images/camera/CameraIconIdle.png" *ngIf="player.status == undefined" />
               <img
-                [src]="player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'"
+                [src]="
+                  player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'
+                "
                 *ngIf="!player['ptz_control'] && player.status == 0"
                 (click)="toggleSpeaker(i)"
                 [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
@@ -63,14 +87,14 @@
 
               <div
                 class="col-lg-5 col-md-5 col-sm-6 col-xs-7 d-flex align-items-center"
-                style="padding: 0px 12px; gap: 0px;"
+                style="padding: 0px 12px; gap: 0px"
               >
-                <div style="width: 60px;">
+                <div style="width: 60px">
                   <button
                     class="grid-button"
                     type="button"
                     (click)="navigator.clipboard.writeText(sendMatrix.matrixUrl)"
-                    style="width: 32px !important;"
+                    style="width: 32px !important"
                   >
                     <i class="fa fa-copy" aria-hidden="true"></i>
                   </button>
@@ -85,7 +109,13 @@
 
             <div
               class="video-header-title text-truncate"
-              style="font-weight: 500; padding-left: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+              style="
+                font-weight: 500;
+                padding-left: 60px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
               [attr.title]="player.channelName"
             >
               {{ player.channelName }}
@@ -111,14 +141,18 @@
               [attr.title]="'Take Snap'"
             />
 
-            <img (click)="closeClicked(i)" src="/images/CloseIcon.png" [attr.title]="'Stop Playing'" />
+            <img
+              (click)="closeClicked(i)"
+              src="/images/CloseIcon.png"
+              [attr.title]="'Stop Playing'"
+            />
           </div>
         </div>
 
         <div
           class="video-container-centeredOverlay"
           [id]="player.waitinggolla_id"
-          style="display: none;"
+          style="display: none"
         >
           <span class="video-container-centeredOverlay-helper"></span>
           <img src="/images/loadinghome.gif" alt="loading" />
@@ -152,7 +186,7 @@
                   </button>
                 </td>
 
-                <td width="55%" align="center" style="padding: 15px;">
+                <td width="55%" align="center" style="padding: 15px">
                   <button
                     type="button"
                     class="btn btn-default"
@@ -230,12 +264,12 @@
                     ></span>
                   </button>
 
-                  <div class="dropup" style="display: inline-block; vertical-align: middle;">
+                  <div class="dropup" style="display: inline-block; vertical-align: middle">
                     <button
                       type="button"
                       class="btn btn-default dropdown-toggle"
                       [disabled]="player.hlsURL == '' && !player.webrtc"
-                      style="border: 1px solid #323845;"
+                      style="border: 1px solid #323845"
                       data-toggle="dropdown"
                       aria-haspopup="true"
                       [attr.aria-expanded]="isDropdownOpen"
@@ -245,14 +279,51 @@
                       {{ speedDisplay }}x
                     </button>
 
-                    <ul class="dropdown-menu" style="background-color: #1e2129; min-width: 30px !important;">
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.125)" style="color: white;">-8x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.25)" style="color: white;">-4x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(0.5)" style="color: white;">-2x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(1)" style="color: white;">1x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(2)" style="color: white;">2x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(4)" style="color: white;">4x</a></li>
-                      <li><a href="javascript:void(0)" (click)="changeSpeed(8)" style="color: white;">8x</a></li>
+                    <ul
+                      class="dropdown-menu"
+                      style="background-color: #1e2129; min-width: 30px !important"
+                    >
+                      <li>
+                        <a
+                          href="javascript:void(0)"
+                          (click)="changeSpeed(0.125)"
+                          style="color: white"
+                          >-8x</a
+                        >
+                      </li>
+                      <li>
+                        <a
+                          href="javascript:void(0)"
+                          (click)="changeSpeed(0.25)"
+                          style="color: white"
+                          >-4x</a
+                        >
+                      </li>
+                      <li>
+                        <a href="javascript:void(0)" (click)="changeSpeed(0.5)" style="color: white"
+                          >-2x</a
+                        >
+                      </li>
+                      <li>
+                        <a href="javascript:void(0)" (click)="changeSpeed(1)" style="color: white"
+                          >1x</a
+                        >
+                      </li>
+                      <li>
+                        <a href="javascript:void(0)" (click)="changeSpeed(2)" style="color: white"
+                          >2x</a
+                        >
+                      </li>
+                      <li>
+                        <a href="javascript:void(0)" (click)="changeSpeed(4)" style="color: white"
+                          >4x</a
+                        >
+                      </li>
+                      <li>
+                        <a href="javascript:void(0)" (click)="changeSpeed(8)" style="color: white"
+                          >8x</a
+                        >
+                      </li>
                     </ul>
                   </div>
                 </td>
@@ -263,7 +334,7 @@
 
         <!-- ✅ Recording & Motion Progress Sections -->
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text" style="text-align: left;">
+          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text" style="text-align: left">
             Recording
           </div>
           <fieldset
@@ -275,17 +346,15 @@
               *ngFor="let barsection of player.barclips"
               class="pointer recording-section"
               [ngStyle]="{
-                    'margin-left': $any(barsection).marginleft,
-                    width: $any(barsection).width
-                }"
-                [attr.title]="
-                    ($any(barsection).starttimestamp | date: 'dd MMM yyyy hh:mm:ss a') +
-                    ' to ' +
-                    ($any(barsection).endtimestamp | date: 'dd MMM yyyy hh:mm:ss a')
-                "
+                'margin-left': $any(barsection).marginleft,
+                width: $any(barsection).width,
+              }"
+              [attr.title]="
+                ($any(barsection).starttimestamp | date: 'dd MMM yyyy hh:mm:ss a') +
+                ' to ' +
+                ($any(barsection).endtimestamp | date: 'dd MMM yyyy hh:mm:ss a')
+              "
               (click)="startPlaying(i, barsection)"
-             
-              
             >
               &nbsp;
             </span>
@@ -293,9 +362,7 @@
         </div>
 
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text">
-            Motion
-          </div>
+          <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text">Motion</div>
           <!-- <fieldset
             id="motion-progress1"
             class="col-lg-11 col-md-10 col-sm-12 col-xs-12 motion-progress"
@@ -319,7 +386,7 @@
 
         <span
           class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center custom-small"
-          style="min-height: 22px; color: #fcb614;"
+          style="min-height: 22px; color: #fcb614"
         >
           {{ player.error }}
         </span>
@@ -328,7 +395,7 @@
       <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" [id]="player.controls_id">
         <span
           class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center error custom-small"
-          style="min-height: 10px;"
+          style="min-height: 10px"
         >
           {{ player.error }}
         </span>

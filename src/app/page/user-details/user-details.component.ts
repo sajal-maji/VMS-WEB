@@ -6,33 +6,32 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { debug } from 'console';
 import { TreeComponent } from '../tree/tree.component';
-import { HeaderComponent } from "../header/header.component";
+import { HeaderComponent } from '../header/header.component';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
 import * as CryptoJS from 'crypto-es';
-import { FooterComponent } from "../footer/footer.component"; 
+import { FooterComponent } from '../footer/footer.component';
 
 @Component({
   selector: 'app-user-details',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, TreeComponent, HeaderComponent, FooterComponent],
   templateUrl: './user-details.component.html',
-  styleUrls: ['./user-details.component.css']
+  styleUrls: ['./user-details.component.css'],
 })
 export class UserDetailsComponent implements OnInit {
-
   userForm!: FormGroup;
   model: any = {};
-  error_message: string ='';
+  error_message: string = '';
   success_message: string = '';
 
   constructor(
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
-    private cookies:CookieService,
+    private cookies: CookieService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -44,7 +43,7 @@ export class UserDetailsComponent implements OnInit {
         { id: 4, name: 'What is the first name of your best childhood friend?' },
         { id: 5, name: 'What was the name of your primary school?' },
         { id: 6, name: 'Which town was your mother born in?' },
-        { id: 7, name: 'What is the name of the first company / organization you worked for?' }
+        { id: 7, name: 'What is the name of the first company / organization you worked for?' },
       ],
       securityQuestionSet_2: [
         { id: 1, name: 'What was your favourite food as a child?' },
@@ -53,24 +52,24 @@ export class UserDetailsComponent implements OnInit {
         { id: 4, name: 'Who is your all-time favourite sports personality?' },
         { id: 5, name: 'Who is your all-time favourite movie character?' },
         { id: 6, name: 'What was your favourite childhood game?' },
-        { id: 7, name: 'What was your favourite cartoon character as a child?' }
+        { id: 7, name: 'What was your favourite cartoon character as a child?' },
       ],
       securityquestion1: 1,
       securityquestion2: 1,
       securityanswer1: '',
       securityanswer2: '',
-      isEditable: false
+      isEditable: false,
     };
 
     this.userForm = this.fb.group({
-      userid: ['', ],
+      userid: [''],
       fullname: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      mobile: ['',Validators.pattern(/^[0-9]{10}$/)],
+      mobile: ['', Validators.pattern(/^[0-9]{10}$/)],
       securityquestion1: [this.model.securityquestion1, Validators.required],
-      securityanswer1: ['',],
+      securityanswer1: [''],
       securityquestion2: [this.model.securityquestion2, Validators.required],
-      securityanswer2: ['', ]
+      securityanswer2: [''],
     });
 
     this.loadData();
@@ -96,58 +95,61 @@ export class UserDetailsComponent implements OnInit {
     return true;
   }
 
-  OnLoad(event: any){
-    console.log("Hi events",event);
+  OnLoad(event: any) {
+    console.log('Hi events', event);
   }
 
   loadData(): void {
     const url = API_ENDPOINTS.USER_SESSION;
-    this.http.get<any>(url, {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }), 
-    }).pipe(take(1)).subscribe({
-      next: (res: any) => {
-        console.log(res.result)
-        if (res?.result?.length > 0) {
-          const user = res.result[0];
-          this.userForm.patchValue(user);
-          this.setSecurityQuestionAnswers(user);
-        }
-      },
-      error: (err) => {
-        if (err.status === 401) {
-          this.router.navigate(['ivmsweb/login']);
-        } else {
-          this.error_message = err.error?.message || 'Error loading user data!';
-        }
-      }
-    });
+    this.http
+      .get<any>(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (res: any) => {
+          console.log(res.result);
+          if (res?.result?.length > 0) {
+            const user = res.result[0];
+            this.userForm.patchValue(user);
+            this.setSecurityQuestionAnswers(user);
+          }
+        },
+        error: (err) => {
+          if (err.status === 401) {
+            this.router.navigate(['ivmsweb/login']);
+          } else {
+            this.error_message = err.error?.message || 'Error loading user data!';
+          }
+        },
+      });
   }
 
   setSecurityQuestionAnswers(user: any): void {
     if (user.securityquestion1) {
       const q1 = this.model.securityQuestionSet_1.find(
-        (q: any) => q.name === user.securityquestion1
+        (q: any) => q.name === user.securityquestion1,
       );
       if (q1) this.userForm.patchValue({ securityquestion1: q1.id });
     }
 
     if (user.securityquestion2) {
       const q2 = this.model.securityQuestionSet_2.find(
-        (q: any) => q.name === user.securityquestion2
+        (q: any) => q.name === user.securityquestion2,
       );
       if (q2) this.userForm.patchValue({ securityquestion2: q2.id });
     }
 
     if (user.securityanswer1) {
-      console.log(user.securityanswer1);
+      // console.log(user.securityanswer1);
       this.userForm.patchValue({ securityanswer1: '**********' });
     }
     if (user.securityanswer2) {
-      console.log(user.securityanswer2);
+      // console.log(user.securityanswer2);
       this.userForm.patchValue({ securityanswer2: '**********' });
     }
   }
@@ -160,23 +162,22 @@ export class UserDetailsComponent implements OnInit {
     }
 
     const user = this.userForm.value;
-    console.log("user", user);
-    
+    console.log('user', user);
 
     // Sanitize inputs
-    Object.keys(user).forEach(key => {
+    Object.keys(user).forEach((key) => {
       user[key] = this.sanitizeInput(user[key]);
     });
 
     // Map security questions
     user.securityquestion1 = this.model.securityQuestionSet_1.find(
-      (q: any) => q.id === Number(user.securityquestion1)
+      (q: any) => q.id === Number(user.securityquestion1),
     )?.name;
     user.securityquestion2 = this.model.securityQuestionSet_2.find(
-      (q: any) => q.id === Number(user.securityquestion2)
+      (q: any) => q.id === Number(user.securityquestion2),
     )?.name;
 
-    console.log(user.securityquestion1, user.securityquestion2)
+    console.log(user.securityquestion1, user.securityquestion2);
 
     // Hash security answers if not masked
     if (user.securityanswer1 !== '**********') {
@@ -187,35 +188,37 @@ export class UserDetailsComponent implements OnInit {
     }
 
     const url = API_ENDPOINTS.UPDATE_USER;
-    this.http.post<any>(url, user, {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }),
-    }).subscribe({
-      next: () => {
-        this.success_message = 'User Details Successfully Updated!';
-        setTimeout(() => {
-          this.success_message = '';
-          location.reload();
-          // this.router.navigate(['ivmsweb/login']);
-        }, 1000);
-      },
-      error: (err) => {
-        if (err.status === 401) {
-          this.router.navigate(['ivmsweb/login']);
-        } else {
-          this.error_message = err.error?.message || 'An error occurred!';
-          this.success_message = '';
-
-          // Auto-clear error message after a few seconds (optional)
+    this.http
+      .post<any>(url, user, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .subscribe({
+        next: () => {
+          this.success_message = 'User Details Successfully Updated!';
           setTimeout(() => {
-            this.error_message = '';
+            this.success_message = '';
+            location.reload();
+            // this.router.navigate(['ivmsweb/login']);
           }, 1000);
-        }
-      }
-    });
+        },
+        error: (err) => {
+          if (err.status === 401) {
+            this.router.navigate(['ivmsweb/login']);
+          } else {
+            this.error_message = err.error?.message || 'An error occurred!';
+            this.success_message = '';
+
+            // Auto-clear error message after a few seconds (optional)
+            setTimeout(() => {
+              this.error_message = '';
+            }, 1000);
+          }
+        },
+      });
   }
 
   // getAPIUrl(endpoint: string): string {

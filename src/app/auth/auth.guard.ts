@@ -4,7 +4,7 @@ import { AuthStore } from './auth.store';
 import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
   private router = inject(Router);
@@ -17,7 +17,7 @@ export class AuthGuard implements CanActivate {
 
     // Update AuthStore state accordingly
     console.log(token);
-    
+
     if (token) {
       this.authStore.getToken(); // sync AuthStore
       return true;

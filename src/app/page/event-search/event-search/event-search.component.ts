@@ -2,23 +2,22 @@ import { Component, OnInit, AfterViewInit, NgZone, Renderer2, HostListener } fro
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HeaderComponent } from "../../header/header.component";
-import { TreeComponent } from "../../tree/tree.component";
+import { HeaderComponent } from '../../header/header.component';
+import { TreeComponent } from '../../tree/tree.component';
 import { API_ENDPOINTS } from '../../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { FooterComponent } from "../../footer/footer.component";
+import { FooterComponent } from '../../footer/footer.component';
 
 @Component({
   selector: 'app-event-search',
   imports: [CommonModule, FormsModule, HeaderComponent, TreeComponent, FooterComponent],
   standalone: true,
   templateUrl: './event-search.component.html',
-  styleUrls: ['./event-search.component.css']
+  styleUrls: ['./event-search.component.css'],
 })
 export class EventSearchComponent implements OnInit, AfterViewInit {
-
   // ---- properties converted from $scope ----
   fullWidth: number = window.innerWidth / 5;
 
@@ -33,10 +32,10 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     selectedchannelid: '',
     selectedrtamc: undefined,
     selectedrecordingserver: undefined,
-    searchresult: []
+    searchresult: [],
   };
 
-  rootconfig: any = {}
+  rootconfig: any = {};
 
   //$scope.isNTAMC;
   isNTAMC: any;
@@ -48,7 +47,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   channelList: any[] = [];
   lastEventId: any = null;
   options: any = {
-    tableconfig: { itemsPerPage: 5, fillLastPage: false }
+    tableconfig: { itemsPerPage: 5, fillLastPage: false },
   };
   page: number = 1;
   postData: any = null;
@@ -76,10 +75,10 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   analyticsList: any[] = [];
 
   constructor(
-    private http: HttpClient, 
-    private cookies:CookieService, 
-    private ngZone: NgZone, 
-    private renderer: Renderer2
+    private http: HttpClient,
+    private cookies: CookieService,
+    private ngZone: NgZone,
+    private renderer: Renderer2,
   ) {}
 
   // ---- lifecycle ----
@@ -184,7 +183,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
       starttimestamp: new Date(this.model.dateform.date).getTime(),
       endtimestamp: new Date(this.model.dateto.date).getTime(),
       lpnumber: null,
-      limit: this.model.limit
+      limit: this.model.limit,
     };
 
     if (this.model.selectedtype) {
@@ -195,92 +194,99 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
     if (this.model.selectedchannelid) {
       this.postData['channelid'] = this.model.selectedchannelid;
-      console.log("channelId", this.model.selectedchannelid);
+      console.log('channelId', this.model.selectedchannelid);
     } else {
       this.postData['channelid'] = null;
     }
     const apiurl = API_ENDPOINTS.EVENT_COUNT.replace('{serverid}', this.rootconfig.serverid);
-    const payload = JSON.stringify(this.postData)
+    const payload = JSON.stringify(this.postData);
 
     // Mirror the original $http POST to "proxy"
-    this.http.post<any>(apiurl, this.postData, {
-      headers: new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-      'Authorization': `Bearer ${this.cookies.get('authToken')}`
-    })
-    }).subscribe({
-      next: (response) => {
-        try {
-          this.model.error = '';
-          this.model.offset = 0;
-          this.model.total = response.result[0]['totalrecords'];
+    this.http
+      .post<any>(apiurl, this.postData, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .subscribe({
+        next: (response) => {
+          try {
+            this.model.error = '';
+            this.model.offset = 0;
+            this.model.total = response.result[0]['totalrecords'];
 
-          if (this.model.total > 0) {
-            this.refreshResultSet();
-          }
-        } catch (e) {
-          // preserve original behavior: set error
-          this.model.error = 'Unexpected response format';
-        }
-      },
-      error: (err) => {
-        this.model.error = err?.error?.message || err?.message || 'Error fetching events';
-        if (err) {
-          setTimeout(() => {
-            if (err.status === 401) {
-              (window as any).$rootScope?.showInvalidSession?.();
+            if (this.model.total > 0) {
+              this.refreshResultSet();
             }
-          }, 2000);
-        }
-      }
-    });
+          } catch (e) {
+            // preserve original behavior: set error
+            this.model.error = 'Unexpected response format';
+          }
+        },
+        error: (err) => {
+          this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+          if (err) {
+            setTimeout(() => {
+              if (err.status === 401) {
+                (window as any).$rootScope?.showInvalidSession?.();
+              }
+            }, 2000);
+          }
+        },
+      });
   }
 
   refreshResultSet() {
-    if (!this.postData) { this.postData = {}; }
+    if (!this.postData) {
+      this.postData = {};
+    }
     this.postData['page'] = this.page;
     const apiurl = API_ENDPOINTS.EVENT_SEARCH.replace('{serverid}', this.rootconfig.serverid);
     const payload = JSON.stringify(this.postData);
 
-    this.http.post<any>(apiurl, payload, {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }),
-    }).subscribe({next: (response) => {
-      // console.log("r",response);
-        try {
-          this.model.error = '';
-          this.model.searchresult = response.result[0]['eventlist'];
-        } catch (e) {
-          this.model.error = 'Unexpected response format';
-        }
-      },
-      error: (err) => {
-        this.model.error = err?.error?.message || err?.message || 'Error fetching events';
-        if (err) {
-          setTimeout(() => {
-            if (err.status === 401) {
-              (window as any).$rootScope?.showInvalidSession?.();
-            }
-          }, 2000);
-        }
-      }
-    });
+    this.http
+      .post<any>(apiurl, payload, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .subscribe({
+        next: (response) => {
+          // console.log("r",response);
+          try {
+            this.model.error = '';
+            this.model.searchresult = response.result[0]['eventlist'];
+          } catch (e) {
+            this.model.error = 'Unexpected response format';
+          }
+        },
+        error: (err) => {
+          this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+          if (err) {
+            setTimeout(() => {
+              if (err.status === 401) {
+                (window as any).$rootScope?.showInvalidSession?.();
+              }
+            }, 2000);
+          }
+        },
+      });
   }
 
   OnLoad(event: any) {
     // console.log("",event);
     this.rootconfig = event;
-    console.log("HIIIII", this.rootconfig);
+    console.log('HIIIII', this.rootconfig);
   }
 
-  OnAnayticsLoad(event: any) {  
-    // console.log("",event); 
-    const eventList = Array.isArray(event) ? event : Object.values(event); 
-    this.analyticsList=eventList;
+  OnAnayticsLoad(event: any) {
+    // console.log("",event);
+    const eventList = Array.isArray(event) ? event : Object.values(event);
+    this.analyticsList = eventList;
     this.analyticsList.map((e: any) => e.alertname);
 
     // Initialize selectedEvent if null
@@ -298,49 +304,57 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   getChannels() {
     const url = API_ENDPOINTS.CHANNEL_INFO.replace('{serverid}', this.rootconfig.serverid);
 
-    this.http.get<any>(url, { 
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }), 
-    }).pipe(take(1)).subscribe({
-      next: (response) => {
-        this.channelList = [];
-        const rawData = response?.result;
-        // console.log('Raw Data:', rawData);
-        
-        if (rawData && rawData.length > 0) {
-          this.channelList = rawData;
-          this.channelList.map((ch: any) => ch.channelname);
-          if (!this.selectedEvent) {
-            this.selectedEvent = {};
-          }
-          // this.selectedEvent.channelname = channelNames;
-          // console.log('All Channel Names:', this.selectedEvent.channelname);
-        } else {
+    this.http
+      .get<any>(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
           this.channelList = [];
-        }
-      },
-      error: (err) => {
-        this.channelList = [];
-        if (err.status === 401) {
-          (window as any).$rootScope?.showInvalidSession?.();
-        } else {
-          this.model.camerror = err?.error?.message || err?.message || 'Error fetching channels';
-          setTimeout(() => (this.model.camerror = ''), 3000);
-        }
-      }
-    });
+          const rawData = response?.result;
+          // console.log('Raw Data:', rawData);
+
+          if (rawData && rawData.length > 0) {
+            this.channelList = rawData;
+            this.channelList.map((ch: any) => ch.channelname);
+            if (!this.selectedEvent) {
+              this.selectedEvent = {};
+            }
+            // this.selectedEvent.channelname = channelNames;
+            // console.log('All Channel Names:', this.selectedEvent.channelname);
+          } else {
+            this.channelList = [];
+          }
+        },
+        error: (err) => {
+          this.channelList = [];
+          if (err.status === 401) {
+            (window as any).$rootScope?.showInvalidSession?.();
+          } else {
+            this.model.camerror = err?.error?.message || err?.message || 'Error fetching channels';
+            setTimeout(() => (this.model.camerror = ''), 3000);
+          }
+        },
+      });
   }
-  
+
   updateRecServerDropdown() {
     const filteredServers = this.fullChannelList
-      .filter(channel => !this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc)
-      .map(channel => ({ recordingserverid: channel.recordingserverid, recordingservername: channel.recordingservername }));
+      .filter(
+        (channel) => !this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc,
+      )
+      .map((channel) => ({
+        recordingserverid: channel.recordingserverid,
+        recordingservername: channel.recordingservername,
+      }));
 
     const uniqueServersMap = new Map();
-    filteredServers.forEach(server => uniqueServersMap.set(server.recordingserverid, server));
+    filteredServers.forEach((server) => uniqueServersMap.set(server.recordingserverid, server));
 
     this.uniqueRecServerList = Array.from(uniqueServersMap.values());
 
@@ -349,9 +363,12 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   }
 
   filterChannels() {
-    this.channelList = this.fullChannelList
-      .filter(channel => (!this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc) &&
-        (!this.model.selectedrecordingserver || channel.recordingserverid === this.model.selectedrecordingserver));
+    this.channelList = this.fullChannelList.filter(
+      (channel) =>
+        (!this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc) &&
+        (!this.model.selectedrecordingserver ||
+          channel.recordingserverid === this.model.selectedrecordingserver),
+    );
 
     console.log('Filtered channelList:', this.fullChannelList);
   }
@@ -374,10 +391,10 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
     if (this.videoPlayer) {
       if (typeof event.snapurl !== 'undefined') {
-        console.log("eventsnap", event.snapurl);
-        const snap = `${environment.apiurl}${event.snapurl}`
+        console.log('eventsnap', event.snapurl);
+        const snap = `${environment.apiurl}${event.snapurl}`;
         const videoSnap = this.videoPlayer.setAttribute('poster', snap);
-        console.log("snap", snap, videoSnap);
+        console.log('snap', snap, videoSnap);
       }
 
       this.event_clip_url = this.selectedEvent.clipurl;
@@ -394,59 +411,62 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     }
     const cleanPath = this.event_clip_url.replace(/^\/V1/i, '');
     const url = `${environment.apiUrl}${cleanPath}`;
-    console.log("clipurl",this.event_clip_url, url);
+    console.log('clipurl', this.event_clip_url, url);
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-      'Authorization': `Bearer ${this.cookies.get('authToken')}`
+      Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+      Authorization: `Bearer ${this.cookies.get('authToken')}`,
     });
 
-    this.http.get<any>(url, { headers }).pipe(take(1)).subscribe({
-      next: (response) => {
-        console.log("response", response);
-        this.firstTimeLoadingClip = true;
-        this.model.error = '';
-        if (waiting) waiting.style.display = 'none';
+    this.http
+      .get<any>(url, { headers })
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          console.log('response', response);
+          this.firstTimeLoadingClip = true;
+          this.model.error = '';
+          if (waiting) waiting.style.display = 'none';
 
-        if (this.videoPlayer) {
-          this.videoPlayer.setAttribute('src', this.event_clip_url);
-          console.log(this.videoPlayer.setAttribute('src', this.event_clip_url))
-          const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-          if (playBtn) playBtn.src = 'images/Pause_16x16.png';
-          this.videoPlayer.play();
-        }
-      },
-      error: (err) => {
-        if (waiting) waiting.style.display = 'none';
-
-        if (err.status === 401) {
-          (window as any).$rootScope?.showInvalidSession?.();
-        } else {
-          this.model.error =
-            err?.error?.message || err?.message || 'Error loading clip';
-          setTimeout(() => (this.model.error = ''), 3000);
-        }
-      },
-      complete: () => {
-        // Handle play/pause toggle only after first load
-        if (this.firstTimeLoadingClip && this.videoPlayer) {
-          const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-          if (this.videoPlayer.paused) {
+          if (this.videoPlayer) {
+            this.videoPlayer.setAttribute('src', this.event_clip_url);
+            console.log(this.videoPlayer.setAttribute('src', this.event_clip_url));
+            const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
             if (playBtn) playBtn.src = 'images/Pause_16x16.png';
             this.videoPlayer.play();
-          } else {
-            if (playBtn) playBtn.src = 'images/Play.png';
-            this.videoPlayer.pause();
           }
-        }
-      }
-    });
+        },
+        error: (err) => {
+          if (waiting) waiting.style.display = 'none';
+
+          if (err.status === 401) {
+            (window as any).$rootScope?.showInvalidSession?.();
+          } else {
+            this.model.error = err?.error?.message || err?.message || 'Error loading clip';
+            setTimeout(() => (this.model.error = ''), 3000);
+          }
+        },
+        complete: () => {
+          // Handle play/pause toggle only after first load
+          if (this.firstTimeLoadingClip && this.videoPlayer) {
+            const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
+            if (this.videoPlayer.paused) {
+              if (playBtn) playBtn.src = 'images/Pause_16x16.png';
+              this.videoPlayer.play();
+            } else {
+              if (playBtn) playBtn.src = 'images/Play.png';
+              this.videoPlayer.pause();
+            }
+          }
+        },
+      });
   }
 
-
   fullScreen() {
-    if (!this.videoPlayer) { return; }
+    if (!this.videoPlayer) {
+      return;
+    }
     const vp = this.videoPlayer as any;
     if (vp.requestFullscreen) {
       vp.requestFullscreen();
@@ -478,8 +498,13 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   }
 
   dragElement(elmnt: HTMLElement | null, headerId: string) {
-    if (!elmnt) { return; }
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    if (!elmnt) {
+      return;
+    }
+    let pos1 = 0,
+      pos2 = 0,
+      pos3 = 0,
+      pos4 = 0;
     const header = document.getElementById(headerId);
 
     if (header) {
@@ -506,8 +531,8 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
       pos3 = e.clientX;
       pos4 = e.clientY;
       if (elmnt) {
-        elmnt.style.top = (elmnt.offsetTop - pos2) + 'px';
-        elmnt.style.left = (elmnt.offsetLeft - pos1) + 'px';
+        elmnt.style.top = elmnt.offsetTop - pos2 + 'px';
+        elmnt.style.left = elmnt.offsetLeft - pos1 + 'px';
       }
     }
 
@@ -522,7 +547,9 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   markEvent(markType: string) {
     this.selectedMark = markType;
     const overlay = document.getElementById('eventoverlay');
-    if (overlay) { overlay.style.display = 'block'; }
+    if (overlay) {
+      overlay.style.display = 'block';
+    }
   }
 
   showMarkEvent(param: any) {
@@ -539,7 +566,9 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   hideMarkEvent(param: any) {
     if (param === 1) {
       const overlay = document.getElementById('eventoverlay');
-      if (overlay) { overlay.style.display = 'none'; }
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
       console.log('Overlay hidden');
     }
   }
@@ -548,7 +577,11 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     console.log('showForwardEvent called with param:', param);
     if (param === 0) {
       const overlay = document.getElementById('overlay');
-      if (overlay) { overlay.style.display = 'block'; this.dragElement(overlay, 'overlayheader'); console.log('Overlay shown'); }
+      if (overlay) {
+        overlay.style.display = 'block';
+        this.dragElement(overlay, 'overlayheader');
+        console.log('Overlay shown');
+      }
     }
   }
 
@@ -556,7 +589,10 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     console.log('hideForwardEvent called with param:', param);
     if (param === 1) {
       const overlay = document.getElementById('overlay');
-      if (overlay) { overlay.style.display = 'none'; console.log('Overlay hidden'); }
+      if (overlay) {
+        overlay.style.display = 'none';
+        console.log('Overlay hidden');
+      }
     }
   }
 
@@ -567,40 +603,49 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   resetChange() {
     console.log('No changes are saved.');
     const overlay = document.getElementById('eventoverlay');
-    if (overlay) { overlay.style.display = 'none'; }
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
   }
 
   cancelChange() {
     console.log('cancel all changes.');
     const overlay = document.getElementById('eventoverlay');
-    if (overlay) { overlay.style.display = 'none'; }
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
   }
 
   // ---- users ----
   getAllUsers() {
     const url = API_ENDPOINTS.USER_INFO;
-    this.http.get<any>(url, { 
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Cookies': `JSESSIONID=${this.cookies.get('vSessionId')}`,
-        'Authorization': `Bearer ${this.cookies.get('authToken')}`
-      }), 
-     }).pipe(take(1))
-    .subscribe({
-      next: (response) => {
-        this.users = response.result;
-        this.selectedUsers = this.users.map((user: any) => ({ 
-          username: user.userid, selected: user.selected || false 
-        }));
-      },
-      error: (err) => {
-        console.error('Error fetching users:', err?.error || err);
-      }
-    });
+    this.http
+      .get<any>(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          this.users = response.result;
+          this.selectedUsers = this.users.map((user: any) => ({
+            username: user.userid,
+            selected: user.selected || false,
+          }));
+        },
+        error: (err) => {
+          console.error('Error fetching users:', err?.error || err);
+        },
+      });
   }
 
   updateSelectedUsers() {
-    this.selectedUsers = this.users.filter(u => u.selected).map(u => ({ username: u.userid, selected: u.selected }));
+    this.selectedUsers = this.users
+      .filter((u) => u.selected)
+      .map((u) => ({ username: u.userid, selected: u.selected }));
     console.log('Selected users:', this.selectedUsers);
   }
 
@@ -608,7 +653,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     if (!this.selectedUsers || this.selectedUsers.length === 0) {
       alert('Please select user(s)');
     } else {
-      const usernames = this.selectedUsers.map(u => u.username);
+      const usernames = this.selectedUsers.map((u) => u.username);
       console.log('Message sent to ' + usernames.join(','));
       // Add your message sending logic here
     }
@@ -622,7 +667,9 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
 
     this.selectedEvent = null;
     const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-    if (playBtn) { playBtn.src = 'images/Play.png'; }
+    if (playBtn) {
+      playBtn.src = 'images/Play.png';
+    }
     this.event_clip_url = undefined;
     this.currentTime = '0:00';
     this.duration = '0:00';
@@ -630,7 +677,9 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     this.durInitial = undefined;
     this.firstTimeLoadingClip = false;
     const waiting = document.getElementById('event_video_player_waitinggolla_id');
-    if (waiting) { waiting.style.display = 'none'; }
+    if (waiting) {
+      waiting.style.display = 'none';
+    }
 
     this.model.error = '';
   }
@@ -638,72 +687,107 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
   initPlayer() {
     let lastDiff: number | undefined = undefined;
 
-    this.videoPlayer = document.getElementById('event_video_player') as HTMLVideoElement | null || undefined;
+    this.videoPlayer =
+      (document.getElementById('event_video_player') as HTMLVideoElement | null) || undefined;
 
-    if (!this.videoPlayer) { return; }
+    if (!this.videoPlayer) {
+      return;
+    }
 
-    this.videoPlayer.addEventListener('ended', () => {
-      lastDiff = undefined;
-      const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
-      if (playBtn) { playBtn.src = 'images/Play.png'; }
-    }, true);
+    this.videoPlayer.addEventListener(
+      'ended',
+      () => {
+        lastDiff = undefined;
+        const playBtn = document.getElementById('play_btn_id') as HTMLImageElement | null;
+        if (playBtn) {
+          playBtn.src = 'images/Play.png';
+        }
+      },
+      true,
+    );
 
-    this.videoPlayer.addEventListener('timeupdate', () => {
-      let curr = Math.floor(this.videoPlayer!.currentTime);
-      let dur = Math.floor(this.videoPlayer!.duration as number);
+    this.videoPlayer.addEventListener(
+      'timeupdate',
+      () => {
+        let curr = Math.floor(this.videoPlayer!.currentTime);
+        let dur = Math.floor(this.videoPlayer!.duration as number);
 
-      if (curr > dur) { curr = dur; }
-
-      let diff = dur - curr;
-      diff = (this.durInitial ?? diff) - diff; // preserve original math: diff = durInitial - (dur - curr)
-
-      if (typeof lastDiff !== 'undefined') {
-        if (diff < lastDiff) { diff = lastDiff; }
-      }
-
-      if (diff < 0) { diff = 0; }
-
-      lastDiff = diff;
-
-      if (diff < 60) {
-        this.currentTime = '0:' + ((diff > 9) ? diff : ('0' + diff));
-      } else {
-        this.currentTime = Math.floor(diff / 60) + ':' + (Math.floor((diff % 60)) > 9 ? Math.floor((diff % 60)) : ('0' + Math.floor((diff % 60))));
-      }
-
-      this.progress = Math.floor((lastDiff * (100 / (this.durInitial ?? 1))));
-
-      if (Number.isNaN(diff)) {
-        this.currentTime = '0:00';
-      } else {
-        const waiting = document.getElementById('event_video_player_waitinggolla_id');
-        if (waiting) { waiting.style.display = 'none'; }
-      }
-
-      setTimeout(() => {
-        // in Angular change detection will pick up changes; run in zone to be safe
-      }, 10);
-
-    }, true);
-
-    this.videoPlayer.addEventListener('loadedmetadata', () => {
-      if (typeof this.videoPlayer!.duration !== 'undefined' && !Number.isNaN(this.videoPlayer!.duration)) {
-        this.durInitial = Math.floor(this.videoPlayer!.duration as number);
-        this.durInitial = this.durInitial < 0 ? 0 : this.durInitial;
-
-        if (this.durInitial < 60) {
-          this.duration = '0:' + ((this.durInitial > 9) ? this.durInitial : ('0' + this.durInitial));
-        } else {
-          this.duration = Math.floor(this.durInitial / 60) + ':' + (Math.floor((this.durInitial % 60)) > 9 ? Math.floor((this.durInitial % 60)) : ('0' + Math.floor((this.durInitial % 60))));
+        if (curr > dur) {
+          curr = dur;
         }
 
-        this.currentTime = '0:00';
+        let diff = dur - curr;
+        diff = (this.durInitial ?? diff) - diff; // preserve original math: diff = durInitial - (dur - curr)
+
+        if (typeof lastDiff !== 'undefined') {
+          if (diff < lastDiff) {
+            diff = lastDiff;
+          }
+        }
+
+        if (diff < 0) {
+          diff = 0;
+        }
+
+        lastDiff = diff;
+
+        if (diff < 60) {
+          this.currentTime = '0:' + (diff > 9 ? diff : '0' + diff);
+        } else {
+          this.currentTime =
+            Math.floor(diff / 60) +
+            ':' +
+            (Math.floor(diff % 60) > 9 ? Math.floor(diff % 60) : '0' + Math.floor(diff % 60));
+        }
+
+        this.progress = Math.floor(lastDiff * (100 / (this.durInitial ?? 1)));
+
+        if (Number.isNaN(diff)) {
+          this.currentTime = '0:00';
+        } else {
+          const waiting = document.getElementById('event_video_player_waitinggolla_id');
+          if (waiting) {
+            waiting.style.display = 'none';
+          }
+        }
 
         setTimeout(() => {
-          // force change detection if needed
-        }, 100);
-      }
-    }, true);
+          // in Angular change detection will pick up changes; run in zone to be safe
+        }, 10);
+      },
+      true,
+    );
+
+    this.videoPlayer.addEventListener(
+      'loadedmetadata',
+      () => {
+        if (
+          typeof this.videoPlayer!.duration !== 'undefined' &&
+          !Number.isNaN(this.videoPlayer!.duration)
+        ) {
+          this.durInitial = Math.floor(this.videoPlayer!.duration as number);
+          this.durInitial = this.durInitial < 0 ? 0 : this.durInitial;
+
+          if (this.durInitial < 60) {
+            this.duration = '0:' + (this.durInitial > 9 ? this.durInitial : '0' + this.durInitial);
+          } else {
+            this.duration =
+              Math.floor(this.durInitial / 60) +
+              ':' +
+              (Math.floor(this.durInitial % 60) > 9
+                ? Math.floor(this.durInitial % 60)
+                : '0' + Math.floor(this.durInitial % 60));
+          }
+
+          this.currentTime = '0:00';
+
+          setTimeout(() => {
+            // force change detection if needed
+          }, 100);
+        }
+      },
+      true,
+    );
   }
 
   // ---- placeholders for external helpers originally referenced in the controller ----

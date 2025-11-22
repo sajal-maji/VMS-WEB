@@ -1,4 +1,9 @@
-import { HttpInterceptorFn, HttpRequest, HttpResponse, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpResponse,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
@@ -11,7 +16,7 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const loadingService = inject(LoadingService);
-  
+
   // Merge with default configuration
   const config: PostInterceptorConfig = { ...DEFAULT_POST_CONFIG };
 
@@ -21,8 +26,8 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // Check if URL should be excluded
-  const shouldExclude = config.excludedUrls?.some(url => req.url.includes(url));
-  
+  const shouldExclude = config.excludedUrls?.some((url) => req.url.includes(url));
+
   if (shouldExclude) {
     return next(req);
   }
@@ -33,21 +38,25 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Add authorization header and custom headers
   const headers: Record<string, string> = { ...config.customHeaders };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   authorizedRequest = req.clone({
-    setHeaders: headers
+    setHeaders: headers,
   });
 
   // Log request (in development mode)
-  if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
+  if (
+    config.enableLogging &&
+    typeof window !== 'undefined' &&
+    window.location.hostname === '127.0.0.1'
+  ) {
     console.log(`POST Request: ${req.url}`, {
       method: req.method,
       headers: authorizedRequest.headers.keys(),
-      body: req.body
+      body: req.body,
     });
   }
 
@@ -61,23 +70,31 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
     tap((event) => {
       if (event instanceof HttpResponse) {
         // Log successful response
-        if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
+        if (
+          config.enableLogging &&
+          typeof window !== 'undefined' &&
+          window.location.hostname === '127.0.0.1'
+        ) {
           console.log(`POST Response: ${req.url}`, {
             status: event.status,
             statusText: event.statusText,
-            body: event.body
+            body: event.body,
           });
         }
       }
     }),
     catchError((error: HttpErrorResponse) => {
       // Log error
-      if (config.enableLogging && typeof window !== 'undefined' && window.location.hostname === '127.0.0.1') {
+      if (
+        config.enableLogging &&
+        typeof window !== 'undefined' &&
+        window.location.hostname === '127.0.0.1'
+      ) {
         console.error(`POST Error: ${req.url}`, {
           status: error.status,
           statusText: error.statusText,
           error: error.error,
-          message: error.message
+          message: error.message,
         });
       }
 
@@ -115,6 +132,6 @@ export const postInterceptor: HttpInterceptorFn = (req, next) => {
       if (config.enableLoadingIndicator) {
         loadingService.hide();
       }
-    })
+    }),
   );
 };

@@ -11,10 +11,10 @@ import { CookieService } from 'ngx-cookie-service';
   templateUrl: './header.component.html',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
-  styleUrls: ['./header.component.css']
+  styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent {
-  private readonly layout = inject(LayoutService);
+  readonly layout = inject(LayoutService);
   private readonly router = inject(Router);
   private readonly cookies = inject(CookieService);
   userSession: boolean = true;
@@ -22,7 +22,6 @@ export class HeaderComponent {
   liveEvents: boolean = true;
   isConnected: boolean = true;
   showDropdown: boolean = true;
-
 
   // which tab group (like your Thymeleaf flags)
   activeTabGroup: string = 'live-matrix';
@@ -33,30 +32,34 @@ export class HeaderComponent {
   // current layout label for dropdown button
   currentLayout: string = '1x1';
 
-
-   constructor() {
+  constructor() {
     // 🔹 Detect route changes
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      const url = event.urlAfterRedirects;
-      if (url.includes('/live-matrix')) {
-        this.activeTab = 'Dashboard';
-        this.showDropdown = true;
-      } else if (url.includes('/archive-matrix')) {
-        this.activeTab = 'Archive';
-        this.showDropdown = true;
-      } else {
-        this.activeTab = ''; // Other tabs
-        this.showDropdown = false;
-      }
-    });
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        const url = event.urlAfterRedirects;
+        if (url.includes('/live-matrix')) {
+          this.activeTab = 'Dashboard';
+          this.showDropdown = true;
+          this.layout.setAllowedLayouts(['1x1', '2x2', '3x3', '4x4']);
+        } else if (url.includes('/archive-matrix')) {
+          this.activeTab = 'Archive';
+          this.showDropdown = true;
+          this.layout.setAllowedLayouts(['1x1', '2x2']);
+
+          // optional: default layout for archive
+          this.selectLayout('1x1');
+        } else {
+          this.activeTab = ''; // Other tabs
+          this.showDropdown = false;
+        }
+      });
   }
 
   tabChanged(tab: string): void {
     this.activeTab = tab;
     // console.log('Tab changed to:', tab);
-    this.showDropdown = (tab === 'Dashboard' || tab === 'Archive');
+    this.showDropdown = tab === 'Dashboard' || tab === 'Archive';
     // console.log("showDropdown", this.showDropdown);
   }
 

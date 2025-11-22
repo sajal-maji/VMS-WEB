@@ -1,4 +1,8 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
@@ -12,7 +16,8 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideRouter(routes, withHashLocation()), provideClientHydration(withEventReplay()),
-    provideHttpClient(withInterceptors([authInterceptor, postInterceptor, sessionInterceptor]))
-  ]
+    provideRouter(routes, withHashLocation()),
+    provideClientHydration(withEventReplay()),
+    provideHttpClient(withInterceptors([authInterceptor, postInterceptor, sessionInterceptor])),
+  ],
 };

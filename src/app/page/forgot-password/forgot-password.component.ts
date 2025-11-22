@@ -7,23 +7,22 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
-import { FooterComponent } from "../footer/footer.component";
+import { FooterComponent } from '../footer/footer.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
   imports: [CommonModule, FormsModule, FooterComponent],
   templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.css']
+  styleUrls: ['./forgot-password.component.css'],
 })
 export class ForgotPasswordComponent implements OnInit {
-
   model: any = {
     uniquekey: undefined,
     email: undefined,
     expiryTime: undefined,
     redirecturl: window.location.origin + '/ivmsweb/set-password',
-    newpassword: undefined
+    newpassword: undefined,
   };
 
   securityquestion1: any;
@@ -36,7 +35,7 @@ export class ForgotPasswordComponent implements OnInit {
     private http: HttpClient,
     private sanitizer: DomSanitizer,
     private router: Router,
-    private cookieService:CookieService,
+    private cookieService: CookieService,
   ) {}
 
   ngOnInit(): void {
@@ -47,7 +46,7 @@ export class ForgotPasswordComponent implements OnInit {
   forgotPassword(): void {
     // Reset password input type toggles (UI logic from jQuery replaced with plain JS)
     document.querySelectorAll('.toggle-password').forEach((el: any) => {
-      const input = document.querySelector((el.getAttribute('toggle') as string)) as HTMLInputElement;
+      const input = document.querySelector(el.getAttribute('toggle') as string) as HTMLInputElement;
       if (input) {
         input.type = 'password';
         el.classList.remove('fa-eye-slash');
@@ -59,7 +58,7 @@ export class ForgotPasswordComponent implements OnInit {
 
     // Validate
     this.validate();
-    if (this.error_message !== "") {
+    if (this.error_message !== '') {
       return;
     }
 
@@ -69,47 +68,47 @@ export class ForgotPasswordComponent implements OnInit {
       userid: this.model.email,
       expiryTime: this.model.expiryTime,
       redirecturl: this.model.redirecturl,
-      newpassword: this.model.newPassword
+      newpassword: this.model.newPassword,
     };
 
     setTimeout(() => {
       const url = API_ENDPOINTS.FORGOT_PASSWORD;
 
-      this.http.post(url, postData, {
-        headers: new HttpHeaders({ 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.cookieService.get('authToken')}`
-        }),
-      }).subscribe({
-        next: (response: any) => {
-          console.log("response", response);
-          
-          // Success modal equivalent (replacing jQuery Confirm)
-          this.success_message = 'Password Reset Link Is Successfully Sent!';
-          this.model.email = undefined;
-          setTimeout(() => {
-            this.success_message = '';
-            this.router.navigateByUrl('ivmsweb/login');
-          }, 2000);
-        },
-        error: (response: any) => {
-          this.error_message = response?.error?.message || 'Something went wrong!';
-          this.success_message = '';
+      this.http
+        .post(url, postData, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.cookieService.get('authToken')}`,
+          }),
+        })
+        .subscribe({
+          next: (response: any) => {
+            console.log('response', response);
 
-          // Auto-clear error message after a few seconds (optional)
-          setTimeout(() => {
-            this.error_message = '';
-            location.reload();
-          }, 3000);
-        }
-      });
+            // Success modal equivalent (replacing jQuery Confirm)
+            this.success_message = 'Password Reset Link Is Successfully Sent!';
+            this.model.email = undefined;
+            setTimeout(() => {
+              this.success_message = '';
+              this.router.navigateByUrl('ivmsweb/login');
+            }, 2000);
+          },
+          error: (response: any) => {
+            this.error_message = response?.error?.message || 'Something went wrong!';
+            this.success_message = '';
+
+            // Auto-clear error message after a few seconds (optional)
+            setTimeout(() => {
+              this.error_message = '';
+              location.reload();
+            }, 3000);
+          },
+        });
     }, 1000);
   }
 
-
   /** Validate inputs */
   validate(): string | undefined {
-
     const pattern = new RegExp(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/);
     // debugger
     if (!this.model.email || this.model.email.trim() === '') {
@@ -117,10 +116,10 @@ export class ForgotPasswordComponent implements OnInit {
       return;
     }
 
-    if (this.model.email.length>0 && !pattern.test(this.model.email)) {
+    if (this.model.email.length > 0 && !pattern.test(this.model.email)) {
       this.error_message = 'Invalid Email Format!';
       return;
     }
-    return this.error_message = ''
+    return (this.error_message = '');
   }
 }

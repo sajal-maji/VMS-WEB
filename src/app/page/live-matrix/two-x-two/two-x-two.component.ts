@@ -8,17 +8,15 @@ import { VideoStreamService } from '../../../store/service/video-stream.service'
   standalone: true,
   imports: [CommonModule],
   templateUrl: './two-x-two.component.html',
-  styleUrls: ['./two-x-two.component.css']
+  styleUrls: ['./two-x-two.component.css'],
 })
 export class TwoXTwo implements OnInit, OnDestroy {
-  @ViewChild('videoPlayer', { static: true }) videoPlayer!:   ElementRef<HTMLVideoElement>;
+  @ViewChild('videoPlayer', { static: true }) videoPlayer!: ElementRef<HTMLVideoElement>;
   private videoSub?: Subscription;
 
   constructor(private videoService: VideoStreamService) {}
 
-  ngOnInit() {
-    
-  }
+  ngOnInit() {}
 
   ngOnDestroy() {
     this.videoSub?.unsubscribe();

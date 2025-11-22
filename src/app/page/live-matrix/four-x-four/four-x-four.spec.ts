@@ -8,9 +8,8 @@ describe('FourXFour', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FourXFour]
-    })
-    .compileComponents();
+      imports: [FourXFour],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(FourXFour);
     component = fixture.componentInstance;

@@ -2,254 +2,337 @@
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree (serverConfig)="OnLoad($event)" (analyticsConfig)="OnAnayticsLoad($event)"></tree>
-	<app-footer></app-footer>
+    <app-footer></app-footer>
   </div>
 
   <!-- Right section (Header + Main content) -->
-  	<div class="main-section">
-    	<app-header></app-header>
-		<div class="row">
-			<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-			
-				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center">
-				
-					<span class="text-header">
-						<img src="images/EventList.png" alt="loading" style="margin-bottom: 3px !important;"/> &nbsp; All Events &nbsp;
-						@if (model.total > 0) {
-							<label style="margin: 0px; padding:4px; background: #0078D7; font-size: 12px; color: #fff; border-radius: 5px;">{{ model.total }}</label>
-						}
-					</span>
-				</div>
-				
-				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="height: 10px;"></div>
-				
-				<div class="col-lg-16 col-md-12 col-sm-12 col-xs-12 custom-center" style="display: flex; align-items: center;">
-					
-					<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex;">
-					
-						<span style="color: #BABFCC; margin-top: 5px; margin-right: 5px;"> From </span>
-							
-						<p class="input-group custom-text">
-							<input type="datetime-local" placeholder="yyyy/mm/dd hh:mm:ss" autocomplete="off" class="form-control custom-table-td-2020"
-								datetime-picker="dd MMMM yyyy hh:mm:ss a"
-								[value]="model.dateform.date"
-								[(ngModel)]="model.dateform.date"
-								style="border: 1px solid #323845 !important;"
-								(change)="refreshResultSetCount()"/>
-							<span class="input-group-btn custom-text">
-								<button type="button" class="btn btn-default custom-table-td-2020"
-									(click)="model.dateform.open = true"
-									style="border: 1px solid #323845 !important;">
-									<i class="fa fa-calendar"></i>
-								</button>
-							</span>
-						</p>
-					</div>
-					
-					<div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex;">
-					
-						<span style="color: #BABFCC; margin-top: 5px; margin-right: 5px;"> To </span>
-							
-						<p class="input-group custom-text">
-							<input type="datetime-local" placeholder="yyyy/mm/dd hh:mm:ss" autocomplete="off" class="form-control custom-table-td-2020"
-								datetime-picker="dd MMMM yyyy hh:mm:ss a"
-								[(ngModel)]="model.dateto.date"
-								style="border: 1px solid #323845 !important;"
-								(change)="refreshResultSetCount()"/>
-							<span class="input-group-btn custom-text">
-								<button type="button" class="btn btn-default custom-table-td-2020"
-									(click)="model.dateto.open = true"
-									style="border: 1px solid #323845 !important;">
-									<i class="fa fa-calendar"></i>
-								</button>
-							</span>
-						</p>
-					</div>
-					
-					<div class="col-lg-10 col-md-6 col-sm-12 col-xs-12" style="display: flex; align-items: center; padding: 0px; gap: 5px;">
-					
-						<div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
-							<div class="form-group" style="padding: 0px;">
-								<select class="date-picker pull-left" id="analyticname" name="analyticname"
-									[(ngModel)]="model.selectedtype"
-									class="form-control custom-table-td-2020"
-									(change)="refreshResultSetCount()">
-									<option value="">Rule</option>
-									@for (analytics of analyticsList; track analytics.alerttype) {
-										<option [value]="analytics.alerttype">{{ analytics.alertname }}</option>
-									}
-								</select>
-							</div>
-						</div>
-						
-						
-						<div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
-							<div class="form-group" style="padding: 0px;">
-								<select class="date-picker pull-left" id="channelname" name="channelname"
-									[(ngModel)]="model.selectedchannelid"
-									class="form-control custom-table-td-2020"
-									(change)="refreshResultSetCount()">
-									<option value="">Camera</option>
-									@for (channel of channelList; track channel.channelid) {
-										<option [value]="channel.channelid">{{ channel.channelname }}</option>
-									}
-								</select>
-							</div>
-						</div>
+  <div class="main-section">
+    <app-header></app-header>
+    <div class="row">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center">
+          <span class="text-header">
+            <img src="images/EventList.png" alt="loading" style="margin-bottom: 3px !important" />
+            &nbsp; All Events &nbsp;
+            @if (model.total > 0) {
+              <label
+                style="
+                  margin: 0px;
+                  padding: 4px;
+                  background: #0078d7;
+                  font-size: 12px;
+                  color: #fff;
+                  border-radius: 5px;
+                "
+                >{{ model.total }}</label
+              >
+            }
+          </span>
+        </div>
 
-						
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="height: 10px"></div>
 
-					</div>
-				</div>
-			</div>
-		</div>
+        <div
+          class="col-lg-16 col-md-12 col-sm-12 col-xs-12 custom-center"
+          style="display: flex; align-items: center"
+        >
+          <div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex">
+            <span style="color: #babfcc; margin-top: 5px; margin-right: 5px"> From </span>
 
-		<div class="custom-margin">
-			<div class="row">
-				<div class="custom-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-					<span class="error">{{ model.error }}</span>
-				</div>
-			</div>
+            <p class="input-group custom-text">
+              <input
+                type="datetime-local"
+                placeholder="yyyy/mm/dd hh:mm:ss"
+                autocomplete="off"
+                class="form-control custom-table-td-2020"
+                datetime-picker="dd MMMM yyyy hh:mm:ss a"
+                [value]="model.dateform.date"
+                [(ngModel)]="model.dateform.date"
+                style="border: 1px solid #323845 !important"
+                (change)="refreshResultSetCount()"
+              />
+              <span class="input-group-btn custom-text">
+                <button
+                  type="button"
+                  class="btn btn-default custom-table-td-2020"
+                  (click)="model.dateform.open = true"
+                  style="border: 1px solid #323845 !important"
+                >
+                  <i class="fa fa-calendar"></i>
+                </button>
+              </span>
+            </p>
+          </div>
 
-			<div class="row"  style="display: flex; flex-direction: row; justify-content: space-between; height: calc(100vh - 80px); background-color: #111317; padding: 0px 24px;">
+          <div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex">
+            <span style="color: #babfcc; margin-top: 5px; margin-right: 5px"> To </span>
 
-				<div id="event_list" class="col-lg-3 col-md-3 col-sm-4 col-xs-12" style="padding: 0px;">
+            <p class="input-group custom-text">
+              <input
+                type="datetime-local"
+                placeholder="yyyy/mm/dd hh:mm:ss"
+                autocomplete="off"
+                class="form-control custom-table-td-2020"
+                datetime-picker="dd MMMM yyyy hh:mm:ss a"
+                [(ngModel)]="model.dateto.date"
+                style="border: 1px solid #323845 !important"
+                (change)="refreshResultSetCount()"
+              />
+              <span class="input-group-btn custom-text">
+                <button
+                  type="button"
+                  class="btn btn-default custom-table-td-2020"
+                  (click)="model.dateto.open = true"
+                  style="border: 1px solid #323845 !important"
+                >
+                  <i class="fa fa-calendar"></i>
+                </button>
+              </span>
+            </p>
+          </div>
 
-					@if (model.offset > 0) {
-						<div style="text-align: center;" (click)="decrease()">
-							<img src="images/ChevronUpIcon.png" style="margin: 0px;"/>
-						</div>
-					}
+          <div
+            class="col-lg-10 col-md-6 col-sm-12 col-xs-12"
+            style="display: flex; align-items: center; padding: 0px; gap: 5px"
+          >
+            <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
+              <div class="form-group" style="padding: 0px">
+                <select
+                  class="date-picker pull-left"
+                  id="analyticname"
+                  name="analyticname"
+                  [(ngModel)]="model.selectedtype"
+                  class="form-control custom-table-td-2020"
+                  (change)="refreshResultSetCount()"
+                >
+                  <option value="">Rule</option>
+                  @for (analytics of analyticsList; track analytics.alerttype) {
+                    <option [value]="analytics.alerttype">{{ analytics.alertname }}</option>
+                  }
+                </select>
+              </div>
+            </div>
 
-					@if (!model.searchresult.length) {
-						<div  style="border: 1px solid #323845; display: flex;" >
-							<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" >
-								<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="margin-top: 16px; color: #697080">
-									No record found in the selected time.<br>
-									Please change the filter values.
-								</span>
-							</div>
-						</div>
-					}
+            <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
+              <div class="form-group" style="padding: 0px">
+                <select
+                  class="date-picker pull-left"
+                  id="channelname"
+                  name="channelname"
+                  [(ngModel)]="model.selectedchannelid"
+                  class="form-control custom-table-td-2020"
+                  (change)="refreshResultSetCount()"
+                >
+                  <option value="">Camera</option>
+                  @for (channel of channelList; track channel.channelid) {
+                    <option [value]="channel.channelid">{{ channel.channelname }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-					@for (item of model.searchresult; track item.eventid) {
-						<div (click)="eventClicked(item)" style="height: 76px; border: 1px solid #323845; display: flex;"
-							[ngStyle]="{
-								'background': selectedEvent?.eventid == item.eventid ? '#111317' : 'transparent', 
-								'border-right': selectedEvent?.eventid == item.eventid ? 'none' : '1px solid #323845'
-							}">
-							
-							<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
-								[ngStyle]="{'background': item.isViewed ? 'transparent' : '#FFEF51'}"
-								style="padding: 0px !important; width: 3px; height: 100%">
-							</div>
-							
-							<div class="col-lg-11 col-md-11 col-sm-11 col-xs-11" style="padding: 0px; width: 99%;">
-								<span class="col-lg-10 col-md-12 col-sm-12 col-xs-8 event-1"
-									style="margin-top: 8px; color: #FFFFFF"
-									[ngStyle]="{'color': item.isViewed ? '#697080' : '#FFFFFF'}">
-									{{ item.alertname }}
-								</span>
-							
-								<span class="col-lg-2 hidden-md hidden-sm col-xs-4 event-1"
-									[ngStyle]="{
-										'color': item.priority == 'Critical' ? '#E52E2E' :
-												item.priority == 'Medium' ? '#FCB614' :
-												'#26AAE1'
-									}"
-									style="margin-top: 8px; font-size: 10px; line-height: 16px; padding: 0px;">
-									{{ item.priority }}
-								</span>
-								
-								<span class="col-lg-12 col-md-12 hidden-sm col-xs-12 event-1" style="padding: 0px;">
-									{{ item.eventtime  }}
-								</span>
-							</div>
-						</div>
-					}
+    <div class="custom-margin">
+      <div class="row">
+        <div class="custom-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
+          <span class="error">{{ model.error }}</span>
+        </div>
+      </div>
 
-					@if (model.offset + model.limit < model.total) {
-						<div style="text-align: center;" (click)="increase()">
-							<img src="images/ChevronDownIcon.png" style="margin: 0px;"/>
-						</div>
-					}
+      <div
+        class="row"
+        style="
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          height: calc(100vh - 80px);
+          background-color: #111317;
+          padding: 0px 24px;
+        "
+      >
+        <div id="event_list" class="col-lg-3 col-md-3 col-sm-4 col-xs-12" style="padding: 0px">
+          @if (model.offset > 0) {
+            <div style="text-align: center" (click)="decrease()">
+              <img src="images/ChevronUpIcon.png" style="margin: 0px" />
+            </div>
+          }
 
-				</div>
+          @if (!model.searchresult.length) {
+            <div style="border: 1px solid #323845; display: flex">
+              <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <span
+                  class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"
+                  style="margin-top: 16px; color: #697080"
+                >
+                  No record found in the selected time.<br />
+                  Please change the filter values.
+                </span>
+              </div>
+            </div>
+          }
 
-				<div class="col-lg-9 col-md-9 col-sm-8 hidden-xs event-video" style="background: #111317">
+          @for (item of model.searchresult; track item.eventid) {
+            <div
+              (click)="eventClicked(item)"
+              style="height: 76px; border: 1px solid #323845; display: flex"
+              [ngStyle]="{
+                background: selectedEvent?.eventid == item.eventid ? '#111317' : 'transparent',
+                'border-right':
+                  selectedEvent?.eventid == item.eventid ? 'none' : '1px solid #323845',
+              }"
+            >
+              <div
+                class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
+                [ngStyle]="{ background: item.isViewed ? 'transparent' : '#FFEF51' }"
+                style="padding: 0px !important; width: 3px; height: 100%"
+              ></div>
 
-					<div class="row custom-center" style="padding: 16px;">
-						<div class="video-container-centeredOverlay" id="event_video_player_waitinggolla_id"
-							style="display:none;">
-							<span class="video-container-centeredOverlay-helper"></span>
-							<img src="images/loadinghome.gif" alt="loading"/>
-						</div>
-							
-						<video id="event_video_player" index="0" poster="images/postervtpl_new.jpg"
-							class="video-elem" style="width: auto; height: 435px;">
-						</video>
-					</div>
-					
-					<!-- Controls -->
-					<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12"
-						style="height: 40px; background: #1E2129; padding: 8px 12px; display: flex; justify-content: center; gap: 4px; white-space: nowrap;">
-						<img id="play_btn_id" src="images/Play.png" style="margin: 0px;" (click)="play()"/>
-						
-						<span class="event-1" style="margin-top: 1px;">
-							{{ currentTime }} / {{ duration }}
-						</span>
-						
-						<progress id="file" [value]="progress" max="100" style="margin: 5px; width: 410px;" [ngStyle]="{'width': fullWidth }"> </progress>
-						
-						<img class="pull-right" src="images/DownloadIcon.png" style="margin: 0px;" (click)="download()"/>
-						<a href="" id="download_event_clip_id" download></a>
+              <div class="col-lg-11 col-md-11 col-sm-11 col-xs-11" style="padding: 0px; width: 99%">
+                <span
+                  class="col-lg-10 col-md-12 col-sm-12 col-xs-8 event-1"
+                  style="margin-top: 8px; color: #ffffff"
+                  [ngStyle]="{ color: item.isViewed ? '#697080' : '#FFFFFF' }"
+                >
+                  {{ item.alertname }}
+                </span>
 
-						<img class="pull-right" src="images/ScreenshotIcon.png" style="margin: 0px;" (click)="downloadSnap()">
-						<a href="" id="download_event_snap_id" download></a>
-						
-						<img class="pull-right" src="images/FullscreenIcon.png" style="margin: 0px;" (click)="fullScreen()"/>
-					</div>
-					
-					<hr style="border: 1px solid #323845; border-bottom: none;">
-					
-					<div class="row" style="padding: 16px;">
-						<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #FFFFFF">
-							{{ selectedEvent?.alertname ? selectedEvent.alertname : "Event Name" }}
-						</span>
-					</div>
-					
-					<hr style="border: 1px solid #323845; border-bottom: none;">
-					
-					<div class="row">
-					
-						<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6" style="border-right: 1px solid #323845;">
-						
-							<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1">
-								Camera
-							</span>
-						
-							<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #FFFFFF">
-								{{ selectedEvent?.channelname ? selectedEvent.channelname : "Camera Name" }}
-							</span>
-						
-						</div>
-						
-						<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-							<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1">
-								Capture Time
-							</span>
-						
-							<span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #FFFFFF">
-								{{ selectedEvent?.eventtime ? selectedEvent.eventtime  : "Event Time" }}
-							</span>
-						
-						</div>
-						
-					</div>
-					
-					<hr style="border: 1px solid #323845; border-bottom: none;">
-					
-				</div>
-			</div>
-		</div>
-	</div>
+                <span
+                  class="col-lg-2 hidden-md hidden-sm col-xs-4 event-1"
+                  [ngStyle]="{
+                    color:
+                      item.priority == 'Critical'
+                        ? '#E52E2E'
+                        : item.priority == 'Medium'
+                          ? '#FCB614'
+                          : '#26AAE1',
+                  }"
+                  style="margin-top: 8px; font-size: 10px; line-height: 16px; padding: 0px"
+                >
+                  {{ item.priority }}
+                </span>
+
+                <span class="col-lg-12 col-md-12 hidden-sm col-xs-12 event-1" style="padding: 0px">
+                  {{ item.eventtime }}
+                </span>
+              </div>
+            </div>
+          }
+
+          @if (model.offset + model.limit < model.total) {
+            <div style="text-align: center" (click)="increase()">
+              <img src="images/ChevronDownIcon.png" style="margin: 0px" />
+            </div>
+          }
+        </div>
+
+        <div class="col-lg-9 col-md-9 col-sm-8 hidden-xs event-video" style="background: #111317">
+          <div class="row custom-center" style="padding: 16px">
+            <div
+              class="video-container-centeredOverlay"
+              id="event_video_player_waitinggolla_id"
+              style="display: none"
+            >
+              <span class="video-container-centeredOverlay-helper"></span>
+              <img src="images/loadinghome.gif" alt="loading" />
+            </div>
+
+            <video
+              id="event_video_player"
+              index="0"
+              poster="images/postervtpl_new.jpg"
+              class="video-elem"
+              style="width: auto; height: 435px"
+            ></video>
+          </div>
+
+          <!-- Controls -->
+          <div
+            class="col-lg-12 col-md-12 col-sm-12 col-xs-12"
+            style="
+              height: 40px;
+              background: #1e2129;
+              padding: 8px 12px;
+              display: flex;
+              justify-content: center;
+              gap: 4px;
+              white-space: nowrap;
+            "
+          >
+            <img id="play_btn_id" src="images/Play.png" style="margin: 0px" (click)="play()" />
+
+            <span class="event-1" style="margin-top: 1px">
+              {{ currentTime }} / {{ duration }}
+            </span>
+
+            <progress
+              id="file"
+              [value]="progress"
+              max="100"
+              style="margin: 5px; width: 410px"
+              [ngStyle]="{ width: fullWidth }"
+            ></progress>
+
+            <img
+              class="pull-right"
+              src="images/DownloadIcon.png"
+              style="margin: 0px"
+              (click)="download()"
+            />
+            <a href="" id="download_event_clip_id" download></a>
+
+            <img
+              class="pull-right"
+              src="images/ScreenshotIcon.png"
+              style="margin: 0px"
+              (click)="downloadSnap()"
+            />
+            <a href="" id="download_event_snap_id" download></a>
+
+            <img
+              class="pull-right"
+              src="images/FullscreenIcon.png"
+              style="margin: 0px"
+              (click)="fullScreen()"
+            />
+          </div>
+
+          <hr style="border: 1px solid #323845; border-bottom: none" />
+
+          <div class="row" style="padding: 16px">
+            <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
+              {{ selectedEvent?.alertname ? selectedEvent.alertname : 'Event Name' }}
+            </span>
+          </div>
+
+          <hr style="border: 1px solid #323845; border-bottom: none" />
+
+          <div class="row">
+            <div
+              class="col-lg-6 col-md-6 col-sm-6 col-xs-6"
+              style="border-right: 1px solid #323845"
+            >
+              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"> Camera </span>
+
+              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
+                {{ selectedEvent?.channelname ? selectedEvent.channelname : 'Camera Name' }}
+              </span>
+            </div>
+
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"> Capture Time </span>
+
+              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
+                {{ selectedEvent?.eventtime ? selectedEvent.eventtime : 'Event Time' }}
+              </span>
+            </div>
+          </div>
+
+          <hr style="border: 1px solid #323845; border-bottom: none" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

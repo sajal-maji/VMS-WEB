@@ -1,4 +1,4 @@
-import { environment } from "../../environments/environment";
+import { environment } from '../../environments/environment';
 
 export const API_ENDPOINTS = {
   LOGIN: `${environment.apiBaseUrl}user/login`,
@@ -16,13 +16,18 @@ export const API_ENDPOINTS = {
   WEBRTC_LIVE: `${environment.apiBaseUrl}webrtc/{serverid}/startlive`,
   HLS_START_LIVE: `${environment.apiBaseUrl}{serverid}/startlive`,
   HLS_STOP_LIVE: `${environment.apiBaseUrl}{serverid}/stoplive`,
+  KEEP_ALIVE_ARCHIVE: `${environment.apiBaseUrl}{serverid}/archive/keepalive`,
   WEBRTC_ARCHIVE: `${environment.apiBaseUrl}webrtc/{serverid}/startarchive`,
   HLS_START_ARCHIVE: `${environment.apiBaseUrl}{serverid}/startarchive`,
+  STOP_ARCHIVE: `${environment.apiBaseUrl}{serverid}/stoparchive`,
+  ENCODED_START_ARCHIVE: `${environment.apiUrl}/V2.2/archive/playback-url/start/resource-server/V1/REST/{serverid}/`,
+  ENCODED_STOP_ARCHIVE: `${environment.apiUrl}/V2.2/archive/playback-url/stop/resource-server/`,
   VIDEO_INFO: `${environment.apiBaseUrl}{serverid}/channel/getstreamingparameter/{channelid}/{streamindex}`,
+  ARCHIVE_BARCLIP: `/barclip/`,
   CHANNEL_INFO: `${environment.apiBaseUrl}{serverid}/channel`,
   EVENT_SEARCH: `${environment.apiBaseUrl}{serverid}/event/getevents`,
   EVENT_COUNT: `${environment.apiBaseUrl}{serverid}/event/count`,
   USER_INFO: `${environment.apiBaseUrl}user`,
   UPDATE_USER: `${environment.apiBaseUrl}user/update/details`,
-  CHANGE_PASSWORD: `${environment.apiBaseUrl}user/changepassword`
+  CHANGE_PASSWORD: `${environment.apiBaseUrl}user/changepassword`,
 };
