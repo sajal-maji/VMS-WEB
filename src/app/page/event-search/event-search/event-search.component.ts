@@ -9,6 +9,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { FooterComponent } from '../../footer/footer.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-event-search',
@@ -79,6 +80,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     private cookies: CookieService,
     private ngZone: NgZone,
     private renderer: Renderer2,
+    private router: Router,
   ) {}
 
   // ---- lifecycle ----
@@ -144,6 +146,19 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
       setTimeout(() => apply(), timeoutSec * 1000);
     } else {
       apply();
+    }
+  }
+
+  showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookies.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      localStorage.clear();
+
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
     }
   }
 
@@ -226,11 +241,11 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
           }
         },
         error: (err) => {
-          this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+          this.model.error = err?.error?.message || 'Error fetching events';
           if (err) {
             setTimeout(() => {
               if (err.status === 401) {
-                (window as any).$rootScope?.showInvalidSession?.();
+                this.showInvalidSession();
               }
             }, 2000);
           }
@@ -265,11 +280,11 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
           }
         },
         error: (err) => {
-          this.model.error = err?.error?.message || err?.message || 'Error fetching events';
+          this.model.error = err?.error?.message || 'Error fetching events';
           if (err) {
             setTimeout(() => {
               if (err.status === 401) {
-                (window as any).$rootScope?.showInvalidSession?.();
+                this.showInvalidSession();
               }
             }, 2000);
           }
@@ -334,53 +349,13 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
         error: (err) => {
           this.channelList = [];
           if (err.status === 401) {
-            (window as any).$rootScope?.showInvalidSession?.();
+            this.showInvalidSession();
           } else {
-            this.model.camerror = err?.error?.message || err?.message || 'Error fetching channels';
+            this.model.camerror = err?.error?.message || 'Error fetching channels';
             setTimeout(() => (this.model.camerror = ''), 3000);
           }
         },
       });
-  }
-
-  updateRecServerDropdown() {
-    const filteredServers = this.fullChannelList
-      .filter(
-        (channel) => !this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc,
-      )
-      .map((channel) => ({
-        recordingserverid: channel.recordingserverid,
-        recordingservername: channel.recordingservername,
-      }));
-
-    const uniqueServersMap = new Map();
-    filteredServers.forEach((server) => uniqueServersMap.set(server.recordingserverid, server));
-
-    this.uniqueRecServerList = Array.from(uniqueServersMap.values());
-
-    this.model.selectedrecordingserver = null;
-    this.filterChannels();
-  }
-
-  filterChannels() {
-    this.channelList = this.fullChannelList.filter(
-      (channel) =>
-        (!this.model.selectedrtamc || channel.rtamcid === this.model.selectedrtamc) &&
-        (!this.model.selectedrecordingserver ||
-          channel.recordingserverid === this.model.selectedrecordingserver),
-    );
-
-    console.log('Filtered channelList:', this.fullChannelList);
-  }
-
-  onRTAMCChange() {
-    this.model.selectedrecordingserver = null;
-    this.updateRecServerDropdown();
-    this.filterChannels();
-  }
-
-  onRecServerChange() {
-    this.filterChannels();
   }
 
   eventClicked(event: any) {
@@ -413,14 +388,14 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     const url = `${environment.apiUrl}${cleanPath}`;
     console.log('clipurl', this.event_clip_url, url);
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
-      Authorization: `Bearer ${this.cookies.get('authToken')}`,
-    });
-
     this.http
-      .get<any>(url, { headers })
+      .get<any>(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookies.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookies.get('authToken')}`,
+        }),
+      })
       .pipe(take(1))
       .subscribe({
         next: (response) => {
@@ -441,9 +416,9 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
           if (waiting) waiting.style.display = 'none';
 
           if (err.status === 401) {
-            (window as any).$rootScope?.showInvalidSession?.();
+            this.showInvalidSession();
           } else {
-            this.model.error = err?.error?.message || err?.message || 'Error loading clip';
+            this.model.error = err?.error?.message || 'Error loading clip';
             setTimeout(() => (this.model.error = ''), 3000);
           }
         },
@@ -788,12 +763,5 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
       },
       true,
     );
-  }
-
-  // ---- placeholders for external helpers originally referenced in the controller ----
-  getAPIEndpoint(name: string): string {
-    // The original controller called $scope.getAPIEndpoint(name). If you have such a helper,
-    // replace the implementation here. For now attempt to call a global function if present.
-    return (window as any).getAPIEndpoint ? (window as any).getAPIEndpoint(name) : name;
   }
 }

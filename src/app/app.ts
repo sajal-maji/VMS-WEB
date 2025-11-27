@@ -16,8 +16,7 @@ import { AuthService } from './auth/auth.service';
 export class App {
   protected readonly title = signal('vms-web-angular-revamp');
   private isTabClosed = false;
-  constructor() // private auth: AuthService, // private cookies: CookieService, // private cleanupService: CleanupService,
-  // @Inject(PLATFORM_ID) private platformId: Object,
+  constructor() // @Inject(PLATFORM_ID) private platformId: Object, // private auth: AuthService, // private cookies: CookieService, // private cleanupService: CleanupService,
   {
     // if (isPlatformBrowser(this.platformId)) {
     //   document.addEventListener('visibilitychange', () => {

@@ -145,15 +145,15 @@ export class TreeComponent implements OnInit {
   loadData(): void {
     const url = API_ENDPOINTS.SERVER_INFO;
     const url1 = API_ENDPOINTS.USER_SESSION;
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      Cookies: `JSESSIONID=${this.cookieService.get('vSessionId')}`,
-      Authorization: `Bearer ${this.cookieService.get('authToken')}`,
-    });
-
     // === 1. Fetch server info ===
     this.http
-      .get<any>(url, { headers })
+      .get<any>(url, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookieService.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookieService.get('authToken')}`,
+        }),
+      })
       .pipe(take(1))
       .subscribe({
         next: (response) => {
@@ -186,7 +186,13 @@ export class TreeComponent implements OnInit {
       });
     // === 2. Fetch user session ===
     this.http
-      .get<any>(url1, { headers })
+      .get<any>(url1, {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          Cookies: `JSESSIONID=${this.cookieService.get('vSessionId')}`,
+          Authorization: `Bearer ${this.cookieService.get('authToken')}`,
+        }),
+      })
       .pipe(take(1))
       .subscribe({
         next: (response) => {
