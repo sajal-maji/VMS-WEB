@@ -7,8 +7,10 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  EventEmitter,
   OnDestroy,
   OnInit,
+  Output,
   QueryList,
   Renderer2,
   ViewChildren,
@@ -99,6 +101,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   matrixItems: any[] = []; // fix: used in *ngFor
   model: any = { error: '' };
+
+  @Output() channelCleared = new EventEmitter<number>();
+
   constructor(
     private renderer: Renderer2,
     private streamSvc: StreamingService,
@@ -124,6 +129,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('players', this.players);
 
     // start keepalive behavior for live sessions (if required)
+    if (this.serverConfiguration.streamer === this.VIDEONETICS_STREAMING_MODE) {
+      console.log('liveKeepAlive()...');
+      this.liveKeepAlive();
+    }
     this.liveKeepAlive();
   }
 
@@ -381,10 +390,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   hidePTZControl(args?: any) {
     // This mirrors original logic: if we had started encoded MJPEG and saved currentPlayer, reattach HLS, else just hide.
-    if (this.serverConfiguration && this.serverConfiguration.streamingMode) {
+    if (this.serverConfiguration && this.serverConfiguration.streamer) {
       if (
-        this.serverConfiguration.streamingMode ===
-          (this.rootconfig?.VIDEONETICS_STREAMING_MODE ?? 'VIDEONETICS') &&
+        this.serverConfiguration.streamer === this.VIDEONETICS_STREAMING_MODE &&
         this.serverConfiguration.videoneticsStreamType !== 'encoded'
       ) {
         // When args present, reattach previously detached HLS to the player slot
@@ -429,10 +437,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.currentPlayer = {};
           this.ptzplayer = {};
         }
-      } else if (
-        this.serverConfiguration.streamingMode ===
-        (this.rootconfig?.WEBRTC_STREAMING_MODE ?? 'WEBRTC')
-      ) {
+      } else if (this.serverConfiguration.streamer === (this.WEBRTC_STREAMING_MODE ?? 'WEBRTC')) {
         if (this.ptzplayer?.webrtc) {
           try {
             this.ptzplayer.webrtc.stop();
@@ -474,7 +479,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getVideoInfo(index: number) {
     const player = this.players[index];
-    console.log('channel', player.channelId);
+    console.log('channel', player.channelId.toString());
 
     if (
       player.channelId > -1 &&
@@ -703,7 +708,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!player) return;
 
     // If your app uses a streamingMode flag for WebRTC
-    if (this.serverConfiguration?.streamingMode === this.rootconfig?.WEBRTC_STREAMING_MODE) {
+    if (this.serverConfiguration?.streamer === this.WEBRTC_STREAMING_MODE) {
       if (player.webrtc) {
         try {
           player.webrtc.stop();
@@ -842,6 +847,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   liveKeepAlive() {
     // Ping every 30 seconds
     this.keepAliveSub = interval(30_000).subscribe(() => {
+      if (this.serverConfiguration.streamer === this.WEBRTC_STREAMING_MODE) {
+        return;
+      }
       this.players.forEach((player, idx) => {
         if (player.channelId > -1 && player.sessionId > 0) {
           const apiUrl = API_ENDPOINTS.KEEP_ALIVE_LIVE.replace(
@@ -1304,7 +1312,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       // Drag Action
       console.log('channelToPlay', channelToPlay);
-      this.getVideoInfo(channelToPlay.id);
+      // this.getVideoInfo(channelToPlay.id);
       let availableIdx = channelToPlay.index - 1;
       if (availableIdx < 0) {
         availableIdx = 0;
@@ -1483,7 +1491,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         '{serverid}',
         this.serverConfiguration.serverid,
       );
-      console.log('rootConfig', this.rootconfig, this.serverConfiguration);
+      console.log('rootConfig', this.serverConfiguration);
 
       // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
       if (
@@ -1570,7 +1578,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 if (this.players[index]['channelId'] > -1) {
                   this.count--;
                   this.players[index]['error'] = response?.error?.message || 'Stream error';
-                  this.emitRootEvent('channelCleared', this.players[index]['channelId']);
+                  this.channelCleared.emit(this.players[index]['channelId']);
 
                   this.players[index]['channelId'] = -1;
                   this.players[index]['recoverDecodingErrorDate'] = null;
@@ -1643,6 +1651,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                           );
                           (this.players[index]['hlsPlayer'] as any).attachMedia(video);
                           video?.play().catch(() => {});
+                          // this.playStream(
+                          //   this.players[index]['channelId'],
+                          //   this.players[index]['hlsURL'],
+                          // );
                         } catch (e) {
                           console.error('HLS attach/play error', e);
                         }
@@ -1679,7 +1691,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                   if (this.players[index]['channelId'] > -1) {
                     this.count--;
                     this.players[index]['error'] = response?.error?.message || 'Stream error';
-                    this.emitRootEvent('channelCleared', this.players[index]['channelId']);
+                    this.channelCleared.emit(this.players[index]['channelId']);
 
                     this.players[index]['channelId'] = -1;
                     this.players[index]['recoverDecodingErrorDate'] = null;
@@ -1738,7 +1750,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
               this.stopPlaying(selectedIndex);
             }
 
-            this.emitRootEvent('channelCleared', selectedPlayer['channelId']);
+            this.channelCleared.emit(selectedPlayer['channelId']);
             this.count--;
             selectedPlayer['channelId'] = -1;
             selectedPlayer['channelName'] = (

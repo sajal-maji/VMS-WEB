@@ -170,6 +170,11 @@ export class ChangePasswordComponent implements OnInit {
       changePassword[key] = this.sanitizeInput(changePassword[key]);
     });
 
+    if (changePassword.newpassword !== changePassword.confirmPassword) {
+      // this.error_message = "New Password and Confirm New Password must be same.";
+      return; // STOP HERE!
+    }
+
     let firstEncryptCurrPass = CryptoJS.SHA512(changePassword.password).toString();
     firstEncryptCurrPass = CryptoJS.SHA512(firstEncryptCurrPass).toString();
     changePassword.password = firstEncryptCurrPass;
@@ -200,7 +205,7 @@ export class ChangePasswordComponent implements OnInit {
           }),
         })
         .subscribe({
-          next: (response: any) => {
+          next: (response) => {
             console.log('response', response);
             this.success_message = 'Password Changed successfully';
             setTimeout(() => {
@@ -209,7 +214,7 @@ export class ChangePasswordComponent implements OnInit {
             }, 1000);
             this.isLoading = false;
           },
-          error: (response: any) => {
+          error: (response) => {
             this.error_message = response?.error?.message || 'Something went wrong!';
             this.success_message = '';
 

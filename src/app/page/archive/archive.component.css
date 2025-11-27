@@ -53,5 +53,52 @@
 .video-elem {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
+}
+
+.dropdown-menu-open {
+  position: absolute;
+  bottom: 100%; /* behaves like drop-up */
+  left: 0;
+  background-color: #1e2129;
+  min-width: 50px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-radius: 4px;
+  z-index: 1000;
+  border: 1px solid #323845;
+}
+
+.dropdown-menu-open li a {
+  display: block;
+  padding: 5px 8px;
+  color: white;
+  text-decoration: none;
+}
+
+.dropdown-menu-open li a:hover {
+  background-color: #0078d7;
+}
+
+.recording-progress,
+.motion-progress {
+  position: relative;
+  height: 20px; /* required */
+}
+
+.recording-section {
+  display: inline-block;
+  height: 100%; /* <— VERY IMPORTANT */
+  background-color: #fcb614; /* or any visible color */
+  cursor: pointer;
+  position: absolute;
+}
+
+.motion-section {
+  display: inline-block;
+  height: 100%; /* <— VERY IMPORTANT */
+  background-color: #ff0000; /* or any visible color */
+  cursor: pointer;
+  position: absolute;
 }

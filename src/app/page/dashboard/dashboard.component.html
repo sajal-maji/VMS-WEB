@@ -13,20 +13,9 @@
       class="video-grid"
       [ngStyle]="{ 'grid-template-columns': gridTemplate }"
       class="col-lg-6 col-md-6 col-sm-6 col-xs-12 player_container"
-      style="padding: 0px 2px"
+      style="padding: 0px 2px; margin-top: 30px"
       *ngFor="let player of players; let i = index"
     >
-      <div
-        class="calendar-container"
-        style="
-          position: relative;
-          top: 10px;
-          right: 20px;
-          display: flex;
-          justify-content: end;
-          gap: 8px;
-        "
-      ></div>
       <div
         class="col-lg-12 col-md-12 col-sm-12 col-xs-12 ui-droppable video-container"
         [attr.context-menu]="options.actionsMenu"
@@ -205,6 +194,7 @@
                       [disabled]="player.hlsURL == ''"
                     >
                       <span
+                        class="fa"
                         [class.fa-play]="!player.isplaying"
                         [class.fa-pause]="player.isplaying"
                         aria-hidden="true"
@@ -221,40 +211,40 @@
           <div class="video-parameters" *ngIf="player.isplaying">
             <p
               *ngIf="
-                player.streamingParameters[0].fps > 0 ||
-                player.streamingParameters[0].bitrate > 0 ||
-                player.streamingParameters[0].codecType > 0 ||
-                player.streamingParameters[0].width > 0 ||
-                player.streamingParameters[0].height > 0
+                player.streamingParameters[0]?.fps > 0 ||
+                player.streamingParameters[0]?.bitrate > 0 ||
+                player.streamingParameters[0]?.codecType > 0 ||
+                player.streamingParameters[0]?.width > 0 ||
+                player.streamingParameters[0]?.height > 0
               "
             >
-              {{ currentTime }} | {{ player.streamingParameters[0].fps }}fps |
-              {{ player.streamingParameters[0].bitrate }}kbps |
+              {{ currentTime }} | {{ player.streamingParameters[0]?.fps }}fps |
+              {{ player.streamingParameters[0]?.bitrate }}kbps |
               {{
-                player.streamingParameters[0].codecType == 0
+                player.streamingParameters[0]?.codecType == 0
                   ? 'MJPG'
-                  : player.streamingParameters[0].codecType == 1
+                  : player.streamingParameters[0]?.codecType == 1
                     ? 'MPEG'
-                    : player.streamingParameters[0].codecType == 2
+                    : player.streamingParameters[0]?.codecType == 2
                       ? 'H264'
-                      : player.streamingParameters[0].codecType == 3
+                      : player.streamingParameters[0]?.codecType == 3
                         ? 'PCMU'
-                        : player.streamingParameters[0].codecType == 8
+                        : player.streamingParameters[0]?.codecType == 8
                           ? 'H265'
                           : ''
               }}
               |
-              {{ player.streamingParameters[0].width }} X
-              {{ player.streamingParameters[0].height }} |
-              {{ player.streamingParameters[0].streamType == 0 ? 'Major Stream' : 'Minor Stream' }}
+              {{ player.streamingParameters[0]?.width }} X
+              {{ player.streamingParameters[0]?.height }} |
+              {{ player.streamingParameters[0]?.streamType == 0 ? 'Major Stream' : 'Minor Stream' }}
             </p>
             <p
               *ngIf="
-                player.streamingParameters[0].fps == 0 &&
-                player.streamingParameters[0].bitrate == 0 &&
-                player.streamingParameters[0].codecType == 0 &&
-                player.streamingParameters[0].width == 0 &&
-                player.streamingParameters[0].height == 0
+                player.streamingParameters[0]?.fps == 0 &&
+                player.streamingParameters[0]?.bitrate == 0 &&
+                player.streamingParameters[0]?.codecType == 0 &&
+                player.streamingParameters[0]?.width == 0 &&
+                player.streamingParameters[0]?.height == 0
               "
             >
               {{ currentTime }}

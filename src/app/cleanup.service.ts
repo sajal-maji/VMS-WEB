@@ -4,6 +4,7 @@ export class CleanupService {
   @HostListener('window:beforeunload', ['$event'])
   onTabClose() {
     const cookies = document.cookie.split(';');
+    console.log('cookies', cookies);
     for (const cookie of cookies) {
       const eqPos = cookie.indexOf('=');
       const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();

@@ -187,6 +187,11 @@ export class SetPasswordComponent implements OnInit {
       setPassword[key] = this.sanitizeInput(setPassword[key]);
     });
 
+    if (setPassword.newpassword !== setPassword.confirmPassword) {
+      // this.error_message = "New Password and Confirm New Password must be same.";
+      return; // STOP HERE!
+    }
+
     // this.validate();
 
     // if (this.error_message) return;
@@ -225,6 +230,7 @@ export class SetPasswordComponent implements OnInit {
           }, 1000);
         },
         error: (response: any) => {
+          console.log('res', response);
           this.error_message = response?.error?.message || 'Something went wrong!';
           this.success_message = '';
 

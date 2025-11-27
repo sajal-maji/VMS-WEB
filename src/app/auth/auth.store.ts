@@ -47,8 +47,9 @@ export class AuthStore {
           error: null,
         });
         // Set JWT token in cookie, valid for 1 day
-        this.cookies.set('vSessionId', res.result[0].vsessionid, 1, '/');
+        this.cookies.set('vSessionId', res.result[0].vsessionid, 0, '/');
         this.cookies.set('authToken', res.result[0].authToken, 1, '/');
+
         this.router.navigate(['ivmsweb/live-matrix']);
       },
 
@@ -72,12 +73,13 @@ export class AuthStore {
       error: null,
     });
     // Remove JWT token from cookie
-    this.cookies.delete('JSESSIONID', '/');
+    this.cookies.delete('vSessionId', '/');
+    this.cookies.delete('authToken', '/');
   }
 
   getToken(): string | null {
     // Always read from cookie to ensure latest value
-    const token = this.cookies.get('JSESSIONID');
+    const token = this.cookies.get('vSessionId');
     this.state.update((s) => ({ ...s, token, isAuthenticated: !!token }));
     return token || null;
   }

@@ -1,6 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, HostListener, Inject, PLATFORM_ID, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { CleanupService } from './cleanup.service';
+// import { CleanupService } from './cleanup.service';
+import { CookieService } from 'ngx-cookie-service';
+import { isPlatformBrowser } from '@angular/common';
+import { AuthStore } from './auth/auth.store';
+import { AuthService } from './auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +15,25 @@ import { CleanupService } from './cleanup.service';
 })
 export class App {
   protected readonly title = signal('vms-web-angular-revamp');
-  constructor(private cleanupService: CleanupService) {
-    // Just injecting activates the HostListener globally
+  private isTabClosed = false;
+  constructor() // private auth: AuthService, // private cookies: CookieService, // private cleanupService: CleanupService,
+  // @Inject(PLATFORM_ID) private platformId: Object,
+  {
+    // if (isPlatformBrowser(this.platformId)) {
+    //   document.addEventListener('visibilitychange', () => {
+    //     if (document.visibilityState === 'hidden') {
+    //       this.isTabClosed = true;
+    //     }
+    //   });
+    // }
   }
+
+  // @HostListener('window:beforeunload', ['$event'])
+  // onBeforeUnload(event: Event) {
+  //   if (this.isTabClosed) {
+  //     console.log('logout', this.isTabClosed);
+  //     this.auth.logout();
+  //     // optional: clear cookie/localStorage
+  //   }
+  // }
 }

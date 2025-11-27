@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   ENCODED_STOP_ARCHIVE: `${environment.apiUrl}/V2.2/archive/playback-url/stop/resource-server/`,
   VIDEO_INFO: `${environment.apiBaseUrl}{serverid}/channel/getstreamingparameter/{channelid}/{streamindex}`,
   ARCHIVE_BARCLIP: `/barclip/`,
+  ARCHIVE_MOTIONCLIP: `/motionclip/`,
   CHANNEL_INFO: `${environment.apiBaseUrl}{serverid}/channel`,
   EVENT_SEARCH: `${environment.apiBaseUrl}{serverid}/event/getevents`,
   EVENT_COUNT: `${environment.apiBaseUrl}{serverid}/event/count`,

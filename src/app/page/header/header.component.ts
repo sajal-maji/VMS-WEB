@@ -5,6 +5,7 @@ import { inject } from '@angular/core';
 import { LayoutService, MatrixLayout } from '../live-matrix/layout.service';
 import { filter } from 'rxjs';
 import { CookieService } from 'ngx-cookie-service';
+import { AuthStore } from '../../auth/auth.store';
 
 @Component({
   selector: 'app-header',
@@ -17,6 +18,7 @@ export class HeaderComponent {
   readonly layout = inject(LayoutService);
   private readonly router = inject(Router);
   private readonly cookies = inject(CookieService);
+  private readonly authStore = inject(AuthStore);
   userSession: boolean = true;
   firstLogin: boolean = false;
   liveEvents: boolean = true;
@@ -69,10 +71,11 @@ export class HeaderComponent {
   }
 
   signOut(): void {
-    // redirect or handle logout
-    this.cookies.delete('authToken', '/');
-    this.cookies.delete('vSessionId', '/');
-    // window.location.href = '/ivmsweb/signout?successto=/ivmsweb/login';
-    this.router.navigate(['/ivmsweb/login']);
+    // // redirect or handle logout
+    // this.cookies.delete('authToken', '/');
+    // this.cookies.delete('vSessionId', '/');
+    // // window.location.href = '/ivmsweb/signout?successto=/ivmsweb/login';
+    // this.router.navigate(['/ivmsweb/login']);
+    this.authStore.logout();
   }
 }

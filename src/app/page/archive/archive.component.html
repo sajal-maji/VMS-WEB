@@ -85,7 +85,7 @@
                 [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
               />
 
-              <div
+              <!-- <div
                 class="col-lg-5 col-md-5 col-sm-6 col-xs-7 d-flex align-items-center"
                 style="padding: 0px 12px; gap: 0px"
               >
@@ -104,7 +104,7 @@
                   src="/images/camera/CameraLiveAndRecordingIcon.png"
                   *ngIf="!player['ptz_control'] && player.status == 0"
                 />
-              </div>
+              </div> -->
             </div>
 
             <div
@@ -127,13 +127,6 @@
             class="video-header-icon d-flex align-items-center"
             style="display: flex; align-items: center; gap: 0px; flex-shrink: 0; padding: 0 45px"
           >
-            <img
-              (click)="showPTZControl(i)"
-              src="/images/PTZIcon.png"
-              *ngIf="player['ptz_control']"
-              [attr.title]="'PTZ Control'"
-            />
-
             <img
               (click)="screenshotClicked(i)"
               src="/images/ScreenshotIcon.png"
@@ -264,66 +257,30 @@
                     ></span>
                   </button>
 
-                  <div class="dropup" style="display: inline-block; vertical-align: middle">
+                  <div
+                    class="dropup"
+                    style="display: inline-block; vertical-align: middle; position: relative"
+                  >
                     <button
                       type="button"
-                      class="btn btn-default dropdown-toggle"
+                      class="btn btn-default"
                       [disabled]="player.hlsURL == '' && !player.webrtc"
                       style="border: 1px solid #323845"
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      [attr.aria-expanded]="isDropdownOpen"
                       (click)="toggleDropDown()"
                       aria-label="hidden"
                     >
                       {{ speedDisplay }}x
                     </button>
 
-                    <ul
-                      class="dropdown-menu"
-                      style="background-color: #1e2129; min-width: 30px !important"
-                    >
-                      <li>
-                        <a
-                          href="javascript:void(0)"
-                          (click)="changeSpeed(0.125)"
-                          style="color: white"
-                          >-8x</a
-                        >
-                      </li>
-                      <li>
-                        <a
-                          href="javascript:void(0)"
-                          (click)="changeSpeed(0.25)"
-                          style="color: white"
-                          >-4x</a
-                        >
-                      </li>
-                      <li>
-                        <a href="javascript:void(0)" (click)="changeSpeed(0.5)" style="color: white"
-                          >-2x</a
-                        >
-                      </li>
-                      <li>
-                        <a href="javascript:void(0)" (click)="changeSpeed(1)" style="color: white"
-                          >1x</a
-                        >
-                      </li>
-                      <li>
-                        <a href="javascript:void(0)" (click)="changeSpeed(2)" style="color: white"
-                          >2x</a
-                        >
-                      </li>
-                      <li>
-                        <a href="javascript:void(0)" (click)="changeSpeed(4)" style="color: white"
-                          >4x</a
-                        >
-                      </li>
-                      <li>
-                        <a href="javascript:void(0)" (click)="changeSpeed(8)" style="color: white"
-                          >8x</a
-                        >
-                      </li>
+                    <!-- Angular-controlled dropdown -->
+                    <ul *ngIf="isDropdownOpen" class="dropdown-menu-open">
+                      <li><a (click)="changeSpeed(0.125)">-8x</a></li>
+                      <li><a (click)="changeSpeed(0.25)">-4x</a></li>
+                      <li><a (click)="changeSpeed(0.5)">-2x</a></li>
+                      <li><a (click)="changeSpeed(1)">1x</a></li>
+                      <li><a (click)="changeSpeed(2)">2x</a></li>
+                      <li><a (click)="changeSpeed(4)">4x</a></li>
+                      <li><a (click)="changeSpeed(8)">8x</a></li>
                     </ul>
                   </div>
                 </td>
@@ -363,25 +320,28 @@
 
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
           <div class="col-lg-1 col-md-2 col-sm-12 col-xs-12 custom-text">Motion</div>
-          <!-- <fieldset
+          <fieldset
             id="motion-progress1"
             class="col-lg-11 col-md-10 col-sm-12 col-xs-12 motion-progress"
             [disabled]="player.disable_controls"
           >
             <span
               *ngFor="let motionclip of player.motionclips"
-              [ngStyle]="{ 'margin-left': motionclip.marginleft, width: motionclip.width }"
+              [ngStyle]="{
+                'margin-left': $any(motionclip).marginleft,
+                width: $any(motionclip).width,
+              }"
               class="pointer motion-section"
               [attr.title]="
-                (motionclip.startTimestamp | date:'hh:mm:ss a') +
+                ($any(motionclip).startTimestamp | date: 'hh:mm:ss a') +
                 ' to ' +
-                (motionclip.endTimestamp | date:'hh:mm:ss a')
+                ($any(motionclip).endTimestamp | date: 'hh:mm:ss a')
               "
               (click)="startMotionPlaying(i, motionclip)"
             >
               &nbsp;
             </span>
-          </fieldset> -->
+          </fieldset>
         </div>
 
         <span

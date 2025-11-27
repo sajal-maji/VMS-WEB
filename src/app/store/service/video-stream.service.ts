@@ -58,6 +58,7 @@ class VideoneticsRTC extends EventTarget {
   #errorMessage;
   #isLive;
   base_url: any;
+  baseUrl: any;
 
   constructor(base_url: any, videoElement: any) {
     super();
@@ -80,6 +81,8 @@ class VideoneticsRTC extends EventTarget {
     this.#errorMessage = '';
     this.#isLive = false;
     this.base_url = base_url;
+
+    this.baseUrl = environment.apiUrl;
 
     this.#CODECS = [
       'avc1.640029', // H.264 high 4.1 (Chromecast 1st and 2nd Gen)
@@ -326,7 +329,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -362,7 +365,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -398,7 +401,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -433,7 +436,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionId: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -468,7 +471,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -502,7 +505,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -536,7 +539,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -571,7 +574,7 @@ class VideoneticsRTC extends EventTarget {
     const requestBody = { sessionid: this.#sessionId };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -594,7 +597,7 @@ class VideoneticsRTC extends EventTarget {
    * @param {string|URL} value
    */
   set #src(value: any) {
-    console.log('VideoneticsRTC.src', value, environment.apiUrl);
+    console.log('VideoneticsRTC.src', value);
     if (typeof value !== 'string') value = value.toString();
     if (value.startsWith('http')) {
       console.log('VideoneticsRTC.src', value.substring(4));
