@@ -103,6 +103,19 @@ export class ChangePasswordComponent implements OnInit {
     return this.changePassForm.controls;
   }
 
+  private showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookies.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      localStorage.clear();
+
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
+    }
+  }
+
   loadData(): void {
     const url = API_ENDPOINTS.USER_SESSION;
     this.http
@@ -125,7 +138,8 @@ export class ChangePasswordComponent implements OnInit {
         },
         error: (err) => {
           if (err.status === 401) {
-            this.router.navigate(['ivmsweb/login']);
+            this.showInvalidSession();
+            // this.router.navigate(['ivmsweb/login']);
           } else {
             this.error_message = err.error?.message || 'Error loading user data!';
           }
@@ -210,6 +224,7 @@ export class ChangePasswordComponent implements OnInit {
             this.success_message = 'Password Changed successfully';
             setTimeout(() => {
               this.success_message = '';
+              this.authStore.logout();
               this.router.navigateByUrl('ivmsweb/login');
             }, 1000);
             this.isLoading = false;

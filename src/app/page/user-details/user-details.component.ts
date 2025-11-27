@@ -75,6 +75,19 @@ export class UserDetailsComponent implements OnInit {
     this.loadData();
   }
 
+  private showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookies.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      localStorage.clear();
+
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
+    }
+  }
+  
   get f() {
     return this.userForm.controls;
   }
@@ -121,7 +134,8 @@ export class UserDetailsComponent implements OnInit {
         },
         error: (err) => {
           if (err.status === 401) {
-            this.router.navigate(['ivmsweb/login']);
+            this.showInvalidSession();
+            // this.router.navigate(['ivmsweb/login']);
           } else {
             this.error_message = err.error?.message || 'Error loading user data!';
           }

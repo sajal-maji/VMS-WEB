@@ -111,6 +111,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private videoneticsRTC: VideoStreamService,
     private cookies: CookieService,
     public layoutService: LayoutService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -152,6 +153,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.keepAliveSub?.unsubscribe();
+  }
+
+  private showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookies.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      localStorage.clear();
+
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
+    }
   }
 
   private initPlayers(count: number) {
@@ -758,7 +772,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             console.error('stopPlaying error', err);
           } else {
             // invalid session
-            console.error('Invalid session', err);
+            this.showInvalidSession();
+            // console.error('Invalid session', err);
           }
         },
       });
@@ -779,6 +794,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err: any) => {
         if (err?.status === 401) {
+          this.showInvalidSession();
           console.error('Invalid session');
         } else {
           this.players[ptzIndex].error = err?.error?.message ?? 'Error getting presets';
@@ -894,6 +910,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     }
                   }
                 } else {
+                  this.showInvalidSession();
                   console.error('Invalid session');
                 }
               },
@@ -1604,6 +1621,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                   }, 5000);
                 }
               } else {
+                this.showInvalidSession();
                 console.error('Invalid session');
               }
             },
@@ -1717,6 +1735,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                     }, 5000);
                   }
                 } else {
+                  this.showInvalidSession();
                   console.error('Invalid session');
                 }
               },

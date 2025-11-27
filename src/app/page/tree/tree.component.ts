@@ -515,7 +515,7 @@ export class TreeComponent implements OnInit {
           if (error.status === 401) {
             this.showInvalidSession();
             setTimeout(() => {
-              window.location.href = 'ivmsweb/login';
+              this.router.navigate(['ivmsweb/login']);
             }, 3000);
           } else {
             console.debug(error.error?.message || 'Camera status fetch failed.');

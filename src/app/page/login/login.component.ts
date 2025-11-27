@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -29,12 +29,27 @@ export class LoginComponent implements OnInit {
   siteList: any[] = [];
   site: string | null = null;
 
+  SESSION_TIMEOUT = 1 * 60 * 1000; // 15 minutes
+  sessionTimer: any; // to hold timeout reference
+
   constructor(
     private fb: FormBuilder,
     private sanitizer: DomSanitizer,
     private authStore: AuthStore,
     private router: Router,
-  ) {}
+  ) {
+    effect(() => {
+      const err = this.authStore.error() ?? '';
+      this.errorMessage = err;
+
+      if (err) {
+        // Clear after 5 seconds
+        setTimeout(() => {
+          this.errorMessage = '';
+        }, 1000);
+      }
+    });
+  }
 
   ngOnInit(): void {
     // Initialize form
@@ -114,8 +129,32 @@ export class LoginComponent implements OnInit {
     // Call API via store
     this.authStore.login({ userid, password });
     this.errorMessage = '';
+    
     this.submitted = false;
+
+    if (this.authStore.isAuthenticated()) {
+      this.resetSessionTimer();
+      // this.registerActivityListeners();
+
+    }
   }
+
+  private resetSessionTimer(): void {
+    if (this.sessionTimer) {
+      clearTimeout(this.sessionTimer);
+    }
+
+    this.sessionTimer = setTimeout(() => {
+      this.handleSessionTimeout();
+    }, this.SESSION_TIMEOUT);
+  }
+  
+  private handleSessionTimeout(): void {
+    this.authStore.logout();
+    alert('Your session has expired. Please login again.');
+    // Optional: redirect to login
+  }
+
 
   forgotPassword(): void {
     this.router.navigate(['/ivmsweb/forgot-password']);
