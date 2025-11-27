@@ -211,40 +211,40 @@
           <div class="video-parameters" *ngIf="player.isplaying">
             <p
               *ngIf="
-                player.streamingParameters[0]?.fps > 0 ||
-                player.streamingParameters[0]?.bitrate > 0 ||
-                player.streamingParameters[0]?.codecType > 0 ||
-                player.streamingParameters[0]?.width > 0 ||
-                player.streamingParameters[0]?.height > 0
+                (player.streamingParameters?.[0] && player.streamingParameters[0].fps > 0) ||
+                player.streamingParameters[0].bitrate > 0 ||
+                player.streamingParameters[0].codecType > 0 ||
+                player.streamingParameters[0].width > 0 ||
+                player.streamingParameters[0].height > 0
               "
             >
-              {{ currentTime }} | {{ player.streamingParameters[0]?.fps }}fps |
-              {{ player.streamingParameters[0]?.bitrate }}kbps |
+              {{ currentTime }} | {{ player.streamingParameters[0].fps }}fps |
+              {{ player.streamingParameters[0].bitrate }}kbps |
               {{
-                player.streamingParameters[0]?.codecType == 0
+                player.streamingParameters[0].codecType == 0
                   ? 'MJPG'
-                  : player.streamingParameters[0]?.codecType == 1
+                  : player.streamingParameters[0].codecType == 1
                     ? 'MPEG'
-                    : player.streamingParameters[0]?.codecType == 2
+                    : player.streamingParameters[0].codecType == 2
                       ? 'H264'
-                      : player.streamingParameters[0]?.codecType == 3
+                      : player.streamingParameters[0].codecType == 3
                         ? 'PCMU'
-                        : player.streamingParameters[0]?.codecType == 8
+                        : player.streamingParameters[0].codecType == 8
                           ? 'H265'
                           : ''
               }}
               |
-              {{ player.streamingParameters[0]?.width }} X
-              {{ player.streamingParameters[0]?.height }} |
-              {{ player.streamingParameters[0]?.streamType == 0 ? 'Major Stream' : 'Minor Stream' }}
+              {{ player.streamingParameters[0].width }} X
+              {{ player.streamingParameters[0].height }} |
+              {{ player.streamingParameters[0].streamType == 0 ? 'Major Stream' : 'Minor Stream' }}
             </p>
             <p
               *ngIf="
-                player.streamingParameters[0]?.fps == 0 &&
-                player.streamingParameters[0]?.bitrate == 0 &&
-                player.streamingParameters[0]?.codecType == 0 &&
-                player.streamingParameters[0]?.width == 0 &&
-                player.streamingParameters[0]?.height == 0
+                player.streamingParameters[0].fps == 0 &&
+                player.streamingParameters[0].bitrate == 0 &&
+                player.streamingParameters[0].codecType == 0 &&
+                player.streamingParameters[0].width == 0 &&
+                player.streamingParameters[0].height == 0
               "
             >
               {{ currentTime }}

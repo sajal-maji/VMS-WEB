@@ -55,7 +55,16 @@ type Player = {
   error?: string;
   recoverDecodingErrorDate?: any;
   recoverSwapAudioCodecDate?: any;
-  streamingParameters?: any;
+  streamingParameters: [
+    {
+      fps: number;
+      bitrate: number;
+      codecType: number;
+      width: number;
+      height: number;
+      streamType: number;
+    },
+  ];
   videoInfoIntervalSub?: Subscription | null;
   streamType?: number;
 };
@@ -187,6 +196,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         hlsPlayer: undefined,
         streamType: -1,
         videoInfoIntervalSub: null,
+        streamingParameters: [
+          {
+            fps: 0,
+            bitrate: 0,
+            codecType: 0,
+            width: 0,
+            height: 0,
+            streamType: 0,
+          },
+        ],
       });
     }
   }
@@ -508,6 +527,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       )
         .replace('{channelid}', player.channelId.toString())
         .replace('{streamindex}', player.streamType.toString());
+
       this.http
         .get<any>(apiUrl, {
           headers: new HttpHeaders({
@@ -519,17 +539,74 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         .pipe(take(1))
         .subscribe({
           next: (response: any) => {
-            console.log('response', response);
-            player.streamingParameters = response?.result ?? null;
-            console.log('streamingParameters', player.streamingParameters);
+            console.log('resp', response);
+            const result = response?.result;
+            if (Array.isArray(result) && result.length > 0) {
+              const r = result[0]; // Take the first element only
+              player.streamingParameters = [
+                {
+                  fps: r.fps ?? 0,
+                  bitrate: r.bitrate ?? 0,
+                  codecType: r.codecType ?? 0,
+                  width: r.width ?? 0,
+                  height: r.height ?? 0,
+                  streamType: r.streamType ?? player.streamType,
+                },
+              ];
+            } else if (result) {
+              // If backend returns a single object
+              player.streamingParameters = [
+                {
+                  fps: result.fps ?? 0,
+                  bitrate: result.bitrate ?? 0,
+                  codecType: result.codecType ?? 0,
+                  width: result.width ?? 0,
+                  height: result.height ?? 0,
+                  streamType: result.streamType ?? player.streamType,
+                },
+              ];
+            } else {
+              // If nothing is returned, provide a default object
+              player.streamingParameters = [
+                {
+                  fps: 0,
+                  bitrate: 0,
+                  codecType: 0,
+                  width: 0,
+                  height: 0,
+                  streamType: player.streamType ?? 0,
+                },
+              ];
+            }
           },
           error: (err: any) => {
-            console.error('Error fetching streaming parameters', err);
-            player.streamingParameters = null;
+            console.error('Error fetching camera streaming parameters:', err);
+            console.error('url', apiUrl);
+            // Provide a default object in case of error
+            player.streamingParameters = [
+              {
+                fps: 0,
+                bitrate: 0,
+                codecType: 0,
+                width: 0,
+                height: 0,
+                streamType: player.streamType ?? 0,
+              },
+            ];
           },
         });
     } else {
-      player.streamingParameters = null;
+      // Always provide exactly one object for the tuple
+      player.streamingParameters = [
+        {
+          fps: 0,
+          bitrate: 0,
+          codecType: 0,
+          width: 0,
+          height: 0,
+          streamType: player.streamType ?? 0,
+        },
+      ];
     }
   }
 
