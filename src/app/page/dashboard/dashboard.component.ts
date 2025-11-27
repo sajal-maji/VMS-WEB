@@ -33,6 +33,7 @@ import { StreamingService } from '../../store/service/commonService/streaming.se
 import { CookieService } from 'ngx-cookie-service';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { FooterComponent } from '../footer/footer.component';
+import { environment } from '../../../environments/environment';
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -1654,7 +1655,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.players[index]['sessionId'] = response?.result?.[0]?.sessionid ?? 0;
 
                 if (this.players[index]['channelId'] > -1) {
-                  this.players[index]['hlsURL'] = response?.result?.[0]?.hlsurl ?? '';
+                  const hlsPath = response?.result?.[0]?.hlsurl ?? '';
+                  this.players[index]['hlsURL'] = `${environment.apiUrl}${hlsPath}`;
+                  // this.players[index]['hlsURL'] = response?.result?.[0]?.hlsurl ?? '';
                   this.players[index]['isplaying'] = true;
 
                   if ((Hls as any).isSupported && (Hls as any).isSupported()) {

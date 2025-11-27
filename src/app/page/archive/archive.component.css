@@ -102,3 +102,15 @@
   cursor: pointer;
   position: absolute;
 }
+
+.video-container-centeredOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;   /* Don't block mouse */
+}

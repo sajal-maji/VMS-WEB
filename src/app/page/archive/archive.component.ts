@@ -1656,6 +1656,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
         })
         .subscribe({
           next: (response) => {
+            console.log('response', response?.result);
             player.error = '';
             player.disable_controls = false;
             if (waitingElement) waitingElement.style.display = 'none';
@@ -1665,7 +1666,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
             player.sessionId = result.sessionid;
 
             if (player.channelId > -1) {
-              player.hlsURL = result.hlsurl;
+              player.hlsURL = `${environment.apiUrl}${result.hlsurl}`;
               player.isplaying = true;
 
               if ((Hls as any).isSupported && (Hls as any).isSupported()) {
