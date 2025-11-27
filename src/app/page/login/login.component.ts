@@ -129,13 +129,12 @@ export class LoginComponent implements OnInit {
     // Call API via store
     this.authStore.login({ userid, password });
     this.errorMessage = '';
-    
+
     this.submitted = false;
 
     if (this.authStore.isAuthenticated()) {
       this.resetSessionTimer();
       // this.registerActivityListeners();
-
     }
   }
 
@@ -148,13 +147,12 @@ export class LoginComponent implements OnInit {
       this.handleSessionTimeout();
     }, this.SESSION_TIMEOUT);
   }
-  
+
   private handleSessionTimeout(): void {
     this.authStore.logout();
     alert('Your session has expired. Please login again.');
     // Optional: redirect to login
   }
-
 
   forgotPassword(): void {
     this.router.navigate(['/ivmsweb/forgot-password']);

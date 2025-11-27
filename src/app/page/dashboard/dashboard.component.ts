@@ -111,7 +111,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private videoneticsRTC: VideoStreamService,
     private cookies: CookieService,
     public layoutService: LayoutService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {

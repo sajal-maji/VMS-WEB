@@ -87,7 +87,7 @@ export class UserDetailsComponent implements OnInit {
       this.router.navigateByUrl('ivmsweb/login');
     }
   }
-  
+
   get f() {
     return this.userForm.controls;
   }
