@@ -211,7 +211,7 @@
           <div class="video-parameters" *ngIf="player.isplaying">
             <p
               *ngIf="
-                (player.streamingParameters?.[0] && player.streamingParameters[0].fps > 0) ||
+                (player?.streamingParameters?.[0] && player.streamingParameters[0].fps > 0) ||
                 player.streamingParameters[0].bitrate > 0 ||
                 player.streamingParameters[0].codecType > 0 ||
                 player.streamingParameters[0].width > 0 ||

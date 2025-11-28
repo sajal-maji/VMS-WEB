@@ -30,7 +30,7 @@ WORKDIR /usr/share/nginx/html
 COPY --from=builder /app/dist/vms-web-angular-revamp/browser/ ./ 
 
 # Copy NGINX config supporting SPA + HTTPS
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # IMPORTANT: Expose both HTTP and HTTPS
 EXPOSE 800

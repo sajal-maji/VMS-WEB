@@ -66,7 +66,7 @@ type Player = {
     },
   ];
   videoInfoIntervalSub?: Subscription | null;
-  streamType?: number;
+  streamType: number;
 };
 
 const liveHlsJsConfig = {
@@ -511,16 +511,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      Video info polling and management
      ============================ */
 
-  getVideoInfo(index: number) {
+  getVideoInfo(index: number): void {
     const player = this.players[index];
-    console.log('channel', player.channelId.toString());
 
-    if (
-      player.channelId > -1 &&
-      player &&
-      player.streamType !== undefined &&
-      player.streamType > -1
-    ) {
+    if (player?.channelId > -1 && player?.streamType > -1) {
       const apiUrl = API_ENDPOINTS.VIDEO_INFO.replace(
         '{serverid}',
         this.serverConfiguration.serverid,
@@ -1440,7 +1434,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.count++;
         this.startPlaying(availableIdx);
-        this.getVideoInfo(channelToPlay.id);
+        this.manageVideoInfoInterval(channelToPlay.id);
 
         this.setVideoMatrixUrlChannels(availableIdx, channelToPlay.id.toString());
       }

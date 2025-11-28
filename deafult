@@ -1,0 +1,32 @@
+# ----------------------
+# HTTPS server (port 443)
+# ----------------------
+server {
+    listen 8443 ssl;
+    listen [::]:8443 ssl;
+
+    server_name apiservice.videonetics.com;
+
+    # TURN OFF SERVER VERSION LEAK
+    server_tokens off;
+    add_header Server "" always;
+
+    ssl_certificate /etc/nginx/ssl/videonetics.cer;
+    ssl_certificate_key /etc/nginx/ssl/videonetics.key;
+
+    root /usr/share/nginx/html;
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Cache-Control "no-cache, no-store, max-age=63115200, must-revalidate";
+    add_header Content-Security-Policy "default-src 'self' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' wss: https:; media-src 'self' blob: data: mediastream:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" always;
+    add_header X-Frame-Options "DENY";
+
+    location / {
+        try_files $uri $uri/ /index.html$is_args$args;
+    }
+
+    error_page 404 /index.html;
+}
