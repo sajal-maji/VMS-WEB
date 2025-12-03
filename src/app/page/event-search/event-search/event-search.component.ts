@@ -10,6 +10,7 @@ import { take } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { FooterComponent } from '../../footer/footer.component';
 import { Router } from '@angular/router';
+import { AuthStore } from '../../../auth/auth.store';
 
 @Component({
   selector: 'app-event-search',
@@ -81,6 +82,7 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone,
     private renderer: Renderer2,
     private router: Router,
+    private authStore: AuthStore,
   ) {}
 
   // ---- lifecycle ----
@@ -156,6 +158,8 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
       this.cookies.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
+
+      this.authStore.logout();
 
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');

@@ -12,6 +12,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
 import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from '../footer/footer.component';
+import { AuthStore } from '../../auth/auth.store';
 
 @Component({
   selector: 'app-user-details',
@@ -32,6 +33,7 @@ export class UserDetailsComponent implements OnInit {
     private cookies: CookieService,
     private http: HttpClient,
     private router: Router,
+    private authStore: AuthStore,
   ) {}
 
   ngOnInit(): void {
@@ -82,7 +84,7 @@ export class UserDetailsComponent implements OnInit {
       this.cookies.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
-
+      this.authStore.logout();      
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');
     }

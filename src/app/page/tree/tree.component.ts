@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { NavigationEnd, Router } from '@angular/router';
 import { interval, Subject, Subscription } from 'rxjs';
+import { AuthStore } from '../../auth/auth.store';
 
 interface CameraNode {
   name: string;
@@ -94,6 +95,7 @@ export class TreeComponent implements OnInit {
     private http: HttpClient,
     private cookieService: CookieService,
     private router: Router,
+    private authStore: AuthStore,
   ) {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
@@ -136,6 +138,7 @@ export class TreeComponent implements OnInit {
       this.cookieService.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
+      this.authStore.logout();
 
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');

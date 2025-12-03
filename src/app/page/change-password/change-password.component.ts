@@ -110,6 +110,7 @@ export class ChangePasswordComponent implements OnInit {
       this.cookies.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
+      this.authStore.logout();
 
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');

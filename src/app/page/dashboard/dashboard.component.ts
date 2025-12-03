@@ -34,6 +34,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { FooterComponent } from '../footer/footer.component';
 import { environment } from '../../../environments/environment';
+import { AuthStore } from '../../auth/auth.store';
 type Player = {
   isMicrophoneOn?: boolean;
   microphone_txt?: string;
@@ -122,6 +123,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private cookies: CookieService,
     public layoutService: LayoutService,
     private router: Router,
+    private authStore: AuthStore,
   ) {}
 
   ngOnInit(): void {
@@ -172,6 +174,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cookies.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
+      this.authStore.logout();
 
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');
