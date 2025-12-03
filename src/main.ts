@@ -9,25 +9,41 @@ function deleteCookie(name: string): void {
   }
 }
 
-// window.addEventListener('unload', () => {
-//   // If "reloading" does NOT exist → it was a TAB CLOSE
-//   const isReload = sessionStorage.getItem('reloading');
+window.addEventListener('beforeunload', () => {
+  if (!sessionStorage.getItem('reloading')) {
+    const payload = JSON.stringify({ intent: "LOGOUT", source: "TAB_CLOSE" });
 
-//   if (!isReload) {
-//     deleteCookie('JSESSIONID');
-//     deleteCookie('vSessionId');
-//     deleteCookie('authToken');
-//   }
-// });
-window.addEventListener('visibilitychange', () => {
-  const isReload = sessionStorage.getItem('reloading');
-  if (document.visibilityState === 'hidden' && !isReload) {
-    navigator.sendBeacon(`${environment.apiBaseUrl}user/session/close`);
+    navigator.sendBeacon(
+      `${environment.apiBaseUrl}user/session/close`,
+      new Blob([payload], { type: 'application/json' })
+    );
+
     deleteCookie('JSESSIONID');
     deleteCookie('vSessionId');
     deleteCookie('authToken');
   }
 });
+// window.addEventListener('visibilitychange', () => {
+//   const isReload = sessionStorage.getItem('reloading');
+
+//   if (document.visibilityState === 'hidden' && !isReload) {
+
+//     const payload = JSON.stringify({
+//       intent: "LOGOUT",
+//       source: "TAB_CLOSE"
+//     });
+
+//     navigator.sendBeacon(
+//       `${environment.apiBaseUrl}user/session/close`,
+//       new Blob([payload], { type: 'application/json' })
+//     );
+
+//     deleteCookie('JSESSIONID');
+//     deleteCookie('vSessionId');
+//     deleteCookie('authToken');
+//   }
+// });
+
 
 
 import 'zone.js';
