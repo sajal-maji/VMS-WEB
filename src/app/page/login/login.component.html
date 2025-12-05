@@ -1,44 +1,30 @@
-<div class="custom-main">
-  <div class="col-lg-4 col-md-3 col-sm-2 col-xs-1"></div>
+<div class="login-wrapper min-h-screen flex items-center justify-center bg-gray-100">
+  <div class="login-card w-full max-w-md bg-white shadow-lg rounded-xl p-8">
 
-  <div
-    class="col-lg-4 col-md-6 col-sm-8 col-xs-10 screen-center"
-    style="width: 428px; height: 620px; padding: 0px"
-  >
-    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="col-lg-3 col-md-3 col-sm-3 col-xs-2"></div>
-      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-8" style="text-align: center">
-        <img src="/images/newvtplLogo.png" width="200px" height="200px;" />
-      </div>
-      <div class="col-lg-3 col-md-3 col-sm-3 col-xs-2"></div>
+    <div class="logo-wrap flex justify-center">
+      <img src="/images/newvtplLogo.png" alt="Logo" class="h-14 object-contain" />
     </div>
 
     <form
       [formGroup]="loginForm"
       (ngSubmit)="login()"
       autocomplete="off"
-      class="col-lg-10 col-md-10 col-sm-10 col-xs-10"
-      style="padding: 0px"
+      class="space-y-3 w-full max-w-sm mx-auto mt-1"
     >
       <!-- Username -->
-      <label
-        class="control-label col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-text-color"
-        for="userid"
-      >
-        Username
-      </label>
-      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      <label class="block text-sm font-semibold text-slate-200 mb-1" for="userid">Username</label>
+      <div class="relative">
         <input
           id="userid"
           type="text"
-          class="form-control login-input"
           placeholder="Username"
           formControlName="userid"
           required
           autocomplete="off"
+          class="w-full bg-transparent rounded-md px-3 py-2 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_18px_rgba(143,25,47,0.45)] transition"
         />
         @if (submitted && loginForm.controls['userid'].errors) {
-          <div style="color: #b00020; font-size: 12px; margin-top: 4px">
+          <div class="text-sm text-red-500 mt-1">
             @if (loginForm.controls['userid'].errors['required']) {
               <span>Username is required.</span>
             }
@@ -47,38 +33,31 @@
       </div>
 
       <!-- Password -->
-      <label
-        class="control-label col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-text-color"
-        for="password"
-        style="margin-top: 24px"
-      >
-        Password
-      </label>
-      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      <label class="block text-sm font-semibold text-slate-200 mb-1" for="password">Password</label>
+      <div class="relative">
         <input
           id="password-field"
           [type]="showPassword ? 'text' : 'password'"
-          class="form-control login-input"
           placeholder="Password"
           formControlName="password"
           required
           autocomplete="off"
+          class="w-full bg-transparent rounded-md px-3 py-2 pr-12 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_18px_rgba(143,25,47,0.45)] transition"
         />
-        <span
+        <button
+          type="button"
           (click)="togglePassword()"
-          class="fa field-icon toggle-password"
+          class="fa absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent border-0 p-0 text-slate-400 hover:text-slate-200 hover:bg-transparent focus:bg-transparent active:bg-transparent cursor-pointer focus:outline-none focus:ring-0"
           [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"
-        ></span>
+          aria-label="Toggle password visibility"
+        ></button>
         @if (submitted && loginForm.controls['password'].errors) {
-          <div style="color: #b00020; font-size: 12px; margin-top: 4px">
+          <div class="error-text text-sm text-red-600 mt-1">
             @if (loginForm.controls['password'].errors['required']) {
               <span>Password is required.</span>
             }
             @if (loginForm.controls['password'].errors['pattern']) {
-              <span
-                >Password must be 8-12 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special
-                character.</span
-              >
+              <span>Password must be 8-12 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</span>
             }
           </div>
         }
@@ -89,50 +68,46 @@
       <input type="hidden" name="failto" />
 
       <!-- Remember Me and Forgot Password -->
-      <div
-        class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-text-color"
-        style="margin-top: 24px; display: flex; flex-wrap: wrap"
-      >
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex align-items-center">
+      <div class="mt-6 flex items-center justify-between text-sm text-slate-200">
+        <label class="flex items-center gap-2.5">
           <input
             type="checkbox"
             id="rememberMe"
-            [ngModelOptions]="{ standalone: true }"
             [(ngModel)]="rememberMe"
+            [ngModelOptions]="{ standalone: true }"
             name="rememberMe"
-            style="margin-right: 8px; margin-left: 22px"
+            class="accent-blue-600"
           />
-          <label for="rememberMe" class="mb-0">Remember me</label>
-        </div>
-        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 text-end">
-          <a
-            class="field-link"
-            routerLink="/ivmsweb/forgot-password"
-            style="margin-right: 8px"
-            (click)="forgotPassword()"
-            >Forgot Password</a
-          >
-        </div>
+          <span>Remember me</span>
+        </label>
+        <a
+          class="text-blue-500 hover:underline"
+          routerLink="/ivmsweb/forgot-password"
+          (click)="forgotPassword()"
+        >
+          Forgot Password
+        </a>
       </div>
 
       <!-- Error Message -->
-      <div
-        class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center"
-        style="color: #fcb614; margin-top: 24px"
-      >
-        {{ errorMessage }}
-      </div>
+      @if (errorMessage) {
+        <div class="text-amber-400 text-sm text-center">
+          {{ errorMessage }}
+        </div>
+      }
 
       <!-- Submit Button -->
-      <div
-        class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12"
-        style="display: flex; justify-content: center; margin-bottom: 45px"
+      <button
+        type="submit"
+        class="!mt-8 block w-24 mx-auto bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition active:scale-[0.98]"
       >
-        <button type="submit" style="width: 73px; background: #0078d7">Login</button>
-      </div>
+        Login
+      </button>
+
     </form>
   </div>
 
-  <div class="col-lg-4 col-md-3 col-sm-2 col-xs-1"></div>
+  <div class="absolute left-1 bottom-1 text-slate-200">
+    <app-footer></app-footer>
+  </div>
 </div>
-<app-footer></app-footer>
