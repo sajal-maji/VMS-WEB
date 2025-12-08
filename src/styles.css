@@ -147,8 +147,10 @@ button:hover {
 .field-link:hover {
   color: #ffdb6d;
 }
-
 .field-link-name {
+  display: flex; /* make icon and text in one row */
+  align-items: center; /* vertically center them */
+  gap: 8px; /* space between icon and text */
   color: #babfcc;
   text-decoration: none;
   font-weight: 500;
@@ -157,6 +159,12 @@ button:hover {
 
 .field-link-name:hover {
   color: #babfcc;
+}
+
+.field-link-name img {
+  display: inline-block; /* ensure image stays inline */
+  width: 20px; /* adjust size as needed */
+  height: 20px; /* adjust size as needed */
 }
 
 /* ------------------------------

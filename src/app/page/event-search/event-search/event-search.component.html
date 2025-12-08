@@ -1,336 +1,241 @@
-<div class="event-container">
+<div class="event-container flex h-screen bg-[#111317] text-white">
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree (serverConfig)="OnLoad($event)" (analyticsConfig)="OnAnayticsLoad($event)"></tree>
-    <app-footer></app-footer>
+    <div class="sidebar-footer">
+      <app-footer></app-footer>
+    </div>
   </div>
 
   <!-- Right section (Header + Main content) -->
-  <div class="main-section">
+  <div class="main-section flex-1 flex flex-col">
     <app-header></app-header>
-    <div class="row">
-      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 custom-center">
-          <span class="text-header">
-            <img src="images/EventList.png" alt="loading" style="margin-bottom: 3px !important" />
-            &nbsp; All Events &nbsp;
-            @if (model.total > 0) {
-              <label
-                style="
-                  margin: 0px;
-                  padding: 4px;
-                  background: #0078d7;
-                  font-size: 12px;
-                  color: #fff;
-                  border-radius: 5px;
-                "
-                >{{ model.total }}</label
-              >
-            }
-          </span>
+
+    <div class="p-4 flex flex-col gap-4">
+      <!-- Header with icon and total count -->
+      <div class="w-full flex justify-start gap-2 mb-8 mx-3">
+        <img src="images/EventList.png" alt="loading" class="w-6 h-6 object-contain" />
+        <span class="text-xl font-semibold flex items-center gap-2 bg-transparent">All Events</span>
+        <label *ngIf="model.total > 0" class="bg-blue-700 text-white text-xs px-2 py-1 rounded">
+          {{ model.total }}
+        </label>
+      </div>
+
+      <!-- Filters: From / To / Rule / Camera -->
+      <div class="flex flex-wrap items-center gap-4 justify-start">
+        <!-- From -->
+        <div class="flex items-center gap-1">
+          <span class="text-[#babfcc]">From</span>
+          <p class="flex items-center">
+            <input
+              type="datetime-local"
+              placeholder="yyyy/mm/dd hh:mm:ss"
+              autocomplete="off"
+              class="form-control border border-[#323845] text-sm p-1"
+              datetime-picker="dd MMMM yyyy hh:mm:ss a"
+              [value]="model.dateform.date"
+              [(ngModel)]="model.dateform.date"
+              (change)="refreshResultSetCount()"
+            />
+            <!-- <button
+              type="button"
+              class="ml-1 border border-[#323845] p-1 bg-[#1e2129] hover:bg-[#22252c]"
+              (click)="model.dateform.open = true"
+            >
+              <i class="fa fa-calendar"></i>
+            </button> -->
+          </p>
         </div>
 
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="height: 10px"></div>
+        <!-- To -->
+        <div class="flex items-center gap-1">
+          <span class="text-[#babfcc]">To</span>
+          <p class="flex items-center">
+            <input
+              type="datetime-local"
+              placeholder="yyyy/mm/dd hh:mm:ss"
+              autocomplete="off"
+              class="form-control border border-[#323845] text-sm p-1"
+              [(ngModel)]="model.dateto.date"
+              (change)="refreshResultSetCount()"
+            />
+            <!-- <button
+              type="button"
+              class="ml-1 border border-[#323845] p-1 bg-[#1e2129] hover:bg-[#22252c]"
+              (click)="model.dateto.open = true"
+            >
+              <i class="fa fa-calendar"></i>
+            </button> -->
+          </p>
+        </div>
 
-        <div
-          class="col-lg-16 col-md-12 col-sm-12 col-xs-12 custom-center"
-          style="display: flex; align-items: center"
-        >
-          <div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex">
-            <span style="color: #babfcc; margin-top: 5px; margin-right: 5px"> From </span>
-
-            <p class="input-group custom-text">
-              <input
-                type="datetime-local"
-                placeholder="yyyy/mm/dd hh:mm:ss"
-                autocomplete="off"
-                class="form-control custom-table-td-2020"
-                datetime-picker="dd MMMM yyyy hh:mm:ss a"
-                [value]="model.dateform.date"
-                [(ngModel)]="model.dateform.date"
-                style="border: 1px solid #323845 !important"
-                (change)="refreshResultSetCount()"
-              />
-              <span class="input-group-btn custom-text">
-                <button
-                  type="button"
-                  class="btn btn-default custom-table-td-2020"
-                  (click)="model.dateform.open = true"
-                  style="border: 1px solid #323845 !important"
-                >
-                  <i class="fa fa-calendar"></i>
-                </button>
-              </span>
-            </p>
-          </div>
-
-          <div class="col-lg-3 col-md-6 col-sm-6 col-xs-12" style="display: flex">
-            <span style="color: #babfcc; margin-top: 5px; margin-right: 5px"> To </span>
-
-            <p class="input-group custom-text">
-              <input
-                type="datetime-local"
-                placeholder="yyyy/mm/dd hh:mm:ss"
-                autocomplete="off"
-                class="form-control custom-table-td-2020"
-                datetime-picker="dd MMMM yyyy hh:mm:ss a"
-                [(ngModel)]="model.dateto.date"
-                style="border: 1px solid #323845 !important"
-                (change)="refreshResultSetCount()"
-              />
-              <span class="input-group-btn custom-text">
-                <button
-                  type="button"
-                  class="btn btn-default custom-table-td-2020"
-                  (click)="model.dateto.open = true"
-                  style="border: 1px solid #323845 !important"
-                >
-                  <i class="fa fa-calendar"></i>
-                </button>
-              </span>
-            </p>
-          </div>
-
-          <div
-            class="col-lg-10 col-md-6 col-sm-12 col-xs-12"
-            style="display: flex; align-items: center; padding: 0px; gap: 5px"
+        <!-- Rule select -->
+        <div class="flex-1 max-w-xs">
+          <select
+            id="analyticname"
+            name="analyticname"
+            [(ngModel)]="model.selectedtype"
+            class="w-full border border-[#323845] p-1 bg-[#1e2129] text-white text-sm"
+            (change)="refreshResultSetCount()"
           >
-            <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
-              <div class="form-group" style="padding: 0px">
-                <select
-                  class="date-picker pull-left"
-                  id="analyticname"
-                  name="analyticname"
-                  [(ngModel)]="model.selectedtype"
-                  class="form-control custom-table-td-2020"
-                  (change)="refreshResultSetCount()"
-                >
-                  <option value="">Rule</option>
-                  @for (analytics of analyticsList; track analytics.alerttype) {
-                    <option [value]="analytics.alerttype">{{ analytics.alertname }}</option>
-                  }
-                </select>
-              </div>
-            </div>
+            <option value="">Rule</option>
+            @for (analytics of analyticsList; track analytics.alerttype) {
+              <option [value]="analytics.alerttype">{{ analytics.alertname }}</option>
+            }
+          </select>
+        </div>
 
-            <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12 date-picker-input">
-              <div class="form-group" style="padding: 0px">
-                <select
-                  class="date-picker pull-left"
-                  id="channelname"
-                  name="channelname"
-                  [(ngModel)]="model.selectedchannelid"
-                  class="form-control custom-table-td-2020"
-                  (change)="refreshResultSetCount()"
-                >
-                  <option value="">Camera</option>
-                  @for (channel of channelList; track channel.channelid) {
-                    <option [value]="channel.channelid">{{ channel.channelname }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-          </div>
+        <!-- Camera select -->
+        <div class="flex-1 max-w-xs">
+          <select
+            id="channelname"
+            name="channelname"
+            [(ngModel)]="model.selectedchannelid"
+            class="w-full border border-[#323845] p-1 bg-[#1e2129] text-white text-sm"
+            (change)="refreshResultSetCount()"
+          >
+            <option value="">Camera</option>
+            @for (channel of channelList; track channel.channelid) {
+              <option [value]="channel.channelid">{{ channel.channelname }}</option>
+            }
+          </select>
         </div>
       </div>
     </div>
 
-    <div class="custom-margin">
-      <div class="row">
-        <div class="custom-center col-lg-12 col-md-12 col-sm-12 col-xs-12">
-          <span class="error">{{ model.error }}</span>
-        </div>
+    <!-- Error Message -->
+    @if (model.error) {
+      <div class="text-center text-sm text-amber-500">
+        {{ model.error }}
+      </div>
+    }
+
+    <!-- Main Event Section -->
+    <div class="flex flex-1 overflow-hidden px-6">
+      <!-- Event List -->
+      <div id="event_list" class="w-72 flex flex-col gap-1 overflow-y-auto">
+        @if (model.offset > 0) {
+          <div class="text-center cursor-pointer" (click)="decrease()">
+            <img src="images/ChevronUpIcon.png" class="mx-auto" />
+          </div>
+        }
+
+        @if (!model.searchresult.length) {
+          <div class="p-3 text-left text-[#b3bac9]">
+            <p>No record found in the selected time.</p>
+            <p>Please change the filter values.</p>
+          </div>
+        }
+
+        @for (item of model.searchresult; track item.eventid) {
+          <div
+            (click)="eventClicked(item)"
+            class="flex h-20 border border-[#323845] cursor-pointer"
+            [ngClass]="{
+              'bg-[#111317] border-r-0': selectedEvent?.eventid == item.eventid,
+            }"
+          >
+            <div
+              class="w-1"
+              [ngStyle]="{ background: item.isViewed ? 'transparent' : '#FFEF51' }"
+            ></div>
+
+            <div class="flex-1 flex flex-col justify-center px-2">
+              <span
+                class="text-white text-sm font-medium"
+                [ngStyle]="{ color: item.isViewed ? '#697080' : '#FFFFFF' }"
+              >
+                {{ item.alertname }}
+              </span>
+
+              <span
+                class="text-xs mt-1"
+                [ngStyle]="{
+                  color:
+                    item.priority == 'Critical'
+                      ? '#E52E2E'
+                      : item.priority == 'Medium'
+                        ? '#FCB614'
+                        : '#26AAE1',
+                }"
+              >
+                {{ item.priority }}
+              </span>
+
+              <span class="text-xs mt-1 text-[#ffffff] hidden sm:block">
+                {{ item.eventtime }}
+              </span>
+            </div>
+          </div>
+        }
+
+        @if (model.offset + model.limit < model.total) {
+          <div class="text-center cursor-pointer" (click)="increase()">
+            <img src="images/ChevronDownIcon.png" class="mx-auto" />
+          </div>
+        }
       </div>
 
-      <div
-        class="row"
-        style="
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          height: calc(100vh - 80px);
-          background-color: #111317;
-          padding: 0px 24px;
-        "
-      >
-        <div id="event_list" class="col-lg-3 col-md-3 col-sm-4 col-xs-12" style="padding: 0px">
-          @if (model.offset > 0) {
-            <div style="text-align: center" (click)="decrease()">
-              <img src="images/ChevronUpIcon.png" style="margin: 0px" />
-            </div>
-          }
+      <!-- Event Video -->
+      <div class="flex-1 flex flex-col bg-[#111317]">
+        <div class="flex justify-center p-4 relative">
+          <div
+            id="event_video_player_waitinggolla_id"
+            class="absolute inset-0 flex items-center justify-center bg-[#111317] z-10"
+            style="display: none"
+          >
+            <img src="images/loadinghome.gif" alt="loading" />
+          </div>
 
-          @if (!model.searchresult.length) {
-            <div style="border: 1px solid #323845; display: flex">
-              <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <span
-                  class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"
-                  style="margin-top: 16px; color: #697080"
-                >
-                  No record found in the selected time.<br />
-                  Please change the filter values.
-                </span>
-              </div>
-            </div>
-          }
-
-          @for (item of model.searchresult; track item.eventid) {
-            <div
-              (click)="eventClicked(item)"
-              style="height: 76px; border: 1px solid #323845; display: flex"
-              [ngStyle]="{
-                background: selectedEvent?.eventid == item.eventid ? '#111317' : 'transparent',
-                'border-right':
-                  selectedEvent?.eventid == item.eventid ? 'none' : '1px solid #323845',
-              }"
-            >
-              <div
-                class="col-lg-1 col-md-1 col-sm-1 col-xs-1"
-                [ngStyle]="{ background: item.isViewed ? 'transparent' : '#FFEF51' }"
-                style="padding: 0px !important; width: 3px; height: 100%"
-              ></div>
-
-              <div class="col-lg-11 col-md-11 col-sm-11 col-xs-11" style="padding: 0px; width: 99%">
-                <span
-                  class="col-lg-10 col-md-12 col-sm-12 col-xs-8 event-1"
-                  style="margin-top: 8px; color: #ffffff"
-                  [ngStyle]="{ color: item.isViewed ? '#697080' : '#FFFFFF' }"
-                >
-                  {{ item.alertname }}
-                </span>
-
-                <span
-                  class="col-lg-2 hidden-md hidden-sm col-xs-4 event-1"
-                  [ngStyle]="{
-                    color:
-                      item.priority == 'Critical'
-                        ? '#E52E2E'
-                        : item.priority == 'Medium'
-                          ? '#FCB614'
-                          : '#26AAE1',
-                  }"
-                  style="margin-top: 8px; font-size: 10px; line-height: 16px; padding: 0px"
-                >
-                  {{ item.priority }}
-                </span>
-
-                <span class="col-lg-12 col-md-12 hidden-sm col-xs-12 event-1" style="padding: 0px">
-                  {{ item.eventtime }}
-                </span>
-              </div>
-            </div>
-          }
-
-          @if (model.offset + model.limit < model.total) {
-            <div style="text-align: center" (click)="increase()">
-              <img src="images/ChevronDownIcon.png" style="margin: 0px" />
-            </div>
-          }
+          <video
+            id="event_video_player"
+            index="0"
+            poster="images/postervtpl_new.jpg"
+            class="w-auto h-[435px]"
+          ></video>
         </div>
 
-        <div class="col-lg-9 col-md-9 col-sm-8 hidden-xs event-video" style="background: #111317">
-          <div class="row custom-center" style="padding: 16px">
-            <div
-              class="video-container-centeredOverlay"
-              id="event_video_player_waitinggolla_id"
-              style="display: none"
-            >
-              <span class="video-container-centeredOverlay-helper"></span>
-              <img src="images/loadinghome.gif" alt="loading" />
+        <!-- Controls -->
+        <div
+          class="flex items-center justify-center gap-2 h-10 px-3 bg-[#1e2129] whitespace-nowrap"
+        >
+          <img id="play_btn_id" src="images/Play.png" class="cursor-pointer" (click)="play()" />
+          <span class="text-sm mt-0.5">{{ currentTime }} / {{ duration }}</span>
+          <progress
+            id="file"
+            [value]="progress"
+            max="100"
+            class="mx-1 w-[410px]"
+            [ngStyle]="{ width: fullWidth }"
+          ></progress>
+          <img src="images/DownloadIcon.png" class="cursor-pointer" (click)="download()" />
+          <a href="" id="download_event_clip_id" download></a>
+          <img src="images/ScreenshotIcon.png" class="cursor-pointer" (click)="downloadSnap()" />
+          <a href="" id="download_event_snap_id" download></a>
+          <img src="images/FullscreenIcon.png" class="cursor-pointer" (click)="fullScreen()" />
+        </div>
+
+        <hr class="border-[#323845]" />
+
+        <!-- Event Info -->
+        <div class="flex flex-col p-4 gap-2">
+          <span class="text-white font-medium mb-10">
+            {{ selectedEvent?.alertname ? selectedEvent.alertname : 'Event Name' }}
+          </span>
+          <hr class="border-[#323845]" />
+          <div class="flex">
+            <div class="flex-1 border-r border-[#323845] p-2">
+              <span class="text-sm font-semibold text-slate-700">Camera</span>
+              <span class="block text-white">{{
+                selectedEvent?.channelname || 'Camera Name'
+              }}</span>
             </div>
-
-            <video
-              id="event_video_player"
-              index="0"
-              poster="images/postervtpl_new.jpg"
-              class="video-elem"
-              style="width: auto; height: 435px"
-            ></video>
-          </div>
-
-          <!-- Controls -->
-          <div
-            class="col-lg-12 col-md-12 col-sm-12 col-xs-12"
-            style="
-              height: 40px;
-              background: #1e2129;
-              padding: 8px 12px;
-              display: flex;
-              justify-content: center;
-              gap: 4px;
-              white-space: nowrap;
-            "
-          >
-            <img id="play_btn_id" src="images/Play.png" style="margin: 0px" (click)="play()" />
-
-            <span class="event-1" style="margin-top: 1px">
-              {{ currentTime }} / {{ duration }}
-            </span>
-
-            <progress
-              id="file"
-              [value]="progress"
-              max="100"
-              style="margin: 5px; width: 410px"
-              [ngStyle]="{ width: fullWidth }"
-            ></progress>
-
-            <img
-              class="pull-right"
-              src="images/DownloadIcon.png"
-              style="margin: 0px"
-              (click)="download()"
-            />
-            <a href="" id="download_event_clip_id" download></a>
-
-            <img
-              class="pull-right"
-              src="images/ScreenshotIcon.png"
-              style="margin: 0px"
-              (click)="downloadSnap()"
-            />
-            <a href="" id="download_event_snap_id" download></a>
-
-            <img
-              class="pull-right"
-              src="images/FullscreenIcon.png"
-              style="margin: 0px"
-              (click)="fullScreen()"
-            />
-          </div>
-
-          <hr style="border: 1px solid #323845; border-bottom: none" />
-
-          <div class="row" style="padding: 16px">
-            <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
-              {{ selectedEvent?.alertname ? selectedEvent.alertname : 'Event Name' }}
-            </span>
-          </div>
-
-          <hr style="border: 1px solid #323845; border-bottom: none" />
-
-          <div class="row">
-            <div
-              class="col-lg-6 col-md-6 col-sm-6 col-xs-6"
-              style="border-right: 1px solid #323845"
-            >
-              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"> Camera </span>
-
-              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
-                {{ selectedEvent?.channelname ? selectedEvent.channelname : 'Camera Name' }}
-              </span>
-            </div>
-
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1"> Capture Time </span>
-
-              <span class="col-lg-12 col-md-12 col-sm-12 col-xs-12 event-1" style="color: #ffffff">
-                {{ selectedEvent?.eventtime ? selectedEvent.eventtime : 'Event Time' }}
-              </span>
+            <div class="flex-1 p-2">
+              <span class="text-sm text-slate-700">Capture Time</span>
+              <span class="block text-white">{{ selectedEvent?.eventtime || 'Event Time' }}</span>
             </div>
           </div>
-
-          <hr style="border: 1px solid #323845; border-bottom: none" />
+          <hr class="border-[#323845]" />
         </div>
       </div>
     </div>

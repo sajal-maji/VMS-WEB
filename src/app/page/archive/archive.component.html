@@ -2,11 +2,13 @@
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
-    <app-footer></app-footer>
+    <div class="sidebar-footer">
+      <app-footer></app-footer>
+    </div>
   </div>
 
   <!-- Right section (Header + Main content) -->
-  <div class="main-section">
+  <div class="main-section flex-1 flex flex-col">
     <app-header></app-header>
 
     <div

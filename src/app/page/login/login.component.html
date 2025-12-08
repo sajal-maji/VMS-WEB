@@ -1,6 +1,5 @@
 <div class="login-wrapper min-h-screen flex items-center justify-center bg-gray-100">
   <div class="login-card w-full max-w-md bg-white shadow-lg rounded-xl p-8">
-
     <div class="logo-wrap flex justify-center">
       <img src="/images/newvtplLogo.png" alt="Logo" class="h-14 object-contain" />
     </div>
@@ -21,7 +20,7 @@
           formControlName="userid"
           required
           autocomplete="off"
-          class="w-full bg-transparent rounded-md px-3 py-2 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_18px_rgba(143,25,47,0.45)] transition"
+          class="w-full bg-transparent rounded-md px-3 py-2 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_14px_rgba(143,25,47,0.45)] [&:not(:placeholder-shown)]:focus:shadow-[0_0_16px_rgba(37,99,235,0.45)] transition"
         />
         @if (submitted && loginForm.controls['userid'].errors) {
           <div class="text-sm text-red-500 mt-1">
@@ -42,7 +41,7 @@
           formControlName="password"
           required
           autocomplete="off"
-          class="w-full bg-transparent rounded-md px-3 py-2 pr-12 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_18px_rgba(143,25,47,0.45)] transition"
+          class="w-full bg-transparent rounded-md px-3 py-2 pr-12 text-slate-100 placeholder:text-slate-400 shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_14px_rgba(143,25,47,0.45)] [&:not(:placeholder-shown)]:focus:shadow-[0_0_16px_rgba(37,99,235,0.45)] transition"
         />
         <button
           type="button"
@@ -51,17 +50,20 @@
           [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"
           aria-label="Toggle password visibility"
         ></button>
-        @if (submitted && loginForm.controls['password'].errors) {
-          <div class="error-text text-sm text-red-600 mt-1">
-            @if (loginForm.controls['password'].errors['required']) {
-              <span>Password is required.</span>
-            }
-            @if (loginForm.controls['password'].errors['pattern']) {
-              <span>Password must be 8-12 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.</span>
-            }
-          </div>
-        }
       </div>
+      <!-- @if (submitted && loginForm.controls['password'].errors) {
+        <div class="error-text text-sm text-red-600 mt-1">
+          @if (loginForm.controls['password'].errors['required']) {
+            <span>Password is required.</span>
+          }
+          @if (loginForm.controls['password'].errors['pattern']) {
+            <span
+              >Password must be 8-12 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special
+              character.</span
+            >
+          }
+        </div>
+      } -->
 
       <!-- Hidden success/fail inputs -->
       <input type="hidden" name="successto" />
@@ -103,7 +105,6 @@
       >
         Login
       </button>
-
     </form>
   </div>
 

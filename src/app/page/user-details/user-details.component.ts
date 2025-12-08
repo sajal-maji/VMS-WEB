@@ -84,7 +84,7 @@ export class UserDetailsComponent implements OnInit {
       this.cookies.deleteAll('/', window.location.hostname);
       sessionStorage.clear();
       localStorage.clear();
-      this.authStore.logout();      
+      this.authStore.logout();
       // ✅ Redirect to login page
       this.router.navigateByUrl('ivmsweb/login');
     }

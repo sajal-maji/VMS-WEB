@@ -103,7 +103,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   sendMatrix: { matrix: string; channels: string[]; matrixUrl: string } = {
     matrix: '2x2',
     channels: [],
-    matrixUrl: '',
+    matrixUrl: window.location.href,
   };
   currentTime = '';
   private subscriptions: Subscription[] = [];

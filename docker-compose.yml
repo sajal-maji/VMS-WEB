@@ -6,7 +6,7 @@ services:
     container_name: vms-web
     restart: always
     ports:
-      - '800:80' # HTTP on 800
-      - '8443:443' # HTTPS on 8443
+      - '8080:8080' # HTTP on 800
+      - '8443:8443' # HTTPS on 8443
     volumes:
       - ./ssl:/etc/nginx/ssl

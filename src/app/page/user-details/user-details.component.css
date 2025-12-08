@@ -8,9 +8,41 @@
 
 /* Left Sidebar */
 .sidebar {
-  width: 250px;
+  width: 275px;
   background-color: #1a1d22;
   border-right: 1px solid #2b2e34;
+  /* position: relative;
+  display: flex;
+  flex-direction: column; */
+}
+
+/* Footer positioning inside sidebar */
+.sidebar-footer {
+  position: absolute;
+  bottom: 10px;
+  /* left: 1px; */
+  z-index: 10;
+}
+
+:host ::ng-deep .sidebar-footer nav {
+  position: static !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: auto !important;
+  background: transparent !important;
+  z-index: auto !important;
+}
+
+/* :host ::ng-deep .sidebar-footer nav span {
+  color: #94a3b8 !important;
+  padding: 0 !important;
+  float: none !important;
+  font-size: 12px !important;
+} */
+
+:host ::ng-deep .sidebar-footer nav a {
+  color: #3b82f6 !important;
+  font-size: 12px !important;
 }
 
 /* Main Section (header + content) */

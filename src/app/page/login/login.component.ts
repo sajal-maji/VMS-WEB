@@ -91,10 +91,31 @@ export class LoginComponent implements OnInit {
 
   login(): void {
     this.submitted = true;
+
+    // Reset previous error
+    this.errorMessage = '';
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
-      this.errorMessage = 'Please correct the highlighted errors.';
-      return;
+
+      // Check specific errors
+      const passwordErrors = this.loginForm.controls['password'].errors;
+      const userErrors = this.loginForm.controls['userid'].errors;
+
+      if (userErrors?.['required']) {
+        this.errorMessage = 'Username is required.';
+      } else if (passwordErrors) {
+        if (passwordErrors['required']) {
+          this.errorMessage = 'Password is required.';
+        } else if (passwordErrors['pattern']) {
+          this.errorMessage =
+            'Password must be 8-12 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special character.';
+        }
+      } else {
+        this.errorMessage = 'Please correct the highlighted errors.';
+      }
+
+      return; // stop login if form invalid
     }
 
     // Reset password field icon
@@ -128,13 +149,12 @@ export class LoginComponent implements OnInit {
 
     // Call API via store
     this.authStore.login({ userid, password });
-    this.errorMessage = '';
+    this.errorMessage = ''; // reset API error, store effect handles API errors
 
     this.submitted = false;
 
     if (this.authStore.isAuthenticated()) {
       this.resetSessionTimer();
-      // this.registerActivityListeners();
     }
   }
 
