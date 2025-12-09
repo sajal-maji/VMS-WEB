@@ -82,11 +82,15 @@
   position: relative;
 }
 
+.video-container {
+  padding: 0 !important;
+  position: relative !important;
+  height: 100% !important;
+}
 .video-elem {
   /* object-fit: cover; */
   object-fit: unset;
   width: 100%;
-  max-height: 850px !important;
 }
 
 .dropdown-menu-open {
@@ -114,26 +118,65 @@
   background-color: #0078d7;
 }
 
-.recording-progress,
-.motion-progress {
-  position: relative;
-  height: 20px; /* required */
+.recording-progress {
+  display: flex;
+  flex-shrink: 0; /* Don't expand tile height */
+  width: 100%;
+  height: 10px;
+  margin: 2px 0; /* reduce space */
+  padding: 0 !important;
+  border-radius: 4px;
+  border: 1px #323845 solid;
+  background-color: transparent;
+  overflow: hidden;
+  float: none !important; /* CRITICAL FIX */
 }
-
 .recording-section {
-  display: inline-block;
-  height: 100%; /* <— VERY IMPORTANT */
-  background-color: #fcb614; /* or any visible color */
-  cursor: pointer;
-  position: absolute;
+  position: relative;
+  background-color: #26aae1;
+  /* background-color: #d9534f; */
+  height: 10px;
+}
+.recording-progress-bar {
+  /* float: left;
+	height: 100%;
+	line-height: 15px;
+	color: #fff;
+	text-align: center;
+	font-size: 12px;
+	
+	-webkit-box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
+	box-shadow: inset 0 -1px 0 rgba(0,0,0,.15);
+	-webkit-transition: width .6s ease;
+	-o-transition: width .6s ease;
+	transition: width .6s ease; */
 }
 
+.recording-progress-bar-available {
+  /* background-color: #5cb85c;
+	background-color: #d9534f; */
+}
+.recording-progress-bar-not-available {
+  /* background-color: #d9534f; */
+}
+
+.motion-progress {
+  display: flex;
+  flex-shrink: 0; /* Don't expand tile height */
+  width: 100%;
+  height: 10px;
+  margin: 2px 0; /* reduce space */
+  padding: 0 !important;
+  border-radius: 4px;
+  border: 1px #323845 solid;
+  background-color: transparent;
+  overflow: hidden;
+  float: none !important; /* CRITICAL FIX */
+}
 .motion-section {
-  display: inline-block;
-  height: 100%; /* <— VERY IMPORTANT */
-  background-color: #ff0000; /* or any visible color */
-  cursor: pointer;
-  position: absolute;
+  position: relative;
+  background-color: #7d3c98;
+  height: 10px;
 }
 
 .video-container-centeredOverlay {

@@ -206,6 +206,49 @@ button:hover {
 .col-lg-12 {
   position: relative;
 }
+/* ================================
+   CLEAN SCROLLBAR - NO TRACK UI
+   ================================ */
+
+/* Chrome / Edge / Webkit browsers */
+/* Width */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+::-webkit-scrollbar-button:single-button {
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Thumb */
+::-webkit-scrollbar-thumb {
+  background: rgba(180, 180, 180, 0.55);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 220, 220, 0.75);
+}
+
+/* ===============================
+   FIREFOX
+   =============================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180, 180, 180, 0.5) transparent;
+}
 
 /* ------------------------------
    RESPONSIVE STYLES

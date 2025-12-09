@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { TreeComponent } from '../tree/tree.component';
 import { HeaderComponent } from '../header/header.component';
-import { LayoutService } from '../live-matrix/layout.service';
+import { LayoutService, MatrixLayout } from '../live-matrix/layout.service';
 import { interval, Subscription, take, timer } from 'rxjs';
 import { StreamingService } from '../../store/service/commonService/streaming.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -117,12 +117,13 @@ const archiveHlsJsConfig = {
   imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
   templateUrl: './archive.component.html',
   styleUrl: './archive.component.css',
+  providers: [LayoutService],
 })
 export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly layout = inject(LayoutService);
+  // private readonly layout = inject(LayoutService);
   private zone = inject(NgZone);
 
-  readonly selectedLayout = computed(() => this.layout.selectedLayout());
+  // readonly selectedLayout = computed(() => this.layout.selectedLayout());
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
 
   players: Player[] = [];
@@ -176,6 +177,8 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   millisPerDay = 24 * 60 * 60 * 1000;
   oneDayMillis = 24 * 60 * 60 * 1000;
 
+  currentPath: string = '/archive-matrix/2x2';
+
   @Output() channelCleared = new EventEmitter<number>();
 
   constructor(
@@ -195,7 +198,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.layoutService.selectedLayout() === '3x3') {
       this.initPlayers(9);
     } else if (this.layoutService.selectedLayout() === '4x4') {
-      this.initPlayers(24);
+      this.initPlayers(16);
     }
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
@@ -218,6 +221,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     if (overlay) {
       this.makeDraggable(overlay);
     }
+    this.adjustVideoView();
   }
 
   ngOnDestroy(): void {
@@ -228,6 +232,122 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.keepAliveSub?.unsubscribe();
+  }
+
+  currentLayout: MatrixLayout = '1x1';
+  allowedLayouts: MatrixLayout[] = ['1x1', '2x2'];
+
+  onLayoutChange(layout: MatrixLayout) {
+    this.currentLayout = layout;
+    // handle layout change locally, e.g., updating the archive matrix view
+  }
+
+  // Listen to window resize
+  // ===================== Converted adjustVideoView =====================
+  adjustVideoView(timeoutSec?: number) {
+    const delay = timeoutSec ? timeoutSec * 1000 : 0;
+
+    setTimeout(() => {
+      const otherElementIds: string[] = ['id_matrix_dropdown'];
+      const firstVideoDivElementId = this.players[0]?.controls_id;
+
+      if (firstVideoDivElementId) {
+        switch (this.currentPath) {
+          case '/archive-matrix/1x1':
+            otherElementIds.push(firstVideoDivElementId);
+            break;
+          case '/archive-matrix/2x2':
+            otherElementIds.push(firstVideoDivElementId, firstVideoDivElementId);
+            break;
+          case '/archive-matrix/3x3':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+          case '/archive-matrix/4x4':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+          case '/archive-matrix/5x5':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+        }
+
+        const height = this.getViewPortHeight(otherElementIds);
+        console.log('height', height);
+
+        if (height > 200) {
+          let adjustedHeight = height - 180;
+
+          switch (this.currentPath) {
+            case '/archive-matrix/2x2':
+              adjustedHeight = adjustedHeight / 2;
+              break;
+            case '/archive-matrix/3x3':
+              adjustedHeight = adjustedHeight / 3;
+              break;
+            case '/archive-matrix/4x4':
+              adjustedHeight = adjustedHeight / 4;
+              break;
+            case '/archive-matrix/5x5':
+              adjustedHeight = adjustedHeight / 5;
+              break;
+          }
+
+          const width = adjustedHeight * 1.842105263157895;
+
+          // Apply styles to video elements
+          document.querySelectorAll<HTMLVideoElement>('video').forEach((v) => {
+            v.style.setProperty('height', `${adjustedHeight}px`, 'important');
+          });
+
+          const ptzElem = document.getElementById('elem_id_ptz');
+          if (ptzElem) {
+            ptzElem.style.setProperty('height', '253px', 'important');
+          }
+        } else {
+          document.querySelectorAll<HTMLVideoElement>('video').forEach((v) => {
+            v.style.removeProperty('height');
+          });
+        }
+      }
+    }, delay);
+  }
+
+  // ===================== getViewPortHeight (keep as-is) =====================
+  getViewPortHeight(elementIds: string[]): number {
+    let usedHeight = 0;
+
+    elementIds.forEach((id) => {
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) usedHeight += el.clientHeight;
+    });
+
+    return window.innerHeight - usedHeight;
+  }
+
+  getGridTemplate(): string {
+    switch (this.currentLayout) {
+      case '1x1':
+        return 'repeat(1, 1fr)';
+      case '2x2':
+        return 'repeat(2, 1fr)';
+      default:
+        return 'repeat(1, 1fr)';
+    }
   }
 
   getLocalDate(epoch: number): string {

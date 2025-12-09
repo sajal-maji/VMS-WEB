@@ -8,6 +8,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  HostListener,
   OnDestroy,
   OnInit,
   Output,
@@ -27,7 +28,7 @@ import { interval, Subscription, take, timer } from 'rxjs';
 import Hls from 'hls.js';
 import { TreeComponent } from '../tree/tree.component';
 import { HeaderComponent } from '../header/header.component';
-import { LayoutService } from '../live-matrix/layout.service';
+import { LayoutService, MatrixLayout } from '../live-matrix/layout.service';
 import { VideoStreamService } from '../../store/service/video-stream.service';
 import { StreamingService } from '../../store/service/commonService/streaming.service';
 import { CookieService } from 'ngx-cookie-service';
@@ -81,10 +82,11 @@ const liveHlsJsConfig = {
   imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
+  providers: [LayoutService],
 })
 export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly layout = inject(LayoutService);
-  readonly selectedLayout = computed(() => this.layout.selectedLayout());
+  // private readonly layout = inject(LayoutService);
+  // readonly selectedLayout = computed(() => this.layout.selectedLayout());
   @ViewChildren('videoRef') videoRefs!: QueryList<ElementRef<HTMLVideoElement>>;
 
   players: Player[] = [];
@@ -112,6 +114,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   matrixItems: any[] = []; // fix: used in *ngFor
   model: any = { error: '' };
+  matrixSize = 1;
+  selectedMatrix: string = '1x1';
+  private resizeTimer: any;
+  private viewReady = false;
+  currentPath: string = '/live-matrix/2x2';
+  currentLayout: MatrixLayout = '1x1';
+allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
 
   @Output() channelCleared = new EventEmitter<number>();
 
@@ -134,7 +143,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.layoutService.selectedLayout() === '3x3') {
       this.initPlayers(9);
     } else if (this.layoutService.selectedLayout() === '4x4') {
-      this.initPlayers(24);
+      this.initPlayers(16);
+    } else if (this.layoutService.selectedLayout() === '5x5') {
+      this.initPlayers(25);
     }
     this.updateCurrentTime();
     const t = interval(1000).subscribe(() => this.updateCurrentTime());
@@ -155,6 +166,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (overlay) {
       this.makeDraggable(overlay);
     }
+    this.adjustVideoView();
   }
 
   ngOnDestroy(): void {
@@ -165,6 +177,108 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.keepAliveSub?.unsubscribe();
+  }
+
+  onLayoutChange(event: MatrixLayout) {
+  this.currentLayout = event;
+  console.log(this.currentLayout);
+}
+
+  // Listen to window resize
+  // ===================== Converted adjustVideoView =====================
+  adjustVideoView(timeoutSec?: number) {
+    const delay = timeoutSec ? timeoutSec * 1000 : 0;
+
+    setTimeout(() => {
+      const otherElementIds: string[] = ['id_matrix_dropdown'];
+      const firstVideoDivElementId = this.players[0]?.controls_id;
+
+      if (firstVideoDivElementId) {
+        switch (this.currentPath) {
+          case '/live-matrix/1x1':
+            otherElementIds.push(firstVideoDivElementId);
+            break;
+          case '/live-matrix/2x2':
+            otherElementIds.push(firstVideoDivElementId, firstVideoDivElementId);
+            break;
+          case '/live-matrix/3x3':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+          case '/live-matrix/4x4':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+          case '/live-matrix/5x5':
+            otherElementIds.push(
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+              firstVideoDivElementId,
+            );
+            break;
+        }
+
+        const height = this.getViewPortHeight(otherElementIds);
+        console.log('height', height);
+
+        if (height > 200) {
+          let adjustedHeight = height - 180;
+
+          switch (this.currentPath) {
+            case '/live-matrix/2x2':
+              adjustedHeight = adjustedHeight / 2;
+              break;
+            case '/live-matrix/3x3':
+              adjustedHeight = adjustedHeight / 3;
+              break;
+            case '/live-matrix/4x4':
+              adjustedHeight = adjustedHeight / 4;
+              break;
+            case '/live-matrix/5x5':
+              adjustedHeight = adjustedHeight / 5;
+              break;
+          }
+
+          const width = adjustedHeight * 1.842105263157895;
+
+          // Apply styles to video elements
+          document.querySelectorAll<HTMLVideoElement>('video').forEach((v) => {
+            v.style.setProperty('height', `${adjustedHeight}px`, 'important');
+          });
+
+          const ptzElem = document.getElementById('elem_id_ptz');
+          if (ptzElem) {
+            ptzElem.style.setProperty('height', '253px', 'important');
+          }
+        } else {
+          document.querySelectorAll<HTMLVideoElement>('video').forEach((v) => {
+            v.style.removeProperty('height');
+          });
+        }
+      }
+    }, delay);
+  }
+
+  // ===================== getViewPortHeight (keep as-is) =====================
+  getViewPortHeight(elementIds: string[]): number {
+    let usedHeight = 0;
+
+    elementIds.forEach((id) => {
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) usedHeight += el.clientHeight;
+    });
+
+    return window.innerHeight - usedHeight;
   }
 
   private showInvalidSession(): void {
@@ -212,6 +326,29 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
+
+  getGridTemplate(): string {
+  if (this.currentLayout) {
+    switch (this.currentLayout) {
+      case '1x1': return 'repeat(1, minmax(0, 1fr))';
+      case '2x2': return 'repeat(2, minmax(0, 1fr))';
+      case '3x3': return 'repeat(3, minmax(0, 1fr))';
+      case '4x4': return 'repeat(4, minmax(0, 1fr))';
+    }
+  }
+
+  // fallback auto-layout
+  const count = this.players.length;
+  let cols = 1;
+  if (count <= 1) cols = 1;
+  else if (count <= 4) cols = 2;
+  else if (count <= 9) cols = 3;
+  else if (count <= 16) cols = 4;
+  else cols = Math.ceil(Math.sqrt(count));
+
+  return `repeat(${cols}, minmax(0, 1fr))`;
+}
+
 
   /* ============================
      HLS playback utilities

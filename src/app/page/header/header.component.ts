@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { inject } from '@angular/core';
 import { LayoutService, MatrixLayout } from '../live-matrix/layout.service';
@@ -15,27 +15,29 @@ import { AuthStore } from '../../auth/auth.store';
   styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent {
-  readonly layout = inject(LayoutService);
+  @Input() currentLayout: string = '1x1';
+  @Input() allowedLayouts: MatrixLayout[] = [];
+  @Output() layoutChange = new EventEmitter<MatrixLayout>();
+
   private readonly router = inject(Router);
   private readonly cookies = inject(CookieService);
   private readonly authStore = inject(AuthStore);
+
   userSession: boolean = true;
   firstLogin: boolean = false;
   liveEvents: boolean = true;
   isConnected: boolean = true;
   showDropdown: boolean = true;
 
-  // which tab group (like your Thymeleaf flags)
   activeTabGroup: string = 'live-matrix';
-
-  // current active tab
   activeTab: string = 'Dashboard';
 
-  // current layout label for dropdown button
-  currentLayout: string = '1x1';
+  selectLayout(layout: MatrixLayout) {
+    this.layoutChange.emit(layout);
+  }
 
   constructor() {
-    // 🔹 Detect route changes
+    // only detect route changes for showing/hiding dropdown
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: any) => {
@@ -43,16 +45,11 @@ export class HeaderComponent {
         if (url.includes('/live-matrix')) {
           this.activeTab = 'Dashboard';
           this.showDropdown = true;
-          this.layout.setAllowedLayouts(['1x1', '2x2', '3x3', '4x4']);
         } else if (url.includes('/archive-matrix')) {
           this.activeTab = 'Archive';
           this.showDropdown = true;
-          this.layout.setAllowedLayouts(['1x1', '2x2']);
-
-          // optional: default layout for archive
-          this.selectLayout('1x1');
         } else {
-          this.activeTab = ''; // Other tabs
+          this.activeTab = '';
           this.showDropdown = false;
         }
       });
@@ -60,22 +57,10 @@ export class HeaderComponent {
 
   tabChanged(tab: string): void {
     this.activeTab = tab;
-    // console.log('Tab changed to:', tab);
     this.showDropdown = tab === 'Dashboard' || tab === 'Archive';
-    // console.log("showDropdown", this.showDropdown);
-  }
-
-  selectLayout(layout: MatrixLayout): void {
-    this.layout.setLayout(layout);
-    this.currentLayout = layout;
   }
 
   signOut(): void {
-    // // redirect or handle logout
-    // this.cookies.delete('authToken', '/');
-    // this.cookies.delete('vSessionId', '/');
-    // // window.location.href = '/ivmsweb/signout?successto=/ivmsweb/login';
-    // this.router.navigate(['/ivmsweb/login']);
     this.authStore.logout();
   }
 }

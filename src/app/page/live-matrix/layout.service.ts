@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-export type MatrixLayout = '1x1' | '2x2' | '3x3' | '4x4';
+export type MatrixLayout = '1x1' | '2x2' | '3x3' | '4x4' | '5x5';
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
