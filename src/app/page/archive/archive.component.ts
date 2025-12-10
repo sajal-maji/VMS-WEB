@@ -115,7 +115,7 @@ const archiveHlsJsConfig = {
 @Component({
   selector: 'app-archive',
   standalone: true,
-  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule],
   templateUrl: './archive.component.html',
   styleUrl: './archive.component.css',
   providers: [LayoutService],
@@ -318,8 +318,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const height = this.getViewPortHeight(otherElementIds);
-        console.log('height', height);
-
+        
         if (height > 200) {
           let adjustedHeight = height - 180;
 

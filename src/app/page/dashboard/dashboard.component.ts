@@ -79,7 +79,7 @@ const liveHlsJsConfig = {
 @Component({
   selector: 'app-dashboard',
   standalone: true, // ✅ must be standalone for lazy-loading
-  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule, FooterComponent],
+  imports: [CommonModule, TreeComponent, HeaderComponent, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
   providers: [LayoutService],
