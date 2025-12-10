@@ -1,241 +1,207 @@
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <img src="/images/newvtplLogo.png" alt="Videonetics Logo" />
+<div class="sidebar bg-gray-900 text-white w-72 flex flex-col">
+  <!-- Logo -->
+  <div class="sidebar-logo p-4 flex items-center justify-center">
+    <img src="/images/newvtplLogo.png" alt="Videonetics Logo" class="h-12 w-auto" />
   </div>
 
+  <!-- Live / Archive Matrix Section -->
   @if (
-    currentRoute.startsWith('/ivmsweb/live-matrix') ||
-    currentRoute.startsWith('/ivmsweb/archive-matrix')
+    currentRoute &&
+    (currentRoute.startsWith('/ivmsweb/live-matrix') ||
+      currentRoute.startsWith('/ivmsweb/archive-matrix'))
   ) {
-    <div>
-      <div class="sidebar-search">
-        <input type="text" class="search" placeholder="Search..." />
-        <i class="fa fa-search search-icon"></i>
+    <div class="flex flex-col flex-1 px-2 overflow-hidden">
+      <!-- Search (FIXED, NON-SCROLLING) -->
+      <div class="sidebar-search relative my-2 shrink-0">
+        <input
+          type="text"
+          placeholder="Search..."
+          class="w-full pl-2 pr-3 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <i class="fa fa-search absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
       </div>
-      <ul class="tree">
-        <!-- Loop through locations -->
-        @for (location of rootconfig.locations; track location.id) {
-          <li class="parent_li">
-            <div
-              class="location"
-              (click)="nodeClicked(location)"
-              [ngStyle]="{
-                background: (location.isLocation ? location.checked : !location.checked)
-                  ? 'rgba(38, 170, 225, 0.07)'
-                  : '#111317',
-              }"
-            >
-              <span
-                style="cursor: pointer"
-                href="javascript:void(0)"
-                class="draggable"
-                [attr.channelid]="location.id"
-                [attr.channelname]="location.name"
-                [attr.status]="location.status"
-                [attr.configurationtype]="location.configurationType"
+
+      <!-- ========== TREE SCROLL AREA ONLY ========== -->
+      <div class="tree-container flex-1 overflow-y-auto pr-1">
+        <ul class="tree space-y-1">
+          @for (location of rootconfig.locations; track location.id) {
+            <li>
+              <div
+                class="flex items-center justify-between cursor-pointer p-2 rounded"
+                (click)="nodeClicked(location)"
                 [ngClass]="{
-                  location: location.isLocation,
-                  junction: location.isjunction,
-                  road: location.isroad,
-                  lane: location.islane,
-                  camera: location.iscamera,
+                  'bg-blue-900': location.isLocation ? location.checked : !location.checked,
+                  'bg-gray-500': !(location.isLocation ? location.checked : !location.checked),
                 }"
               >
-                <!-- Location Icon -->
-                @if (location.isLocation) {
-                  <img
-                    class="treeLocGroup"
-                    src="images/LocationIcon.png"
-                    style="margin-right: 5px; margin-bottom: 15px"
-                  />
-                }
-
-                <span style="margin-bottom: 15px">
-                  {{ getNodeName(location.name) }}
+                <span
+                  class="flex items-center space-x-2 draggable"
+                  [attr.channelid]="location.id"
+                  [attr.channelname]="location.name"
+                  [attr.status]="location.status"
+                  [attr.configurationtype]="location.configurationType"
+                  [ngClass]="{
+                    location: location.isLocation,
+                    junction: location.isjunction,
+                    road: location.isroad,
+                    lane: location.islane,
+                    camera: location.iscamera,
+                  }"
+                >
+                  @if (location.isLocation) {
+                    <img src="public\images\LocationIcon.png" class="h-5 w-5" />
+                  }
+                  <span>{{ getNodeName(location.name) }}</span>
                 </span>
 
-                <!-- Arrow Icons -->
                 @if (location.isLocation && location.checked) {
-                  <img src="images/Arrow_Down.png" style="float: right" />
+                  <img src="images/Arrow_Down.png" class="h-4 w-4" />
                 }
                 @if (location.isLocation && !location.checked) {
-                  <img src="images/Arrow_Up.png" style="float: right" />
+                  <img src="images/Arrow_Up.png" class="h-4 w-4" />
                 }
-              </span>
-            </div>
+              </div>
 
-            <!-- Cameras under Location -->
-            @if (location.checked) {
-              <ul>
-                @for (camera of location.children; track camera.id) {
-                  <li>
-                    <div
-                      class="location"
-                      (click)="nodeClicked(camera)"
-                      [ngStyle]="{
-                        background: (camera.iscamera ? camera.checked : !camera.checked)
-                          ? 'rgba(38, 170, 225, 0.07)'
-                          : '#111317',
-                      }"
-                    >
-                      <span
-                        style="cursor: pointer"
-                        href="javascript:void(0)"
-                        class="draggable"
-                        [attr.channelid]="camera.id"
-                        [attr.channelname]="camera.name"
-                        [attr.status]="camera.status"
-                        [attr.configurationtype]="camera.configurationType"
-                        [ngClass]="{ camera: camera.iscamera }"
+              @if (location.checked) {
+                <ul class="ml-5 mt-1 space-y-1">
+                  @for (camera of location.children; track camera.id) {
+                    <li>
+                      <div
+                        class="flex items-center cursor-pointer p-2 rounded"
+                        (click)="nodeClicked(camera)"
+                        [ngClass]="{
+                          'bg-blue-900': camera.iscamera ? camera.checked : !camera.checked,
+                          'bg-gray-500': !(camera.iscamera ? camera.checked : !camera.checked),
+                        }"
                       >
-                        <!-- Idle Camera -->
-                        @if (
-                          camera.iscamera &&
-                          !camera.status &&
-                          camera.status != 0 &&
-                          camera.status != 1
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathFixedIdle }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
+                        <span
+                          class="flex items-center space-x-2 draggable"
+                          [attr.channelid]="camera.id"
+                          [attr.channelname]="camera.name"
+                          [attr.status]="camera.status"
+                          [attr.configurationtype]="camera.configurationType"
+                          [ngClass]="{ camera: camera.iscamera }"
+                        >
+                          <!-- Camera Icons -->
+                          @if (
+                            camera.iscamera &&
+                            !camera.status &&
+                            camera.status != 0 &&
+                            camera.status != 1
+                          ) {
+                            <img src="images/camera/{{ imagePathFixedIdle }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 0 && camera.status == 0
+                          ) {
+                            <img src="images/camera/{{ imagePathFixedLive }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 0 && camera.status == 1
+                          ) {
+                            <img src="images/camera/{{ imagePathFixedDead }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 1 && camera.status == 0
+                          ) {
+                            <img src="images/camera/{{ imagePathPtzLive }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 1 && camera.status == 1
+                          ) {
+                            <img src="images/camera/{{ imagePathPtzDead }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 2 && camera.status == 0
+                          ) {
+                            <img src="images/camera/{{ imagePathFixedLive }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 2 && camera.status == 1
+                          ) {
+                            <img src="images/camera/{{ imagePathFixedDead }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 3 && camera.status == 0
+                          ) {
+                            <img src="images/camera/{{ imagePathZoomLive }}" class="h-5 w-5" />
+                          }
+                          @if (
+                            camera.iscamera && camera.configurationType == 3 && camera.status == 1
+                          ) {
+                            <img src="images/camera/{{ imagePathZoomDead }}" class="h-5 w-5" />
+                          }
 
-                        <!-- Fixed Camera (Online / Offline) -->
-                        @if (
-                          camera.iscamera && camera.configurationType == 0 && camera.status == 0
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathFixedLive }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-                        @if (
-                          camera.iscamera && camera.configurationType == 0 && camera.status == 1
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathFixedDead }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-
-                        <!-- PTZ Camera (Online / Offline) -->
-                        @if (
-                          camera.iscamera && camera.configurationType == 1 && camera.status == 0
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathPtzLive }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-                        @if (
-                          camera.iscamera && camera.configurationType == 1 && camera.status == 1
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathPtzDead }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-
-                        <!-- Fixed Type 2 Camera (Online / Offline) -->
-                        @if (
-                          camera.iscamera && camera.configurationType == 2 && camera.status == 0
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathFixedLive }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-                        @if (
-                          camera.iscamera && camera.configurationType == 2 && camera.status == 1
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathFixedDead }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-
-                        <!-- Zoom Camera (Online / Offline) -->
-                        @if (
-                          camera.iscamera && camera.configurationType == 3 && camera.status == 0
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathZoomLive }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-                        @if (
-                          camera.iscamera && camera.configurationType == 3 && camera.status == 1
-                        ) {
-                          <img
-                            class="treeLocGroup"
-                            src="images/camera/{{ imagePathZoomDead }}"
-                            style="margin-bottom: 0px !important"
-                          />
-                        }
-
-                        {{ getNodeName(camera.name) }}
-                      </span>
-                    </div>
-                  </li>
-                }
-              </ul>
-            }
-          </li>
-        }
-      </ul>
+                          {{ getNodeName(camera.name) }}
+                        </span>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      </div>
     </div>
   }
+
+  <!-- User / Password Section -->
   @if (
-    currentRoute.startsWith('/ivmsweb/user-details') ||
-    currentRoute.startsWith('/ivmsweb/change-password')
+    currentRoute &&
+    (currentRoute.startsWith('/ivmsweb/user-details') ||
+      currentRoute.startsWith('/ivmsweb/change-password'))
   ) {
-    <div>
-      <ul class="tree">
-        <li class="parent_li">
-          <div class="location">
+    <div class="px-2">
+      <ul class="tree space-y-1">
+        <li>
+          <div class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-800">
             <a
-              class="field-link-name"
               routerLink="/ivmsweb/user-details"
               (click)="showUserDetails()"
+              class="flex items-center space-x-2"
             >
-              <img src="images/User.png" alt="loading" /> User Details
+              <img src="images/User.png" class="h-5 w-5" /> <span>User Details</span>
             </a>
           </div>
         </li>
-        <li class="parent_li">
-          <div class="location">
+        <li>
+          <div class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-800">
             <a
-              class="field-link-name"
               routerLink="/ivmsweb/change-password"
               (click)="showChangePassword()"
+              class="flex items-center space-x-2"
             >
-              <img src="images/Setting.png" /> Change Password
+              <img src="images/Setting.png" class="h-5 w-5" /> <span>Change Password</span>
             </a>
           </div>
         </li>
       </ul>
     </div>
   }
-  @if (currentRoute.startsWith('/ivmsweb/event-search')) {
-    <div>
-      <ul class="tree">
-        <li class="parent_li">
-          <div class="location">
-            <a class="field-link-name" routerLink="/ivmsweb/event-search" (click)="showEvents()">
-              <img src="images/EventList.png" alt="loading" /> All Events
+
+  <!-- Event Search Section -->
+  @if (currentRoute && currentRoute.startsWith('/ivmsweb/event-search')) {
+    <div class="px-2">
+      <ul class="tree space-y-1">
+        <li>
+          <div class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-800">
+            <a
+              routerLink="/ivmsweb/event-search"
+              (click)="showEvents()"
+              class="flex items-center space-x-2"
+            >
+              <img src="images/EventList.png" class="h-5 w-5" /> <span>All Events</span>
             </a>
           </div>
         </li>
       </ul>
     </div>
   }
+
+  <div
+    class="sidebar-footer mt-auto flex items-center justify-start border-t border-gray-700 shrink-0"
+  >
+    <app-footer></app-footer>
+  </div>
 </div>

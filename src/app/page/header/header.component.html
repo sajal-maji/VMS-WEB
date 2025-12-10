@@ -42,8 +42,8 @@
     >Configuration</a> -->
   </nav>
 
-  <div class="nav-right" *ngIf="showDropdown && allowedLayouts.length">
-    <div class="dropdown">
+  <div class="nav-right">
+    <div class="dropdown" *ngIf="showDropdown && allowedLayouts.length">
       <button class="dropbtn">▦ {{ currentLayout }}</button>
       <div class="dropdown-content">
         <a *ngFor="let layout of allowedLayouts" (click)="selectLayout(layout)">

@@ -25,9 +25,10 @@ import Hls from 'hls.js';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { environment } from '../../../environments/environment';
+import { AuthStore } from '../../auth/auth.store';
 
 type Player = {
   motionclips: never[];
@@ -178,6 +179,10 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   oneDayMillis = 24 * 60 * 60 * 1000;
 
   currentPath: string = '/archive-matrix/2x2';
+  currentLayout: MatrixLayout = '1x1';
+
+  gridTemplate = 'repeat(1, minmax(0,1fr))';
+  allowedLayouts: MatrixLayout[] = ['1x1', '2x2'];
 
   @Output() channelCleared = new EventEmitter<number>();
 
@@ -188,6 +193,8 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     private videoneticsRTC: VideoStreamService,
     private cookies: CookieService,
     public layoutService: LayoutService,
+    private router: Router,
+    private authStore: AuthStore,
   ) {}
 
   ngOnInit(): void {
@@ -234,12 +241,37 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     this.keepAliveSub?.unsubscribe();
   }
 
-  currentLayout: MatrixLayout = '1x1';
-  allowedLayouts: MatrixLayout[] = ['1x1', '2x2'];
+  onLayoutChange(event: MatrixLayout) {
+    // ✅ block unsupported layouts (important for Archive)
+    if (!this.allowedLayouts.includes(event)) {
+      return;
+    }
 
-  onLayoutChange(layout: MatrixLayout) {
-    this.currentLayout = layout;
-    // handle layout change locally, e.g., updating the archive matrix view
+    this.currentLayout = event;
+
+    // ✅ compute grid CSS here
+    const layoutMap: Record<MatrixLayout, string> = {
+      '1x1': 'repeat(1, minmax(0,1fr))',
+      '2x2': 'repeat(2, minmax(0,1fr))',
+      '3x3': 'repeat(3, minmax(0,1fr))',
+      '4x4': 'repeat(4, minmax(0,1fr))',
+      '5x5': 'repeat(5, minmax(0,1fr))',
+    };
+
+    this.gridTemplate = layoutMap[event] ?? layoutMap[this.allowedLayouts[0]];
+
+    // ✅ optional: resize players only if you do this on dashboard
+    const sizeMap: Record<MatrixLayout, number> = {
+      '1x1': 1,
+      '2x2': 4,
+      '3x3': 9,
+      '4x4': 16,
+      '5x5': 25,
+    };
+
+    if (this.initPlayers) {
+      this.initPlayers(sizeMap[event] ?? sizeMap['1x1']);
+    }
   }
 
   // Listen to window resize
@@ -339,15 +371,30 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     return window.innerHeight - usedHeight;
   }
 
-  getGridTemplate(): string {
-    switch (this.currentLayout) {
-      case '1x1':
-        return 'repeat(1, 1fr)';
-      case '2x2':
-        return 'repeat(2, 1fr)';
-      default:
-        return 'repeat(1, 1fr)';
+  private showInvalidSession(): void {
+    const confirmed = confirm('Invalid Session! Please Login.');
+    if (confirmed) {
+      // Clear cookies and local/session storage (optional for security)
+      this.cookies.deleteAll('/', window.location.hostname);
+      sessionStorage.clear();
+      localStorage.clear();
+      this.authStore.logout();
+
+      // ✅ Redirect to login page
+      this.router.navigateByUrl('ivmsweb/login');
     }
+  }
+
+  getGridTemplate(): string {
+    const map: Record<MatrixLayout, string> = {
+      '1x1': 'repeat(1, minmax(0,1fr))',
+      '2x2': 'repeat(2, minmax(0,1fr))',
+      '3x3': 'repeat(3, minmax(0,1fr))',
+      '4x4': 'repeat(4, minmax(0,1fr))',
+      '5x5': 'repeat(5, minmax(0,1fr))',
+    };
+
+    return map[this.currentLayout] ?? map[this.allowedLayouts[0]];
   }
 
   getLocalDate(epoch: number): string {
@@ -382,6 +429,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
+
   onDateChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (input?.value) {
@@ -402,6 +450,36 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   convertEpochToDateString(epoch: number): string {
     return new Date(epoch).toISOString().split('T')[0];
   }
+
+  // getGridTemplateArchive(): string {
+  //   if (this.currentLayout) {
+  //     switch (this.currentLayout) {
+  //       case '1x1':
+  //         this.initPlayers(1);
+  //         return 'repeat(1, minmax(0, 1fr))';
+  //       case '2x2':
+  //         this.initPlayers(4);
+  //         return 'repeat(2, minmax(0, 1fr))';
+  //       case '3x3':
+  //         this.initPlayers(9);
+  //         return 'repeat(3, minmax(0, 1fr))';
+  //       case '4x4':
+  //         this.initPlayers(16);
+  //         return 'repeat(4, minmax(0, 1fr))';
+  //     }
+  //   }
+
+  //   // fallback auto-layout
+  //   const count = this.players.length;
+  //   let cols = 1;
+  //   if (count <= 1) cols = 1;
+  //   else if (count <= 4) cols = 2;
+  //   else if (count <= 9) cols = 3;
+  //   else if (count <= 16) cols = 4;
+  //   else cols = Math.ceil(Math.sqrt(count));
+
+  //   return `repeat(${cols}, minmax(0, 1fr))`;
+  // }
 
   toggleDropDown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -633,10 +711,10 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   //     this.gridSize = size;
   //   }
 
-  get gridTemplate() {
-    // Example: 2x2 -> "repeat(2, 1fr)"
-    return `repeat(${2}, 1fr)`;
-  }
+  // get gridTemplate() {
+  //   // Example: 2x2 -> "repeat(2, 1fr)"
+  //   return `repeat(${2}, 1fr)`;
+  // }
   loadSnap(blobData: Blob | null, index: number) {
     if (!blobData) {
       setTimeout(() => this.requestFrames(index), 500);
@@ -1104,6 +1182,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
                     }
                   }
                 } else {
+                  this.showInvalidSession();
                   console.error('Invalid session');
                 }
               },
@@ -1749,6 +1828,8 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
                 if (elem) elem.setAttribute('poster', 'images/postervtpl_new.jpg');
               }, 5000);
             } else {
+              this.showInvalidSession();
+              console.error('Invalid session');
               location.reload();
             }
           },
@@ -1870,6 +1951,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
                 }, 5000);
               }
             } else {
+              this.showInvalidSession();
               console.error('Invalid session');
             }
           },
@@ -2077,6 +2159,8 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
               if (elem) elem.setAttribute('poster', 'images/postervtpl_new.jpg');
             }, 5000);
           } else {
+            this.showInvalidSession();
+            console.error('Invalid session');
             location.reload();
           }
         },

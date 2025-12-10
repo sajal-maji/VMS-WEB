@@ -2,9 +2,9 @@
   <!-- LEFT -->
   <div class="sidebar">
     <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
-    <div class="sidebar-footer">
+    <!-- <div class="sidebar-footer">
       <app-footer></app-footer>
-    </div>
+    </div> -->
   </div>
 
   <!-- RIGHT -->
@@ -17,7 +17,7 @@
 
     <div
       class="grid gap-2 w-full flex-1 overflow-y-auto"
-      [style.gridTemplateColumns]="getGridTemplate()"
+      [style.gridTemplateColumns]="gridTemplate"
     >
       <div
         *ngFor="let player of players; let i = index"
@@ -84,7 +84,6 @@
           <!-- ✅ THIS WRAPPER CONTAINS ONLY VIDEO & OVERLAY -->
           <div class="relative w-full overflow-hidden bg-black group">
             <video
-              #videoRef
               [id]="player.elem_id"
               poster="images/postervtpl_new.jpg"
               class="ui-droppable video-elem"

@@ -8,6 +8,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { NavigationEnd, Router } from '@angular/router';
 import { interval, Subject, Subscription } from 'rxjs';
 import { AuthStore } from '../../auth/auth.store';
+import { FooterComponent } from '../footer/footer.component';
 
 interface CameraNode {
   name: string;
@@ -25,7 +26,7 @@ interface CameraNode {
 @Component({
   selector: 'tree',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FooterComponent],
   templateUrl: './tree.component.html',
   styleUrls: ['./tree.component.css'],
 })

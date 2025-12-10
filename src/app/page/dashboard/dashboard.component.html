@@ -2,9 +2,9 @@
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
-    <div class="sidebar-footer">
+    <!-- <div class="sidebar-footer">
       <app-footer></app-footer>
-    </div>
+    </div> -->
   </div>
 
   <!-- Right section (Header + Main content) -->
@@ -44,12 +44,12 @@
 
     <!-- ===== VIDEO GRID ===== -->
     <div
-      class="grid gap-2 w-full overflow-y-auto"
-      [style.gridTemplateColumns]="getGridTemplate()"
+      class="grid gap-2 w-full flex-1 overflow-y-auto"
+      [style.gridTemplateColumns]="gridTemplate"
     >
       <div
         *ngFor="let player of players; let i = index"
-        class="video-container w-full"
+        class="video-container flex flex-col w-full h-full"
       >
         <div
           class="w-full relative ui-droppable video-container"
@@ -110,7 +110,6 @@
           <!-- ================= VIDEO PLAYER ================= -->
           <div class="relative w-full group overflow-hidden bg-black">
             <video
-              #videoRef
               [id]="player.elem_id"
               poster="images/postervtpl_new.jpg"
               class="ui-droppable video-elem"

@@ -120,7 +120,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private viewReady = false;
   currentPath: string = '/live-matrix/2x2';
   currentLayout: MatrixLayout = '1x1';
-allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
+  allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
+  gridTemplate = 'repeat(1, minmax(0,1fr))';
 
   @Output() channelCleared = new EventEmitter<number>();
 
@@ -180,9 +181,37 @@ allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
   }
 
   onLayoutChange(event: MatrixLayout) {
-  this.currentLayout = event;
-  console.log(this.currentLayout);
-}
+    // ✅ block unsupported layouts (important for Archive)
+    if (!this.allowedLayouts.includes(event)) {
+      return;
+    }
+
+    this.currentLayout = event;
+
+    // ✅ compute grid CSS here
+    const layoutMap: Record<MatrixLayout, string> = {
+      '1x1': 'repeat(1, minmax(0,1fr))',
+      '2x2': 'repeat(2, minmax(0,1fr))',
+      '3x3': 'repeat(3, minmax(0,1fr))',
+      '4x4': 'repeat(4, minmax(0,1fr))',
+      '5x5': 'repeat(5, minmax(0,1fr))',
+    };
+
+    this.gridTemplate = layoutMap[event] ?? layoutMap[this.allowedLayouts[0]];
+
+    // ✅ optional: resize players only if you do this on dashboard
+    const sizeMap: Record<MatrixLayout, number> = {
+      '1x1': 1,
+      '2x2': 4,
+      '3x3': 9,
+      '4x4': 16,
+      '5x5': 25,
+    };
+
+    if (this.initPlayers) {
+      this.initPlayers(sizeMap[event] ?? sizeMap['1x1']);
+    }
+  }
 
   // Listen to window resize
   // ===================== Converted adjustVideoView =====================
@@ -228,7 +257,6 @@ allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
         }
 
         const height = this.getViewPortHeight(otherElementIds);
-        console.log('height', height);
 
         if (height > 200) {
           let adjustedHeight = height - 180;
@@ -327,28 +355,35 @@ allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
     }
   }
 
-  getGridTemplate(): string {
-  if (this.currentLayout) {
-    switch (this.currentLayout) {
-      case '1x1': return 'repeat(1, minmax(0, 1fr))';
-      case '2x2': return 'repeat(2, minmax(0, 1fr))';
-      case '3x3': return 'repeat(3, minmax(0, 1fr))';
-      case '4x4': return 'repeat(4, minmax(0, 1fr))';
-    }
-  }
+  // getGridTemplate(): string {
+  //   if (this.currentLayout) {
+  //     switch (this.currentLayout) {
+  //       case '1x1':
+  //         this.initPlayers(1);
+  //         return 'repeat(1, minmax(0, 1fr))';
+  //       case '2x2':
+  //         this.initPlayers(4);
+  //         return 'repeat(2, minmax(0, 1fr))';
+  //       case '3x3':
+  //         this.initPlayers(9);
+  //         return 'repeat(3, minmax(0, 1fr))';
+  //       case '4x4':
+  //         this.initPlayers(16);
+  //         return 'repeat(4, minmax(0, 1fr))';
+  //     }
+  //   }
 
-  // fallback auto-layout
-  const count = this.players.length;
-  let cols = 1;
-  if (count <= 1) cols = 1;
-  else if (count <= 4) cols = 2;
-  else if (count <= 9) cols = 3;
-  else if (count <= 16) cols = 4;
-  else cols = Math.ceil(Math.sqrt(count));
+  //   // fallback auto-layout
+  //   const count = this.players.length;
+  //   let cols = 1;
+  //   if (count <= 1) cols = 1;
+  //   else if (count <= 4) cols = 2;
+  //   else if (count <= 9) cols = 3;
+  //   else if (count <= 16) cols = 4;
+  //   else cols = Math.ceil(Math.sqrt(count));
 
-  return `repeat(${cols}, minmax(0, 1fr))`;
-}
-
+  //   return `repeat(${cols}, minmax(0, 1fr))`;
+  // }
 
   /* ============================
      HLS playback utilities
@@ -515,10 +550,10 @@ allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
   //     this.gridSize = size;
   //   }
 
-  get gridTemplate() {
-    // Example: 2x2 -> "repeat(2, 1fr)"
-    return `repeat(${2}, 1fr)`;
-  }
+  // get gridTemplate() {
+  //   // Example: 2x2 -> "repeat(2, 1fr)"
+  //   return `repeat(${2}, 1fr)`;
+  // }
   loadSnap(blobData: Blob | null, index: number) {
     if (!blobData) {
       setTimeout(() => this.requestFrames(index), 500);

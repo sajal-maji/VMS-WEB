@@ -27,6 +27,22 @@
   height: auto;
 }
 
+/* --- SIDEBAR FOOTER --- */
+.sidebar-footer {
+  padding: 8px 6px;
+  border-top: 1px solid #1e2129;
+  background: #111317;
+  text-align: center;
+
+  /* keeps footer fixed */
+  flex-shrink: 0;
+
+  /* align like logo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* --- SEARCH BAR --- */
 .sidebar-search {
   position: relative;
