@@ -14,7 +14,7 @@ import { AuthStore } from '../../../auth/auth.store';
 
 @Component({
   selector: 'app-event-search',
-  imports: [CommonModule, FormsModule, HeaderComponent, TreeComponent, FooterComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, TreeComponent],
   standalone: true,
   templateUrl: './event-search.component.html',
   styleUrls: ['./event-search.component.css'],

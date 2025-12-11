@@ -21,14 +21,7 @@ import * as CryptoJS from 'crypto-es';
 
 @Component({
   selector: 'app-change-password',
-  imports: [
-    HeaderComponent,
-    FooterComponent,
-    FormsModule,
-    CommonModule,
-    TreeComponent,
-    ReactiveFormsModule,
-  ],
+  imports: [HeaderComponent, FormsModule, CommonModule, TreeComponent, ReactiveFormsModule],
   templateUrl: './change-password.component.html',
   styleUrl: './change-password.component.css',
 })

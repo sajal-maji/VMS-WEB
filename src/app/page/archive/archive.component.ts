@@ -318,7 +318,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const height = this.getViewPortHeight(otherElementIds);
-        
+
         if (height > 200) {
           let adjustedHeight = height - 180;
 
