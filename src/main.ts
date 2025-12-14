@@ -8,11 +8,11 @@ import { environment } from './environments/environment';
 import { CookieService } from 'ngx-cookie-service';
 import { runInInjectionContext } from '@angular/core';
 
-// =====================================================
-// UNIVERSAL CLEAR FUNCTION — CACHE + STORAGE + COOKIES
-// =====================================================
+// ================================================
+// CLEAR EVERYTHING (CACHE + STORAGE + COOKIES)
+// ================================================
 async function clearAllClientStorage() {
-  // 1) Clear Cache Storage (PWAs, API cache, assets cache)
+  // Clear Cache
   if ('caches' in window) {
     try {
       const names = await caches.keys();
@@ -23,16 +23,18 @@ async function clearAllClientStorage() {
     }
   }
 
-  // 2) Clear local/session storage
+  // Clear Local + Session Storage
   try {
     localStorage.clear();
     sessionStorage.clear();
-    console.log('Local/session storage cleared');
+    console.log('Local/Session storage cleared');
   } catch (err) {
     console.warn('Storage clearing failed:', err);
   }
 
-  // 3) Clear ALL cookies
+  // =========================================================
+  // DELETE COOKIES EXACTLY AS THEY EXIST
+  // =========================================================
   try {
     const cookies = document.cookie.split(';');
 
@@ -50,37 +52,42 @@ async function clearAllClientStorage() {
       });
     });
 
-    console.log('All cookies cleared');
+    console.log('Cookies cleared');
   } catch (err) {
     console.warn('Cookie clearing failed:', err);
   }
 }
 
-// =====================================================
-// LOGOUT (SERVER LOGOUT + FULL CLEAR ON CLIENT)
-// =====================================================
+// ================================================
+// LOGOUT PROCESS (CALL BACKEND + CLEAR LOCAL DATA)
+// ================================================
 function logout(cookieService: CookieService) {
   const vSessionId = cookieService.get('vSessionId');
+  const host = window.location.hostname;
 
-  // Server logout API
+  // Overwrite JSESSIONID so backend can read correct session for logout
+  document.cookie = `JSESSIONID=${vSessionId}; path=/; domain=${host}`;
+  document.cookie = `JSESSIONID=${vSessionId}; path=/`;
+
+  // Backend logout
   fetch(`${environment.apiBaseUrl}user/session/close`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Cookies: `JSESSIONID=${vSessionId}`,
+      Cookies: vSessionId, // your backend reads this
     },
-    body: '',
     credentials: 'include',
+    body: '',
     keepalive: true,
   }).catch(() => {});
 
-  // Replace old individual cookie deletion with ONE function
+  // Clear client-side data
   clearAllClientStorage();
 }
 
-// =====================================================
-// BOOTSTRAP & EVENT HANDLERS
-// =====================================================
+// ================================================
+// BOOTSTRAP + TAB CLOSE/REFRESH EVENT
+// ================================================
 bootstrapApplication(App, {
   providers: [provideRouter(routes), provideHttpClient(), CookieService],
 })
@@ -92,12 +99,12 @@ bootstrapApplication(App, {
       });
     };
 
-    // When tab becomes hidden
+    // Tab hidden
     window.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') runLogout();
     });
 
-    // When tab is closing or refreshing
+    // Tab closing / refreshing
     window.addEventListener('beforeunload', () => {
       runLogout();
     });

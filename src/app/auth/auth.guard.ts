@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
     const token = this.cookies.get('vSessionId');
 
     // Update AuthStore state accordingly
-    console.log(token);
+    // console.log(token);
 
     if (token) {
       this.authStore.getToken(); // sync AuthStore

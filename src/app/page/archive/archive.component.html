@@ -21,14 +21,14 @@
     >
       <div
         *ngFor="let player of players; let i = index"
-        class="video-container flex flex-col w-full h-full"
+        class="video-container flex flex-col w-full h-full min-h-0"
       >
         <!-- ================= DATETIME PICKER ================= -->
         <div class="flex justify-end m-2">
           <input
             type="datetime-local"
             class="w-[180px] bg-gray-800 text-white border border-gray-600 rounded px-2 py-1"
-            [(ngModel)]="selectedDateStr"
+            [(ngModel)]="player.selectedDateStr"
             (change)="onDateChange($event, i)"
           />
         </div>
@@ -44,7 +44,7 @@
             <!-- LEFT -->
             <div class="flex items-center space-x-2 min-w-0">
               <img
-                class="w-5 h-5 cursor-pointer"
+                class="w-4 h-4 cursor-pointer ml-2"
                 [src]="
                   player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'
                 "
@@ -69,13 +69,13 @@
                 (click)="screenshotClicked(i)"
                 src="/images/ScreenshotIcon.png"
                 *ngIf="player['sessionId'] != 0 || player['mjpeg_sessionId'] != 0"
-                class="w-5 h-5 cursor-pointer"
+                class="w-4 h-4 cursor-pointer"
               />
 
               <img
                 (click)="closeClicked(i)"
                 src="/images/CloseIcon.png"
-                class="w-5 h-5 cursor-pointer"
+                class="w-6 h-6 cursor-pointer"
               />
             </div>
           </div>

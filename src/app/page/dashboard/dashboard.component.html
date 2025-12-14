@@ -65,7 +65,7 @@
                 "
                 *ngIf="player.status === undefined"
                 (click)="toggleSpeaker(i)"
-                class="w-6 h-6 cursor-pointer"
+                class="w-4 h-4 cursor-pointer ml-2"
                 [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
               />
               <img
@@ -76,7 +76,7 @@
                 "
                 *ngIf="player.status === undefined"
                 (click)="toggleMicrophone(i)"
-                class="w-6 h-6 cursor-pointer"
+                class="w-4 h-4 cursor-pointer"
                 [attr.title]="player.isMicrophoneOn ? 'Microphone is On' : 'Microphone is Off'"
               />
               <div class="truncate font-medium" [attr.title]="player.channelName">
@@ -88,14 +88,14 @@
                 (click)="showPTZControl(i)"
                 src="/images/PTZIcon.png"
                 *ngIf="player['ptz_control']"
-                class="w-6 h-6 cursor-pointer"
+                class="w-4 h-4 cursor-pointer"
                 title="PTZ Control"
               />
               <img
                 (click)="screenshotClicked(i)"
                 src="/images/ScreenshotIcon.png"
                 *ngIf="player['sessionId'] != 0 || player['mjpeg_sessionId'] != 0"
-                class="w-6 h-6 cursor-pointer"
+                class="w-4 h-4 cursor-pointer"
                 title="Take Snap"
               />
               <img

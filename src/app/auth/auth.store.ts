@@ -38,7 +38,7 @@ export class AuthStore {
     this.state.update((s) => ({ ...s, isLoading: true, error: null }));
 
     const url = `${environment.apiBaseUrl}user/login/web`;
-    this.http.post<{ token: string }>(url, credentials, { withCredentials: true }).subscribe({
+    this.http.post<{ token: string }>(url, credentials).subscribe({
       next: (res: any) => {
         this.state.set({
           isLoading: false,

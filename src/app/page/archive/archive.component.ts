@@ -58,7 +58,8 @@ type Player = {
   streamingParameters?: any;
   videoInfoIntervalSub?: Subscription | null;
   streamType?: number;
-  date?: number;
+  date?: number | null;
+  selectedDateStr?: string;
   showLoader?: boolean;
 };
 
@@ -168,6 +169,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   isDropdownOpen: boolean = false;
   selectedDate: number = Date.now();
   selectedDateStr: string = new Date().toISOString().split('T')[0];
+  selectedDates: string[] = [];
   isLoading: boolean = false;
   barsection: any = {};
 
@@ -421,7 +423,8 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
         hlsPlayer: undefined,
         streamType: -1,
         videoInfoIntervalSub: null,
-        date: this.selectedDate,
+        date: null, // initialize empty
+        selectedDateStr: '', // initialize ngModel separately
         motionclips: [],
         barclips: [],
         webrtcURL: '',
@@ -432,17 +435,16 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   onDateChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (input?.value) {
-      this.selectedDate = new Date(input.value).getTime(); // convert to epoch
-      this.players.forEach((p) => (p.date = this.selectedDate));
-      console.log('Updated epoch:', this.selectedDate, input.value);
-      // Update all players
-      this.players.forEach((p) => (p.date = this.selectedDate));
-      this.closed(this.players);
-      // this.channelClicked(this.players);
-      this.motionClip(this.players);
-      // if (this.players[index]?.channelId) {
+      const selectedEpoch = new Date(input.value).getTime();
+
+      this.players[index].date = selectedEpoch;
+      this.players[index].selectedDateStr = input.value;
+
+      console.log('Player', index, 'epoch:', selectedEpoch, input.value);
+
       this.startPlaying(index);
-      // }
+      this.motionClip([this.players[index]]);
+      this.closed([this.players[index]]);
     }
   }
 
