@@ -186,6 +186,9 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   gridTemplate = 'repeat(1, minmax(0,1fr))';
   allowedLayouts: MatrixLayout[] = ['1x1', '2x2'];
 
+  imagePathArchiveOn = 'ArchiveCameraIcon.png';
+  imagePathArchiveOff = 'CameraIconIdle.png';
+
   @Output() channelCleared = new EventEmitter<number>();
 
   constructor(
@@ -452,35 +455,11 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     return new Date(epoch).toISOString().split('T')[0];
   }
 
-  // getGridTemplateArchive(): string {
-  //   if (this.currentLayout) {
-  //     switch (this.currentLayout) {
-  //       case '1x1':
-  //         this.initPlayers(1);
-  //         return 'repeat(1, minmax(0, 1fr))';
-  //       case '2x2':
-  //         this.initPlayers(4);
-  //         return 'repeat(2, minmax(0, 1fr))';
-  //       case '3x3':
-  //         this.initPlayers(9);
-  //         return 'repeat(3, minmax(0, 1fr))';
-  //       case '4x4':
-  //         this.initPlayers(16);
-  //         return 'repeat(4, minmax(0, 1fr))';
-  //     }
-  //   }
-
-  //   // fallback auto-layout
-  //   const count = this.players.length;
-  //   let cols = 1;
-  //   if (count <= 1) cols = 1;
-  //   else if (count <= 4) cols = 2;
-  //   else if (count <= 9) cols = 3;
-  //   else if (count <= 16) cols = 4;
-  //   else cols = Math.ceil(Math.sqrt(count));
-
-  //   return `repeat(${cols}, minmax(0, 1fr))`;
-  // }
+  getArchiveCameraIcon(player: any): string {
+    return player.sessionId !== 0
+      ? `images/camera/${this.imagePathArchiveOn}`
+      : `images/camera/${this.imagePathArchiveOff}`;
+  }
 
   toggleDropDown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -1243,7 +1222,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
   // ✅ toggleSpeaker
   toggleSpeaker(index: number): void {
     const player = this.players[index];
-    if (player && player.status === 0) {
+    if (player && player.sessionId === 0) {
       const video = document.getElementById(player.elem_id) as HTMLVideoElement;
       if (!video) return;
 

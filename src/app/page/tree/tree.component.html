@@ -23,125 +23,170 @@
 
       <!-- ========== TREE SCROLL AREA ONLY ========== -->
       <div class="tree-container flex-1 overflow-y-auto pr-1">
-        <ul class="tree space-y-1">
-          @for (location of rootconfig.locations; track location.id) {
-            <li>
-              <div
-                class="flex items-center justify-between cursor-pointer p-2 rounded"
-                (click)="nodeClicked(location)"
-                [ngClass]="{
-                  'bg-blue-900': location.isLocation ? location.checked : !location.checked,
-                  'bg-gray-500': !(location.isLocation ? location.checked : !location.checked),
-                }"
-              >
-                <span
-                  class="flex items-center space-x-2 draggable"
-                  [attr.channelid]="location.id"
-                  [attr.channelname]="location.name"
-                  [attr.status]="location.status"
-                  [attr.configurationtype]="location.configurationType"
+        @if (displayTree.length > 0) {
+          <ul class="tree space-y-1">
+            @for (location of displayTree; track location.id) {
+              <li>
+                <div
+                  class="flex items-center justify-between cursor-pointer p-2 rounded"
+                  (click)="nodeClicked(location)"
                   [ngClass]="{
-                    location: location.isLocation,
-                    junction: location.isjunction,
-                    road: location.isroad,
-                    lane: location.islane,
-                    camera: location.iscamera,
+                    'bg-blue-900': location.isjunction && !location.checked,
+                    'bg-gray-500': !(location.isjunction && !location.checked),
                   }"
                 >
-                  @if (location.isLocation) {
-                    <img src="public\images\LocationIcon.png" class="h-5 w-5" />
+                  <span
+                    class="flex items-center space-x-2 draggable"
+                    [attr.channelid]="location.id"
+                    [attr.channelname]="location.name"
+                    [attr.status]="location.status"
+                    [attr.configurationtype]="location.configurationType"
+                    [ngClass]="{
+                      junction: location.isjunction,
+                      road: location.isroad,
+                      lane: location.islane,
+                      camera: location.iscamera,
+                    }"
+                  >
+                    @if (location.isjunction) {
+                      <img src="images/LocationIcon.png" class="h-5 w-5" />
+                    }
+                    <span>{{ getNodeName(location.name) }}</span>
+                  </span>
+
+                  @if (location.isjunction && location.checked) {
+                    <img src="images/Arrow_Down.png" class="h-4 w-4" />
                   }
-                  <span>{{ getNodeName(location.name) }}</span>
-                </span>
+                  @if (location.isjunction && !location.checked) {
+                    <img src="images/Arrow_Up.png" class="h-4 w-4" />
+                  }
+                </div>
 
-                @if (location.isLocation && location.checked) {
-                  <img src="images/Arrow_Down.png" class="h-4 w-4" />
-                }
-                @if (location.isLocation && !location.checked) {
-                  <img src="images/Arrow_Up.png" class="h-4 w-4" />
-                }
-              </div>
-
-              @if (location.checked) {
-                <ul class="ml-5 mt-1 space-y-1">
-                  @for (camera of location.children; track camera.id) {
-                    <li>
-                      <div
-                        class="flex items-center cursor-pointer p-2 rounded"
-                        (click)="nodeClicked(camera)"
-                        [ngClass]="{
-                          'bg-blue-900': camera.iscamera ? camera.checked : !camera.checked,
-                          'bg-gray-500': !(camera.iscamera ? camera.checked : !camera.checked),
-                        }"
-                      >
-                        <span
-                          class="flex items-center space-x-2 draggable"
-                          [attr.channelid]="camera.id"
-                          [attr.channelname]="camera.name"
-                          [attr.status]="camera.status"
-                          [attr.configurationtype]="camera.configurationType"
-                          [ngClass]="{ camera: camera.iscamera }"
+                @if (location.checked) {
+                  <ul class="ml-5 mt-1 space-y-1">
+                    @for (camera of location.children; track camera.id) {
+                      <li>
+                        <div
+                          class="flex items-center cursor-pointer p-2 rounded"
+                          (click)="nodeClicked(camera)"
+                          [ngClass]="{
+                            'bg-gray-700': camera.iscamera && !camera.checked,
+                            'bg-blue-900': !(camera.iscamera && !camera.checked),
+                          }"
                         >
-                          <!-- Camera Icons -->
-                          @if (
-                            camera.iscamera &&
-                            !camera.status &&
-                            camera.status != 0 &&
-                            camera.status != 1
-                          ) {
-                            <img src="images/camera/{{ imagePathFixedIdle }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 0 && camera.status == 0
-                          ) {
-                            <img src="images/camera/{{ imagePathFixedLive }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 0 && camera.status == 1
-                          ) {
-                            <img src="images/camera/{{ imagePathFixedDead }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 1 && camera.status == 0
-                          ) {
-                            <img src="images/camera/{{ imagePathPtzLive }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 1 && camera.status == 1
-                          ) {
-                            <img src="images/camera/{{ imagePathPtzDead }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 2 && camera.status == 0
-                          ) {
-                            <img src="images/camera/{{ imagePathFixedLive }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 2 && camera.status == 1
-                          ) {
-                            <img src="images/camera/{{ imagePathFixedDead }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 3 && camera.status == 0
-                          ) {
-                            <img src="images/camera/{{ imagePathZoomLive }}" class="h-5 w-5" />
-                          }
-                          @if (
-                            camera.iscamera && camera.configurationType == 3 && camera.status == 1
-                          ) {
-                            <img src="images/camera/{{ imagePathZoomDead }}" class="h-5 w-5" />
-                          }
+                          <span
+                            class="flex items-center space-x-2 draggable"
+                            [attr.channelid]="camera.id"
+                            [attr.channelname]="camera.name"
+                            [attr.status]="camera.status"
+                            [attr.configurationtype]="camera.configurationType"
+                            [ngClass]="{
+                              camera: camera.iscamera,
+                            }"
+                          >
+                            <!-- Camera Icons -->
+                            @if (
+                              camera.iscamera &&
+                              !camera.status &&
+                              camera.status != 0 &&
+                              camera.status != 1
+                            ) {
+                              <img src="images/camera/{{ imagePathFixedIdle }}" class="h-5 w-5" />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 0 &&
+                              camera.status === 0
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathFixedLive }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 0 &&
+                              camera.status === 1
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathFixedDead }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 1 &&
+                              camera.status === 0
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathPtzLive }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 1 &&
+                              camera.status === 1
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathPtzDead }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 2 &&
+                              camera.status === 0
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathFixedLive }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 2 &&
+                              camera.status === 1
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathFixedDead }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 3 &&
+                              camera.status === 0
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathZoomLive }}"
+                                class="cursor-pointer"
+                              />
+                            }
+                            @if (
+                              camera.iscamera &&
+                              camera.configurationType === 3 &&
+                              camera.status === 1
+                            ) {
+                              <img
+                                src="images/camera/{{ imagePathZoomDead }}"
+                                class="cursor-pointer"
+                              />
+                            }
 
-                          {{ getNodeName(camera.name) }}
-                        </span>
-                      </div>
-                    </li>
-                  }
-                </ul>
-              }
-            </li>
-          }
-        </ul>
+                            <span class="ml-2">
+                              {{ getNodeName(camera.name) }}
+                            </span>
+                          </span>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        }
       </div>
     </div>
   }

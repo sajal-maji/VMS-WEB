@@ -123,6 +123,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
   gridTemplate = 'repeat(1, minmax(0,1fr))';
 
+  imagePathFixedIdle = 'CameraIconIdle.png';
+
+  imagePathFixedLive = 'CameraLiveAndRecordingIcon.png';
+  imagePathFixedDead = 'CameraBrokenInactiveIcon.png';
+
+  imagePathPtzLive = 'PtzCameraLiveAndRecordingIcon.png';
+  imagePathPtzDead = 'PtzCameraBrokenInactiveIcon.png';
+
+  imagePathZoomLive = 'ZoomCameraLiveAndRecordingIcon.png';
+  imagePathZoomDead = 'ZoomCameraInactiveIcon.png';
+  imagePathFixed: string = '';
+  imagePathPtz: string = '';
+
   @Output() channelCleared = new EventEmitter<number>();
 
   constructor(
@@ -355,35 +368,30 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // getGridTemplate(): string {
-  //   if (this.currentLayout) {
-  //     switch (this.currentLayout) {
-  //       case '1x1':
-  //         this.initPlayers(1);
-  //         return 'repeat(1, minmax(0, 1fr))';
-  //       case '2x2':
-  //         this.initPlayers(4);
-  //         return 'repeat(2, minmax(0, 1fr))';
-  //       case '3x3':
-  //         this.initPlayers(9);
-  //         return 'repeat(3, minmax(0, 1fr))';
-  //       case '4x4':
-  //         this.initPlayers(16);
-  //         return 'repeat(4, minmax(0, 1fr))';
-  //     }
-  //   }
+  getCameraIcon(player: any): string {
+    // console.log(player.status);
+    if (player.ptz_control) {
+      return player.status === 0
+        ? `images/camera/${this.imagePathPtzLive}`
+        : `images/camera/${this.imagePathPtzDead}`;
+    } else {
+      if (player.status === 1) {
+        return `images/camera/${this.imagePathFixedDead}`;
+      } else if (player.status === 0) {
+        return `images/camera/${this.imagePathFixedLive}`;
+      } else {
+        return `images/camera/${this.imagePathFixedIdle}`;
+      }
+    }
+  }
 
-  //   // fallback auto-layout
-  //   const count = this.players.length;
-  //   let cols = 1;
-  //   if (count <= 1) cols = 1;
-  //   else if (count <= 4) cols = 2;
-  //   else if (count <= 9) cols = 3;
-  //   else if (count <= 16) cols = 4;
-  //   else cols = Math.ceil(Math.sqrt(count));
-
-  //   return `repeat(${cols}, minmax(0, 1fr))`;
-  // }
+  getCameraTitle(player: any): string {
+    if (player.ptz_control) {
+      return player.status === 0 ? 'PTZ Live' : 'PTZ Dead';
+    } else {
+      return player.status === undefined ? 'Idle' : player.status === 0 ? 'Live' : 'Dead';
+    }
+  }
 
   /* ============================
      HLS playback utilities
@@ -1708,6 +1716,23 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     // console.log(event);
     this.serverConfiguration = event;
     console.log('server config', this.serverConfiguration);
+  }
+
+  OnStatusLoad(event: any[]) {
+    console.log('Camera status event:', event);
+
+    this.players.forEach((player) => {
+      if (player.channelId !== -1) {
+        const statusObj = event.find((s) => String(s.channelid) === String(player.channelId));
+
+        console.log('status', statusObj);
+
+        if (statusObj) {
+          player.status = statusObj.channelstatus;
+        }
+        console.log('player', player.status);
+      }
+    });
   }
 
   startPlaying(index: number) {

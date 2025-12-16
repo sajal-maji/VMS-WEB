@@ -1,7 +1,11 @@
 <div class="dashboard-container relative">
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
-    <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
+    <tree
+      (channelClickedEvent)="OnClick($event)"
+      (serverConfig)="OnLoad($event)"
+      (channelStatusConfig)="OnStatusLoad($event)"
+    ></tree>
     <!-- <div class="sidebar-footer">
       <app-footer></app-footer>
     </div> -->
@@ -63,7 +67,7 @@
                 [src]="
                   player.isSpeakerOn ? 'images/SpeakerOnIcon.png' : 'images/SpeakerOffIcon.png'
                 "
-                *ngIf="player.status === undefined"
+                *ngIf="player.status === undefined || player.status === 0"
                 (click)="toggleSpeaker(i)"
                 class="w-4 h-4 cursor-pointer ml-2"
                 [attr.title]="player.isSpeakerOn ? 'Audio is On' : 'Audio is Off'"
@@ -74,11 +78,13 @@
                     ? 'images/MicrophoneOnIcon.png'
                     : 'images/MicrophoneOffIcon.png'
                 "
-                *ngIf="player.status === undefined"
+                *ngIf="player.status === undefined || player.status === 0"
                 (click)="toggleMicrophone(i)"
                 class="w-4 h-4 cursor-pointer"
                 [attr.title]="player.isMicrophoneOn ? 'Microphone is On' : 'Microphone is Off'"
               />
+              <img [src]="getCameraIcon(player)" class="cursor-pointer" />
+
               <div class="truncate font-medium" [attr.title]="player.channelName">
                 {{ player.channelName }}
               </div>

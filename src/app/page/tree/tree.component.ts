@@ -10,17 +10,28 @@ import { interval, Subject, Subscription } from 'rxjs';
 import { AuthStore } from '../../auth/auth.store';
 import { FooterComponent } from '../footer/footer.component';
 
-interface CameraNode {
+export interface CameraNode {
+  id: string | number;
   name: string;
-  type: string;
+  /** Node types */
+  type?: string;
+  isLocation?: boolean;
+  isjunction: boolean | null;
+  isroad?: boolean;
+  islane?: boolean;
+  iscamera?: boolean;
+  /** Camera specific */
+  configurationType?: number;
+  status?: number; // 0 = online, 1 = offline, undefined = idle
+  /** Tree UI state */
+  checked?: boolean;
+  visible?: boolean;
+  /** Hierarchy */
+  children?: CameraNode[];
+  /** Legacy / optional */
+  location?: any;
   isRTAMC?: boolean;
   isRecordingServer?: boolean;
-  isLocation?: boolean;
-  iscamera?: boolean;
-  id?: any;
-  location?: any;
-  configurationType?: any;
-  children?: CameraNode[];
 }
 
 @Component({
@@ -62,6 +73,7 @@ export class TreeComponent implements OnInit {
     filteredchannels: [],
     streamer: undefined,
     analytictypes: {},
+    locations: [],
   };
 
   serverConfiguration: any;
@@ -110,6 +122,7 @@ export class TreeComponent implements OnInit {
   @Output() channelClickedEvent = new EventEmitter<any>();
   @Output() serverConfig = new EventEmitter<any>();
   @Output() analyticsConfig = new EventEmitter<any>();
+  @Output() channelStatusConfig = new EventEmitter<any>();
 
   ngOnInit(): void {
     // Initialize dropZones if needed
@@ -231,106 +244,13 @@ export class TreeComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: (response) => {
-          if (response.result) {
-            let rawData = response.result;
-            this.displayTree = [];
+          if (response?.result) {
+            this.originalCameraTree = response.result;
+            this.displayTree = this.originalCameraTree;
 
-            if (!this.isNTAMC) {
-              this.originalCameraTree = rawData;
-              this.displayTree = this.originalCameraTree;
-            } else {
-              let formattedTree: CameraNode[] = [];
-              console.log(rawData);
-              this.rootconfig.locations = rawData;
-              // if (Array.isArray(rawData) && rawData.length > 0) {
-              //   rawData = rawData[0];
-              // }
-
-              // Object.keys(rawData).forEach(serverKey => {
-              //   let serverName = "Unnamed Server";
-              //   let serverId = "Unknown ID";
-              //   debugger
-              //     serverName = serverKey[1].trim();
-              //     serverId = serverKey[2].trim();
-
-              //   const cameras = Array.isArray(rawData[serverKey]) ? rawData[serverKey] : [];
-              //   const recordingServerMap: any = {};
-
-              //   cameras.forEach(camera => {
-              //     const recordingServer = camera.recordingservername;
-              //     const location = camera.location;
-
-              //     if (!recordingServerMap[recordingServer]) recordingServerMap[recordingServer] = {};
-              //     if (!recordingServerMap[recordingServer][location]) recordingServerMap[recordingServer][location] = [];
-
-              //     recordingServerMap[recordingServer][location].push({
-              //       name: `${camera.channelid}_${camera.channelname}`,
-              //       type: 'camera',
-              //       isRTAMC: false,
-              //       isRecordingServer: false,
-              //       iscamera: true,
-              //       isLocation: false,
-              //       id: camera.channelid,
-              //       location: camera.location,
-              //       configurationType: camera.channeltype
-              //     });
-              //   });
-
-              //   const recordingServerNodes = Object.keys(recordingServerMap).map(recordingServer => {
-              //     const recServerCamera = cameras.find(cam => cam.recordingservername === recordingServer);
-              //     const recordingServerId = recServerCamera ? recServerCamera.recordingserverid : 'unknown';
-
-              //     const locationNodes = Object.keys(recordingServerMap[recordingServer]).map(location => ({
-              //       name: location,
-              //       type: 'location',
-              //       isRTAMC: false,
-              //       isRecordingServer: false,
-              //       isLocation: true,
-              //       iscamera: false,
-              //       children: recordingServerMap[recordingServer][location]
-              //     }));
-
-              //     return {
-              //       name: recordingServer,
-              //       id: recordingServerId,
-              //       type: 'recordingserver',
-              //       isRTAMC: false,
-              //       isRecordingServer: true,
-              //       isLocation: false,
-              //       iscamera: false,
-              //       children: locationNodes
-              //     };
-              //   });
-
-              //   formattedTree.push({
-              //     name: serverName,
-              //     id: serverId,
-              //     type: 'rtamcserver',
-              //     isRTAMC: true,
-              //     isRecordingServer: false,
-              //     isLocation: false,
-              //     iscamera: false,
-              //     children: recordingServerNodes
-              //   });
-              // });
-
-              this.originalCameraTree = formattedTree;
-              this.displayTree = this.originalCameraTree;
-
-              // Populate flat cameras list for drag-drop
-              this.cameras = [];
-              this.displayTree.forEach((server) => {
-                server.children?.forEach((recServer) => {
-                  recServer.children?.forEach((location) => {
-                    location.children?.forEach((cam) => this.cameras.push(cam));
-                  });
-                });
-              });
-            }
-
-            this.loading = false;
-            this.generateCameraHierarchy();
+            this.generateCameraHierarchy(); // EXACT OLD LOGIC
           }
+          this.loading = false;
         },
         error: (err) => {
           console.error('Error loading camera tree:', err);
@@ -339,40 +259,91 @@ export class TreeComponent implements OnInit {
       });
   }
 
-  generateCameraHierarchy() {
-    this.displayTree.forEach((node: any) => {
-      if (!this.isNTAMC) {
-        if (node['isjunction']) {
-          this.rootconfig.junctions.push({ id: node.id, name: node.name });
-        } else if (node['iscamera']) {
-          this.rootconfig.cameramap[`junction_camera_${node.id}`] = node;
-        }
-      } else {
-        if (node.isRTAMC) {
-          this.rootconfig.rtamcServers[node.id] = { id: node.id, name: node.name };
-        }
-        node.children?.forEach((child1: any) => {
-          if (child1.isRecordingServer) {
-            child1.children?.forEach((child2: any) => {
-              if (child2.isLocation) {
-                this.rootconfig.locations[child2.name] = { id: child2.id, name: child2.name };
-              }
-              child2.children?.forEach((child3: any) => {
-                if (child3.iscamera) {
-                  const camera2 = {
-                    id: child3.id,
-                    name: child3.name,
-                    configurationType: child3.configurationType,
-                    location: child2,
-                  };
-                  this.rootconfig.cameramap[`location_camera_${camera2.id}`] = camera2;
+  // generateCameraHierarchy() {
+  //   this.displayTree.forEach((node: any) => {
+  //     if (!this.isNTAMC) {
+  //       if (node['isjunction']) {
+  //         this.rootconfig.junctions.push({ id: node.id, name: node.name });
+  //       } else if (node['iscamera']) {
+  //         this.rootconfig.cameramap[`junction_camera_${node.id}`] = node;
+  //       }
+  //     } else {
+  //       if (node.isRTAMC) {
+  //         this.rootconfig.rtamcServers[node.id] = { id: node.id, name: node.name };
+  //       }
+  //       node.children?.forEach((child1: any) => {
+  //         if (child1.isRecordingServer) {
+  //           child1.children?.forEach((child2: any) => {
+  //             if (child2.isLocation) {
+  //               this.rootconfig.locations[child2.name] = { id: child2.id, name: child2.name };
+  //             }
+  //             child2.children?.forEach((child3: any) => {
+  //               if (child3.iscamera) {
+  //                 const camera2 = {
+  //                   id: child3.id,
+  //                   name: child3.name,
+  //                   configurationType: child3.configurationType,
+  //                   status: child3.status,
+  //                   location: child2,
+  //                 };
+  //                 this.rootconfig.cameramap[`location_camera_${camera2.id}`] = camera2;
 
-                  if (camera2.configurationType == '0') this.imagePathFixed = 'camera_normal.png';
-                  else if (camera2.configurationType == '1')
-                    this.imagePathPtz = 'Ptz_Camera_16x16.png';
-                }
-              });
-            });
+  //                 if (camera2.configurationType == '0') this.imagePathFixed = 'camera_normal.png';
+  //                 else if (camera2.configurationType == '1')
+  //                   this.imagePathPtz = 'Ptz_Camera_16x16.png';
+  //               }
+  //             });
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
+  generateCameraHierarchy(): void {
+    this.rootconfig.junctions = [];
+    this.rootconfig.cameramap = {};
+
+    this.displayTree.forEach((node: any) => {
+      let junction: any = {};
+      let camera: any = {};
+
+      if (node.isjunction) {
+        junction.id = node.id;
+        junction.name = node.name;
+
+        this.rootconfig.junctions.push({
+          id: junction.id,
+          name: junction.name,
+        });
+      } else if (node.iscamera) {
+        camera.id = node.id;
+        camera.name = node.name;
+        camera.configurationType = node.configurationType;
+
+        this.rootconfig.cameramap[`junction_camera_${camera.id}`] = camera;
+      }
+
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child: any) => {
+          if (child.iscamera) {
+            const camera1: any = {
+              id: child.id,
+              name: child.name,
+              configurationType: child.configurationType,
+              status: child.status,
+              junction: junction,
+            };
+
+            this.rootconfig.cameramap[`junction_camera_${camera1.id}`] = camera1;
+
+            // SAME icon assignment logic
+            if (camera1.configurationType == '0') {
+              this.imagePathFixed = 'camera_normal.png';
+            } else if (camera1.configurationType == '1') {
+              this.imagePathPtz = 'Ptz_Camera_16x16.png';
+            } else {
+              this.imagePathFixed = 'camera_normal.png';
+            }
           }
         });
       }
@@ -500,7 +471,7 @@ export class TreeComponent implements OnInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          // console.log("response", response);
+          console.log('response', response);
           if (response?.result?.length > 0) {
             response.result.forEach((data: any) => {
               // console.log("resp",response.result);
@@ -510,6 +481,8 @@ export class TreeComponent implements OnInit {
               this.updateTreeStatus(this.displayTree, data);
               this.updateTreeStatus(this.originalCameraTree, data);
             });
+
+            this.channelStatusConfig.emit(response.result);
 
             // 🔊 Equivalent to `$rootScope.$broadcast('camerastatus', result)`
             // console.log('Camera Status Updated:', response.result);
@@ -550,13 +523,17 @@ export class TreeComponent implements OnInit {
    */
   private updateTreeStatus(tree: any[], data: any): void {
     tree.forEach((node) => {
-      node.children?.forEach((child: any) => {
-        console.log('channel', child, data, node);
-        if (child.id === data.channelid) {
-          child.status = data.channelstatus;
-          child.name = data.channelname;
-        }
-      });
+      // ✅ Case 1: node itself is camera
+      if (node.iscamera && node.id === data.channelid) {
+        node.status = Number(data.channelstatus);
+        // node.name = data.channelname ?? node.name
+        return;
+      }
+
+      // ✅ Case 2: children exist → recurse
+      if (node.children && node.children.length > 0) {
+        this.updateTreeStatus(node.children, data);
+      }
     });
   }
 

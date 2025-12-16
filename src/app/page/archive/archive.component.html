@@ -21,7 +21,7 @@
     >
       <div
         *ngFor="let player of players; let i = index"
-        class="video-container flex flex-col w-full h-full min-h-0"
+        class="video-container flex flex-col w-full h-full"
       >
         <!-- ================= DATETIME PICKER ================= -->
         <div class="flex justify-end m-2">
@@ -54,8 +54,8 @@
 
               <img
                 src="/images/camera/CameraIconIdle.png"
-                *ngIf="player.status == undefined"
-                class="w-5 h-5"
+                [src]="getArchiveCameraIcon(player)"
+                class="cursor-pointer"
               />
 
               <div class="truncate font-medium" [attr.title]="player.channelName">
