@@ -123,6 +123,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   allowedLayouts: MatrixLayout[] = ['1x1', '2x2', '3x3', '4x4'];
   gridTemplate = 'repeat(1, minmax(0,1fr))';
 
+  ptzOverlayVisible: boolean = false;
+  // dashboard.component.ts
+  viewType: string = 'fixed_position'; // default selected
+
   imagePathFixedIdle = 'CameraIconIdle.png';
 
   imagePathFixedLive = 'CameraLiveAndRecordingIcon.png';
@@ -135,6 +139,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   imagePathZoomDead = 'ZoomCameraInactiveIcon.png';
   imagePathFixed: string = '';
   imagePathPtz: string = '';
+
+  overlayX = 0;
+  overlayY = 0;
+
+  // For tracking drag
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private isDragging = false;
 
   @Output() channelCleared = new EventEmitter<number>();
 
@@ -222,7 +234,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     if (this.initPlayers) {
-      this.initPlayers(sizeMap[event] ?? sizeMap['1x1']);
+      this.initPlayers(sizeMap[event]);
     }
   }
 
@@ -361,7 +373,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             codecType: 0,
             width: 0,
             height: 0,
-            streamType: 0,
+            streamType: -1,
           },
         ],
       });
@@ -371,9 +383,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   getCameraIcon(player: any): string {
     // console.log(player.status);
     if (player.ptz_control) {
-      return player.status === 0
-        ? `images/camera/${this.imagePathPtzLive}`
-        : `images/camera/${this.imagePathPtzDead}`;
+      if (player.status === 0) {
+        return `images/camera/${this.imagePathPtzLive}`;
+      } else if (player.status === 1) {
+        return `images/camera/${this.imagePathPtzDead}`;
+      } else {
+        return `images/camera/${this.imagePathFixedIdle}`;
+      }
     } else {
       if (player.status === 1) {
         return `images/camera/${this.imagePathFixedDead}`;
@@ -606,6 +622,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      ============================ */
 
   hidePTZControl(args?: any) {
+    this.ptzOverlayVisible = false;
     // This mirrors original logic: if we had started encoded MJPEG and saved currentPlayer, reattach HLS, else just hide.
     if (this.serverConfiguration && this.serverConfiguration.streamer) {
       if (
@@ -695,7 +712,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
      ============================ */
 
   getVideoInfo(index: number): void {
-    const player = this.players[index];
+    const player = this.players?.[index];
+
+    // if (!player) {
+    //   return;
+    // }
 
     if (player?.channelId > -1 && player?.streamType > -1) {
       const apiUrl = API_ENDPOINTS.VIDEO_INFO.replace(
@@ -800,6 +821,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private cancelVideoInfoInterval(index: number) {
     const player = this.players[index];
+    if (!player) {
+      return;
+    }
     if (player.videoInfoIntervalSub) {
       player.videoInfoIntervalSub.unsubscribe();
       player.videoInfoIntervalSub = null;
@@ -1399,6 +1423,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.ptzindex = index;
     this.ptzplayer = { ...this.players[index] };
+    this.ptzOverlayVisible = true;
+    this.viewType = 'fixed_position';
     if (overlay) overlay.style.display = 'block';
 
     // TODO: implement actual PTZ control logic (API calls, WebRTC stream, etc.)
@@ -1519,7 +1545,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Append the original channelClicked logic (converted) — preserved comments and flow
   channelClicked(channelToPlay: any, fromMatrixUrl?: any) {
-    console.log('channelToPlay', channelToPlay);
+    // console.log('channelToPlay', channelToPlay);
     if (channelToPlay?.index) {
       // Click Action
       var alreadyPlayingIndex = -1;
@@ -1535,7 +1561,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       if (alreadyPlayingIndex < 0 && availableIndex > -1) {
-        console.log('channelToPlay', channelToPlay);
+        // console.log('channelToPlay', channelToPlay);
         this.players[availableIndex]['channelId'] = channelToPlay.id;
         this.players[availableIndex]['channelName'] = channelToPlay.name;
         if (channelToPlay.configurationType && channelToPlay.configurationType == '1') {
@@ -1583,7 +1609,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else {
       // Drag Action
-      console.log('channelToPlay', channelToPlay);
+      // console.log('channelToPlay', channelToPlay);
       // this.getVideoInfo(channelToPlay.id);
       let availableIdx = channelToPlay.index - 1;
       if (availableIdx < 0) {
@@ -1708,7 +1734,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       index: availableIndex !== -1 ? availableIndex : 0,
     };
 
-    console.log('Clicked Event:', channelToPlay);
+    // console.log('Clicked Event:', channelToPlay);
     this.channelClicked(channelToPlay);
   }
 
@@ -1719,13 +1745,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   OnStatusLoad(event: any[]) {
-    console.log('Camera status event:', event);
+    // console.log('Camera status event:', event);
 
     this.players.forEach((player) => {
       if (player.channelId !== -1) {
         const statusObj = event.find((s) => String(s.channelid) === String(player.channelId));
 
-        console.log('status', statusObj);
+        // console.log('status', statusObj);
 
         if (statusObj) {
           player.status = statusObj.channelstatus;
@@ -1780,7 +1806,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         '{serverid}',
         this.serverConfiguration.serverid,
       );
-      console.log('rootConfig', this.serverConfiguration);
+      // console.log('rootConfig', this.serverConfiguration);
 
       // We map your serverConfiguration.streamingMode to a string constant; if set to WEBRTC_STREAMING_MODE
       if (
@@ -2094,6 +2120,64 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         },
       ],
     ],
+  };
+
+  contextMenu = { visible: false, x: 0, y: 0, index: -1 };
+
+  openContextMenu(event: MouseEvent, index: number) {
+    // console.log("Hiiiiiiiii", event)
+    event.preventDefault();
+    this.contextMenu = {
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      index,
+    };
+    // console.log("Hiiiiiiiii", this.contextMenu)
+  }
+
+  onMenuAction(action: any[], index: number) {
+    action[1](index); // calls your existing logic
+    this.contextMenu.visible = false;
+  }
+
+  startDrag(event: MouseEvent | TouchEvent) {
+    event.preventDefault();
+    this.isDragging = true;
+
+    if (event instanceof MouseEvent) {
+      this.dragStartX = event.clientX - this.overlayX;
+      this.dragStartY = event.clientY - this.overlayY;
+      window.addEventListener('mousemove', this.onDrag);
+      window.addEventListener('mouseup', this.endDrag);
+    } else {
+      const touch = event.touches[0];
+      this.dragStartX = touch.clientX - this.overlayX;
+      this.dragStartY = touch.clientY - this.overlayY;
+      window.addEventListener('touchmove', this.onDrag);
+      window.addEventListener('touchend', this.endDrag);
+    }
+  }
+
+  onDrag = (event: MouseEvent | TouchEvent) => {
+    if (!this.isDragging) return;
+
+    if (event instanceof MouseEvent) {
+      this.overlayX = event.clientX - this.dragStartX;
+      this.overlayY = event.clientY - this.dragStartY;
+    } else {
+      const touch = event.touches[0];
+      this.overlayX = touch.clientX - this.dragStartX;
+      this.overlayY = touch.clientY - this.dragStartY;
+    }
+  };
+
+  endDrag = () => {
+    this.isDragging = false;
+    window.removeEventListener('mousemove', this.onDrag);
+    window.removeEventListener('mouseup', this.endDrag);
+    window.removeEventListener('touchmove', this.onDrag);
+    window.removeEventListener('touchend', this.endDrag);
   };
 
   // clearAllPlayers root listener registration done in attachLegacyListeners

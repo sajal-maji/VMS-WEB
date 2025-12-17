@@ -2508,5 +2508,24 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     ],
   };
 
+  contextMenu = { visible: false, x: 0, y: 0, index: -1 };
+
+  openContextMenu(event: MouseEvent, index: number) {
+    // console.log("Hiiiiiiiii", event)
+    event.preventDefault();
+    this.contextMenu = {
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      index,
+    };
+    // console.log("Hiiiiiiiii", this.contextMenu)
+  }
+
+  onMenuAction(action: any[], index: number) {
+    action[1](index); // calls your existing logic
+    this.contextMenu.visible = false;
+  }
+
   // clearAllPlayers root listener registration done in attachLegacyListeners
 }

@@ -1,4 +1,4 @@
-<div class="archive-container relative">
+<div class="archive-container relative" (click)="contextMenu.visible = false">
   <!-- LEFT -->
   <div class="sidebar">
     <tree (channelClickedEvent)="OnClick($event)" (serverConfig)="OnLoad($event)"></tree>
@@ -24,7 +24,7 @@
         class="video-container flex flex-col w-full h-full"
       >
         <!-- ================= DATETIME PICKER ================= -->
-        <div class="flex justify-end m-2">
+        <div class="flex justify-end m-2" (click)="$event.stopPropagation()">
           <input
             type="datetime-local"
             class="w-[180px] bg-gray-800 text-white border border-gray-600 rounded px-2 py-1"
@@ -36,8 +36,7 @@
         <!-- ================= VIDEO CONTAINER ================= -->
         <div
           class="w-full relative ui-droppable video-container"
-          [attr.context-menu]="options.actionsMenu"
-          [attr.model]="i"
+          (contextmenu)="openContextMenu($event, i)"
         >
           <!-- ================= HEADER ================= -->
           <div class="flex justify-between items-center p-[0.05rem] bg-gray-800 text-white">
@@ -253,6 +252,20 @@
           </span>
         </div>
       </div>
+    </div>
+  </div>
+  <div
+    *ngIf="contextMenu.visible"
+    class="fixed bg-gray-900 text-white rounded shadow-lg z-50 min-w-[180px]"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y"
+  >
+    <div
+      *ngFor="let action of options.actionsMenu"
+      class="px-4 py-2 hover:bg-blue-600 cursor-pointer"
+      (click)="onMenuAction(action, contextMenu.index)"
+    >
+      {{ action[0] }}
     </div>
   </div>
 </div>

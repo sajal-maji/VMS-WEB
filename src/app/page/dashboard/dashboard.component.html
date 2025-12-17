@@ -1,4 +1,4 @@
-<div class="dashboard-container relative">
+<div class="dashboard-container relative" (click)="contextMenu.visible = false">
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree
@@ -12,7 +12,7 @@
   </div>
 
   <!-- Right section (Header + Main content) -->
-  <div class="main-section flex-1 flex flex-col">
+  <div class="main-section flex flex-col flex-1">
     <app-header
       [currentLayout]="currentLayout"
       [allowedLayouts]="allowedLayouts"
@@ -37,12 +37,12 @@
         <i class="fa fa-copy"></i>
       </button>
       <button
-        class="grid-button w-8 h-8 flex items-center justify-center"
+        class="grid-button w-8 h-8 flex items-center justify-center p-0"
         type="button"
         title="Play Matrix"
         (click)="playMatrixUrl()"
       >
-        <i class="fa fa-play"></i>
+        <img src="images/Play.png" class="w-4 h-4" alt="Play" />
       </button>
     </div>
 
@@ -57,8 +57,7 @@
       >
         <div
           class="w-full relative ui-droppable video-container"
-          [attr.context-menu]="options.actionsMenu"
-          [attr.model]="i"
+          (contextmenu)="openContextMenu($event, i)"
         >
           <!-- ================= VIDEO HEADER ================= -->
           <div class="flex justify-between items-center p-[0.05rem] bg-gray-800 text-white">
@@ -212,6 +211,171 @@
           </div>
           <!-- ================= END VIDEO PLAYER ================= -->
         </div>
+      </div>
+    </div>
+  </div>
+  <div
+    *ngIf="contextMenu.visible"
+    class="fixed bg-gray-900 text-white rounded shadow-lg z-50 min-w-[180px]"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y"
+  >
+    <div
+      *ngFor="let action of options.actionsMenu"
+      class="px-4 py-2 hover:bg-blue-600 cursor-pointer"
+      (click)="onMenuAction(action, contextMenu.index)"
+    >
+      {{ action[0] }}
+    </div>
+  </div>
+  <!-- ================= PTZ Overlay ================= -->
+  <div
+    id="Overlay"
+    *ngIf="ptzOverlayVisible"
+    class="fixed inset-0 flex items-start justify-center z-50"
+    [ngStyle]="{ top: overlayY + 'px', left: overlayX + 'px' }"
+  >
+    <div
+      class="bg-[#111317] border border-gray-700 w-[650px] h-[600px] relative p-4 rounded"
+      (mousedown)="startDrag($event)"
+      (touchstart)="startDrag($event)"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-white">PTZ Movement</h3>
+        <img
+          (click)="hidePTZControl(1)"
+          src="images/CloseIcon.png"
+          class="w-6 h-6 cursor-pointer"
+          title="Close"
+        />
+      </div>
+
+      <hr class="border-b border-gray-700 mb-2" />
+
+      <!-- Select View -->
+      <div class="mb-4">
+        <h4 class="text-xs font-semibold text-white mb-1">Select View</h4>
+        <div class="flex space-x-4 text-white text-sm">
+          <label class="flex items-center space-x-1">
+            <input
+              type="radio"
+              name="viewtype"
+              value="fixed_position"
+              [(ngModel)]="viewType"
+              class="accent-blue-500"
+            />
+            <span>Fixed Position</span>
+          </label>
+          <label class="flex items-center space-x-1">
+            <input
+              type="radio"
+              name="viewtype"
+              value="preset_auto_tour"
+              [(ngModel)]="viewType"
+              class="accent-blue-500"
+            />
+            <span>Preset Auto Tour</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Video + PTZ Controls -->
+      <div class="flex gap-4">
+        <!-- Video Container -->
+        <div class="flex-1 border border-gray-800 p-0">
+          <div class="flex items-center p-1 bg-gray-800 text-white">
+            <img
+              src="images/camera/{{ imagePathFixedIdle }}"
+              *ngIf="ptzplayer.status == undefined"
+              class="w-5 h-5"
+            />
+            <img
+              src="images/camera/{{ imagePathPtzLive }}"
+              *ngIf="ptzplayer.status == 0"
+              class="w-5 h-5"
+            />
+            <img
+              src="images/camera/{{ imagePathPtzDead }}"
+              *ngIf="ptzplayer.status == 1"
+              class="w-5 h-5"
+            />
+            <div class="truncate ml-2" title="{{ ptzplayer.channelName }}">
+              {{ ptzplayer.channelName }}
+            </div>
+          </div>
+          <video
+            id="elem_id_ptz"
+            poster="images/postervtpl_new.jpg"
+            class="w-full h-[253px] bg-black"
+          ></video>
+        </div>
+
+        <!-- PTZ Controls -->
+        <div class="relative w-1/3 h-[283px] bg-[#1E2129]">
+          <div class="absolute inset-0">
+            <img
+              (click)="ptzControl('13')"
+              src="images/ptzcontrol/left.png"
+              class="absolute left-[46px] top-[108px] w-6 h-6 cursor-pointer"
+            />
+            <img
+              (click)="ptzControl('16')"
+              src="images/ptzcontrol/down.png"
+              class="absolute left-[95px] top-[150px] w-6 h-6 cursor-pointer"
+            />
+            <img
+              (click)="ptzControl('14')"
+              src="images/ptzcontrol/right.png"
+              class="absolute left-[145px] top-[108px] w-6 h-6 cursor-pointer"
+            />
+            <img
+              (click)="ptzControl('15')"
+              src="images/ptzcontrol/up.png"
+              class="absolute left-[95px] top-[54px] w-6 h-6 cursor-pointer"
+            />
+            <!-- Zoom -->
+            <div class="absolute bottom-4 left-[46px] flex gap-2">
+              <img
+                (click)="ptzControl('22')"
+                src="images/ptzcontrol/zoomout.png"
+                class="w-6 h-6 cursor-pointer"
+              />
+              <img
+                (click)="ptzControl('21')"
+                src="images/ptzcontrol/zoomin.png"
+                class="w-6 h-6 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Presets -->
+      <div class="flex gap-2 mt-4 overflow-x-auto h-12">
+        <div
+          *ngFor="let preset of allPresets; let idx = index"
+          class="flex-shrink-0 px-2 py-1 bg-gray-800 text-white text-sm rounded cursor-pointer"
+          (click)="clickedPreset(preset)"
+        >
+          {{ preset }}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="absolute bottom-0 left-0 w-full h-16 bg-[#1E2129] flex items-center justify-end px-6 gap-2"
+      >
+        <span class="text-yellow-400 text-sm flex-1">{{ ptzplayer.error }}</span>
+        <button (click)="hidePTZControl(1)" class="bg-blue-600 text-white px-4 py-1 rounded">
+          Save
+        </button>
+        <button
+          (click)="hidePTZControl()"
+          class="border border-blue-600 text-blue-600 bg-transparent hover:bg-transparent hover:text-blue-600 px-4 py-1 rounded"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   </div>

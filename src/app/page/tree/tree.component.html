@@ -14,11 +14,16 @@
       <!-- Search (FIXED, NON-SCROLLING) -->
       <div class="sidebar-search relative my-2 shrink-0">
         <input
+          id="searchTextId"
           type="text"
           placeholder="Search..."
-          class="w-full pl-2 pr-3 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full pl-2 pr-3 py-1 rounded bg-gray-800 border border-gray-700 text-white shadow-[0_0_0_1px_#1a1f28] focus:outline-none focus:ring-0 focus:shadow-[0_0_16px_rgba(37,99,235,0.45)] transition"
+          [(ngModel)]="searchCameraText"
+          (ngModelChange)="onSearchCameraChange($event)"
         />
         <i class="fa fa-search absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
+
+        <div *ngIf="model.camerror" class="text-red-400 text-sm mt-1">{{ model.camerror }}</div>
       </div>
 
       <!-- ========== TREE SCROLL AREA ONLY ========== -->

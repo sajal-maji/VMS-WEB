@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { switchMap, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, switchMap, take, takeUntil } from 'rxjs/operators';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { NavigationEnd, Router } from '@angular/router';
@@ -103,6 +103,8 @@ export class TreeComponent implements OnInit {
   private statusIntervalSub?: Subscription;
   private destroy$ = new Subject<void>();
   currentRoute: string = '';
+  searchCameraText: string = '';
+  private searchSubject: Subject<string> = new Subject<string>();
 
   constructor(
     private http: HttpClient,
@@ -137,6 +139,9 @@ export class TreeComponent implements OnInit {
     this.loadData();
     this.loadServerConfiguration();
     // this.buildJunctionTree();
+    this.searchSubject.pipe(debounceTime(1000)).subscribe(() => {
+      this.searchCameraClicked();
+    });
   }
 
   ngOnDestroy(): void {
@@ -548,6 +553,48 @@ export class TreeComponent implements OnInit {
     });
   }
 
+  onSearchCameraChange(value: string) {
+    this.searchCameraText = value;
+    this.searchSubject.next(value); // triggers debounce
+  }
+
+  searchCameraClicked(): void {
+    const searchText = this.searchCameraText?.trim().toUpperCase();
+    this.model.camerror = '';
+
+    // 🔁 If search is empty → restore full tree
+    if (!searchText) {
+      this.displayTree = this.deepClone(this.originalCameraTree);
+      return;
+    }
+
+    const filteredTree: CameraNode[] = [];
+
+    this.originalCameraTree.forEach((junction) => {
+      if (!junction.children || !junction.isjunction) return;
+
+      // ✅ Filter cameras inside the junction
+      const matchedChildren = junction.children.filter(
+        (child) => child.iscamera && child.name?.toUpperCase().includes(searchText),
+      );
+
+      if (matchedChildren.length > 0) {
+        filteredTree.push({
+          ...junction,
+          checked: true, // 🔓 auto-expand junction
+          children: matchedChildren, // 🎯 only matching cameras
+        });
+      }
+    });
+
+    if (filteredTree.length === 0) {
+      this.model.camerror = `No camera includes '${this.searchCameraText}'`;
+      setTimeout(() => (this.model.camerror = ''), 3000);
+    }
+
+    this.displayTree = filteredTree;
+  }
+
   // locationClick(value: string): void {
   //   if (value === 'Favroite') {
   //     this.isFavroite = !this.isFavroite;
@@ -574,5 +621,9 @@ export class TreeComponent implements OnInit {
 
   showEvents(): void {
     this.router.navigate(['/ivmsweb/event-search']);
+  }
+
+  private deepClone<T>(data: T): T {
+    return JSON.parse(JSON.stringify(data));
   }
 }
