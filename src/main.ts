@@ -36,21 +36,17 @@ async function clearAllClientStorage() {
   // DELETE COOKIES EXACTLY AS THEY EXIST
   // =========================================================
   try {
-    const cookies = document.cookie.split(';');
+    const domain = window.location.hostname;
 
-    const paths = ['/', '/ivmsweb', '/ivmsweb/login'];
-    const domains = [window.location.hostname, '.' + window.location.hostname];
+    // 1️⃣ DELETE vSessionId cookie (public domain cookie)
+    document.cookie = `vSessionId=; Max-Age=0; path=/; domain=${domain}`;
 
-    cookies.forEach((cookie) => {
-      const eq = cookie.indexOf('=');
-      const name = eq > -1 ? cookie.substring(0, eq).trim() : cookie.trim();
+    // 2️⃣ DELETE fallback host-only cookie (in case frontend created one)
+    document.cookie = `vSessionId=; Max-Age=0; path=/`;
 
-      domains.forEach((domain) => {
-        paths.forEach((path) => {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}; domain=${domain};`;
-        });
-      });
-    });
+    // 3️⃣ DELETE JSESSIONID if any exists
+    document.cookie = `JSESSIONID=; Max-Age=0; path=/; domain=${domain}`;
+    document.cookie = `JSESSIONID=; Max-Age=0; path=/`;
 
     console.log('Cookies cleared');
   } catch (err) {
@@ -62,7 +58,12 @@ async function clearAllClientStorage() {
 // LOGOUT PROCESS (CALL BACKEND + CLEAR LOCAL DATA)
 // ================================================
 function logout(cookieService: CookieService) {
+  // 1️⃣ Delete JWT cookie immediately
+  // cookieService.delete('authToken', '/');
+
   const vSessionId = cookieService.get('vSessionId');
+  const authToken = cookieService.get('authToken'); // will be null now, but backend sees session via vSessionId
+
   const host = window.location.hostname;
 
   // Overwrite JSESSIONID so backend can read correct session for logout
@@ -74,14 +75,15 @@ function logout(cookieService: CookieService) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Cookies: vSessionId, // your backend reads this
+      Cookies: `JSESSIONID=${vSessionId}`,
+      Authorization: `Bearer ${authToken}`,
     },
     credentials: 'include',
     body: '',
     keepalive: true,
   }).catch(() => {});
 
-  // Clear client-side data
+  // Clear all client storage
   clearAllClientStorage();
 }
 

@@ -1,4 +1,4 @@
-<div class="dashboard-container relative" (click)="contextMenu.visible = false">
+<div class="dashboard-container relative">
   <!-- Left sidebar (Tree) -->
   <div class="sidebar">
     <tree
@@ -19,13 +19,13 @@
       (layoutChange)="onLayoutChange($event)"
     ></app-header>
     <!-- ===== MATRIX URL BAR: only once ===== -->
-    <div class="w-full flex items-center gap-2 px-2 py-2 mb-2">
+    <div class="w-full flex items-center gap-4 px-2 py-2 mb-2">
       <input
         id="matrixUrl"
         type="text"
         [(ngModel)]="sendMatrix.matrixUrl"
         placeholder="Video matrix url"
-        class="flex-1 h-9 px-3 rounded bg-gray-800 border border-gray-600 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 matrixUrl"
+        class="w-full max-w-screen-md h-9 px-3 ml-3 mr-8 rounded bg-gray-800 text-white text-sm focus:outline-none focus:ring-0 focus:shadow-[0_0_16px_rgba(37,99,235,0.45)] transition matrixUrl"
       />
       <button
         class="grid-button w-8 h-8 flex items-center justify-center"
@@ -48,8 +48,11 @@
 
     <!-- ===== VIDEO GRID ===== -->
     <div
-      class="grid gap-2 w-full flex-1 overflow-y-auto"
+      class="grid gap-2 w-full flex-1"
       [style.gridTemplateColumns]="gridTemplate"
+      [class.overflow-y-auto]="currentLayout !== '1x1'"
+      [class.overflow-hidden]="currentLayout === '1x1'"
+      (click)="contextMenu.visible = false"
     >
       <div
         *ngFor="let player of players; let i = index"

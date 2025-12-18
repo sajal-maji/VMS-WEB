@@ -233,7 +233,7 @@ export class ArchiveComponent implements OnInit, AfterViewInit, OnDestroy {
     if (overlay) {
       this.makeDraggable(overlay);
     }
-    this.adjustVideoView();
+    // this.adjustVideoView();
   }
 
   ngOnDestroy(): void {

@@ -184,6 +184,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.liveKeepAlive();
     }
     this.liveKeepAlive();
+    // this.onLayoutChange(this.currentLayout);
   }
 
   ngAfterViewInit(): void {
@@ -192,7 +193,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (overlay) {
       this.makeDraggable(overlay);
     }
-    this.adjustVideoView();
+    // this.adjustVideoView();
+    // setTimeout(() => this.onLayoutChange(this.currentLayout), 0);
   }
 
   ngOnDestroy(): void {

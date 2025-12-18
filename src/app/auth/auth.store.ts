@@ -48,7 +48,8 @@ export class AuthStore {
         });
         // Set JWT token in cookie, valid for 1 day
         this.cookies.set('vSessionId', res.result[0].vsessionid, 0, '/');
-        this.cookies.set('authToken', res.result[0].authToken, 1, '/');
+        // Short-lived JWT (1 hour)
+        this.cookies.set('authToken', res.result[0].authToken, 1 / 24, '/');
 
         this.router.navigate(['ivmsweb/live-matrix']);
       },
