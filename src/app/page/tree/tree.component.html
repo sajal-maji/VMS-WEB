@@ -22,10 +22,12 @@
           (ngModelChange)="onSearchCameraChange($event)"
         />
         <i class="fa fa-search absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
-
-        <div *ngIf="model.camerror" class="text-red-400 text-sm mt-1">{{ model.camerror }}</div>
       </div>
-
+      @if (model.camerror) {
+        <div class="text-amber-500 text-centerng text-sm mt-1">
+          {{ model.camerror }}
+        </div>
+      }
       <!-- ========== TREE SCROLL AREA ONLY ========== -->
       <div class="tree-container flex-1 overflow-y-auto pr-1">
         @if (displayTree.length > 0) {

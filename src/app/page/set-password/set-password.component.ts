@@ -13,7 +13,6 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
-import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from '../footer/footer.component';
 import { CookieService } from 'ngx-cookie-service';
 
@@ -64,7 +63,7 @@ export class SetPasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -73,7 +72,7 @@ export class SetPasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -115,6 +114,15 @@ export class SetPasswordComponent implements OnInit {
 
   sanitizeInput(value: string): string {
     return value ? this.sanitizer.sanitize(1, value) || '' : '';
+  }
+
+  private async sha512(value: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+    const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   // Validate unique key via API
@@ -174,7 +182,7 @@ export class SetPasswordComponent implements OnInit {
   }
 
   // Submit password
-  save(): void {
+  async save(): Promise<void> {
     this.submitted = true;
 
     if (!this.setPasswordForm.valid) {
@@ -188,20 +196,14 @@ export class SetPasswordComponent implements OnInit {
     });
 
     if (setPassword.newpassword !== setPassword.confirmPassword) {
-      // this.error_message = "New Password and Confirm New Password must be same.";
+      this.error_message = 'New Password and Confirm New Password must be same.';
       return; // STOP HERE!
     }
 
-    // this.validate();
-
-    // if (this.error_message) return;
-
-    let firstEncryptCurrPass = CryptoJS.SHA512(setPassword.newpassword).toString();
-    setPassword.newpassword = firstEncryptCurrPass;
-
-    setPassword.confirmPassword = firstEncryptCurrPass;
-
-    // console.log("set Pass", setPassword);
+    // 🔐 Web Crypto hashing (same behavior as before)
+    const hashedPassword = await this.sha512(setPassword.newpassword);
+    setPassword.newpassword = hashedPassword;
+    setPassword.confirmPassword = hashedPassword;
 
     const postData = {
       userid: setPassword.userid,

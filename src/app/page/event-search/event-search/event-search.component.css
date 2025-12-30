@@ -87,7 +87,7 @@
   /* object-fit: cover; */
   object-fit: unset;
   width: 100%;
-  max-height: 850px !important;
+  max-height: 450px !important;
 }
 
 .event-video {

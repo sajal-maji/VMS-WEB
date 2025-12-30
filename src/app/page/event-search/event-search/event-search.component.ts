@@ -719,7 +719,20 @@ export class EventSearchComponent implements OnInit, AfterViewInit {
             (Math.floor(diff % 60) > 9 ? Math.floor(diff % 60) : '0' + Math.floor(diff % 60));
         }
 
-        this.progress = Math.floor(lastDiff * (100 / (this.durInitial ?? 1)));
+        if (
+          typeof lastDiff === 'number' &&
+          typeof this.durInitial === 'number' &&
+          isFinite(lastDiff) &&
+          isFinite(this.durInitial) &&
+          this.durInitial > 0
+        ) {
+          this.progress = Math.min(
+            100,
+            Math.max(0, Math.floor((lastDiff * 100) / this.durInitial)),
+          );
+        } else {
+          this.progress = 0;
+        }
 
         if (Number.isNaN(diff)) {
           this.currentTime = '0:00';

@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { HeaderComponent } from '../header/header.component';
-import { FooterComponent } from '../footer/footer.component';
 import { TreeComponent } from '../tree/tree.component';
 import {
   FormBuilder,
@@ -17,7 +16,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
 import { take } from 'rxjs';
-import * as CryptoJS from 'crypto-es';
 
 @Component({
   selector: 'app-change-password',
@@ -59,7 +57,7 @@ export class ChangePasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -68,7 +66,7 @@ export class ChangePasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -77,7 +75,7 @@ export class ChangePasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -163,7 +161,7 @@ export class ChangePasswordComponent implements OnInit {
     return value ? this.sanitizer.sanitize(1, value) || '' : '';
   }
 
-  save() {
+  async save() {
     this.isLoading = true;
     this.submitted = true;
 
@@ -179,15 +177,27 @@ export class ChangePasswordComponent implements OnInit {
     });
 
     if (changePassword.newpassword !== changePassword.confirmPassword) {
-      // this.error_message = "New Password and Confirm New Password must be same.";
+      this.error_message = 'New Password and Confirm New Password must be same.';
       return; // STOP HERE!
     }
 
-    let firstEncryptCurrPass = CryptoJS.SHA512(changePassword.password).toString();
-    firstEncryptCurrPass = CryptoJS.SHA512(firstEncryptCurrPass).toString();
+    // 🔐 Web Crypto API hashing helper
+    const sha512 = async (value: string): Promise<string> => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(value);
+      const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+      return Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    };
+
+    // Hash current password
+    let firstEncryptCurrPass = await sha512(changePassword.password);
+    firstEncryptCurrPass = await sha512(firstEncryptCurrPass);
     changePassword.password = firstEncryptCurrPass;
 
-    let firstEncryptNewPass = CryptoJS.SHA512(changePassword.newpassword).toString();
+    // Hash new password
+    const firstEncryptNewPass = await sha512(changePassword.newpassword);
     changePassword.newpassword = firstEncryptNewPass;
 
     changePassword.confirmPassword = firstEncryptNewPass;

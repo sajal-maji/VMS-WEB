@@ -9,7 +9,6 @@ import {
 } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthStore } from '../../auth/auth.store';
-import * as CryptoJS from 'crypto-es';
 import { FooterComponent } from '../footer/footer.component';
 import { Router, RouterLink } from '@angular/router';
 @Component({
@@ -46,6 +45,7 @@ export class LoginComponent implements OnInit {
         // Clear after 5 seconds
         setTimeout(() => {
           this.errorMessage = '';
+          location.reload();
         }, 1000);
       }
     });
@@ -61,7 +61,7 @@ export class LoginComponent implements OnInit {
           Validators.required,
           // 8-12 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,15}$/,
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\[\]{}\-_=+~`|:;"'<>.,?\/]).{8,64}$/,
           ),
         ],
       ],
@@ -89,7 +89,27 @@ export class LoginComponent implements OnInit {
     if (input) input.type = this.showPassword ? 'text' : 'password';
   }
 
-  login(): void {
+  /* =========================
+     🔐 PASSWORD HASHING ONLY
+     ========================= */
+
+  private async sha512(value: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+    const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  private async doubleHash(password: string): Promise<string> {
+    const first = await this.sha512(password);
+    return this.sha512(first);
+  }
+
+  /* ========================= */
+
+  async login(): Promise<void> {
     this.submitted = true;
 
     // Reset previous error
@@ -114,7 +134,7 @@ export class LoginComponent implements OnInit {
       } else {
         this.errorMessage = 'Please correct the highlighted errors.';
       }
-
+      this.reloadAfterError();
       return; // stop login if form invalid
     }
 
@@ -132,10 +152,10 @@ export class LoginComponent implements OnInit {
     // Sanitize and encrypt
     let userid = this.sanitizer.sanitize(1, this.loginForm.value.userid) || '';
     let password = this.sanitizer.sanitize(1, this.loginForm.value.password) || '';
+
+    // 🔁 REPLACED crypto-es hashing
     if (password.trim()) {
-      let firstEncrypt = CryptoJS.SHA512(password).toString();
-      firstEncrypt = CryptoJS.SHA512(firstEncrypt).toString();
-      password = firstEncrypt;
+      password = await this.doubleHash(password);
     }
 
     // Remember Me
@@ -176,5 +196,12 @@ export class LoginComponent implements OnInit {
 
   forgotPassword(): void {
     this.router.navigate(['/ivmsweb/forgot-password']);
+  }
+
+  private reloadAfterError(): void {
+    setTimeout(() => {
+      this.errorMessage = '';
+      location.reload();
+    }, 3000);
   }
 }

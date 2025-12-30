@@ -4,14 +4,11 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { debug } from 'console';
 import { TreeComponent } from '../tree/tree.component';
 import { HeaderComponent } from '../header/header.component';
 import { API_ENDPOINTS } from '../../config/api-endpoints';
 import { CookieService } from 'ngx-cookie-service';
 import { take } from 'rxjs';
-import * as CryptoJS from 'crypto-es';
-import { FooterComponent } from '../footer/footer.component';
 import { AuthStore } from '../../auth/auth.store';
 
 @Component({
@@ -170,7 +167,16 @@ export class UserDetailsComponent implements OnInit {
     }
   }
 
-  save(): void {
+  private async sha512(value: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+    const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async save(): Promise<void> {
     this.error_message = '';
     // debugger
     if (!this.userForm.valid) {
@@ -197,10 +203,10 @@ export class UserDetailsComponent implements OnInit {
 
     // Hash security answers if not masked
     if (user.securityanswer1 !== '**********') {
-      user.securityanswer1 = CryptoJS.SHA512(user.securityanswer1).toString();
+      user.securityanswer1 = await this.sha512(user.securityanswer1);
     }
     if (user.securityanswer2 !== '**********') {
-      user.securityanswer2 = CryptoJS.SHA512(user.securityanswer2).toString();
+      user.securityanswer2 = await this.sha512(user.securityanswer2);
     }
 
     const url = API_ENDPOINTS.UPDATE_USER;
