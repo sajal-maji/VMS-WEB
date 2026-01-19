@@ -236,10 +236,16 @@ export class SetPasswordComponent implements OnInit {
           console.log('res', response);
           this.error_message = response?.error?.message || 'Something went wrong!';
           this.success_message = '';
-          alert(this.error_message)
+          alert(this.error_message);
           // Auto-clear error message after a few seconds (optional)
           setTimeout(() => {
             this.error_message = '';
+            this.setPasswordForm.reset({
+              password: '',
+              newpassword: '',
+            });
+
+            this.submitted = false;
             // location.reload();
           }, 1000);
         },
