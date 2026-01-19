@@ -226,8 +226,9 @@ export class ChangePasswordComponent implements OnInit {
           next: (response) => {
             console.log('response', response);
             this.success_message = 'Password Changed successfully';
+            alert(this.success_message);
             setTimeout(() => {
-              this.success_message = '';
+              // this.success_message = '';
               this.authStore.logout();
               this.router.navigateByUrl('ivmsweb/login');
             }, 1000);
@@ -236,11 +237,11 @@ export class ChangePasswordComponent implements OnInit {
           error: (response) => {
             this.error_message = response?.error?.message || 'Something went wrong!';
             this.success_message = '';
-
+            alert(this.error_message);
             // Auto-clear error message after a few seconds (optional)
             setTimeout(() => {
               this.error_message = '';
-              location.reload();
+              this.reset();
             }, 1000);
           },
         });
@@ -258,5 +259,7 @@ export class ChangePasswordComponent implements OnInit {
 
     this.changePassForm.markAsPristine();
     this.changePassForm.markAsUntouched();
+
+    this.submitted = false;
   }
 }

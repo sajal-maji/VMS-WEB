@@ -226,6 +226,7 @@ export class SetPasswordComponent implements OnInit {
         next: (response: any) => {
           console.log('response', response);
           this.success_message = 'Password has been reset!';
+          alert(this.success_message);
           setTimeout(() => {
             this.success_message = '';
             this.router.navigate(['ivmsweb/login']);
@@ -235,11 +236,11 @@ export class SetPasswordComponent implements OnInit {
           console.log('res', response);
           this.error_message = response?.error?.message || 'Something went wrong!';
           this.success_message = '';
-
+          alert(this.error_message)
           // Auto-clear error message after a few seconds (optional)
           setTimeout(() => {
             this.error_message = '';
-            location.reload();
+            // location.reload();
           }, 1000);
         },
       });
